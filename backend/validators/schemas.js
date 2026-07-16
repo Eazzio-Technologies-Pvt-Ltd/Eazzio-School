@@ -1,0 +1,55 @@
+import { z } from 'zod';
+
+export const loginSchema = z.object({
+  email: z.string().min(1, 'Login ID is required'),
+  password: z.string().min(1, 'Password is required'),
+});
+
+export const subscriptionOrderSchema = z.object({
+  studentCount: z.coerce.number().min(1, 'Valid student count is required'),
+});
+
+export const registerSchoolSchema = z.object({
+  schoolName: z.string().min(1, 'School name is required'),
+  principalName: z.string().min(1, 'Principal name is required'),
+  email: z.string().email('Invalid email address'),
+  phone: z.string().min(1, 'Phone is required'),
+  address: z.string().optional(),
+  studentCount: z.coerce.number().min(1, 'Student count is required'),
+  password: z.string().min(6, 'Password must be at least 6 characters'),
+  razorpay_payment_id: z.string(),
+  razorpay_order_id: z.string(),
+  razorpay_signature: z.string(),
+});
+
+export const createTeacherSchema = z.object({
+  name: z.string().min(1, 'Name is required'),
+  email: z.string().email('Invalid email'),
+  phone: z.string().optional(),
+  password: z.string().min(6, 'Password must be at least 6 characters'),
+});
+
+export const createClassSchema = z.object({
+  className: z.string().min(1, 'Class name is required'),
+  section: z.string().min(1, 'Section is required'),
+  academicYear: z.string().min(1, 'Academic year is required'),
+});
+
+export const createStudentSchema = z.object({
+  name: z.string().min(1, 'Name is required'),
+  classId: z.coerce.number().min(1, 'Class ID is required'),
+  fatherName: z.string().optional(),
+  motherName: z.string().optional(),
+  phone: z.string().optional(),
+  address: z.string().optional(),
+  rollNumber: z.string().optional(),
+  admissionDate: z.string().optional().nullable(),
+});
+
+export const noticeSchema = z.object({
+  schoolId: z.coerce.number(),
+  title: z.string().min(1, 'Title is required'),
+  content: z.string().min(1, 'Content is required'),
+  audience: z.enum(['SCHOOL', 'CLASS', 'TEACHERS', 'STUDENTS']),
+  classId: z.coerce.number().optional().nullable(),
+});

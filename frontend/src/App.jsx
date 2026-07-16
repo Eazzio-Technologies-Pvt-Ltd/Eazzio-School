@@ -1,0 +1,142 @@
+import React, { useContext } from 'react';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import AuthProvider, { AuthContext } from './context/AuthContext';
+import ThemeProvider from './context/ThemeContext';
+import Login from './pages/Login';
+import Landing from './pages/Landing';
+import RegisterSchool from './pages/RegisterSchool';
+import DashboardLayout from './components/DashboardLayout';
+
+// Principal Pages
+import PrincipalDashboard from './pages/principal/PrincipalDashboard';
+import Students from './pages/principal/Students';
+import Teachers from './pages/principal/Teachers';
+import AttendanceOverview from './pages/principal/AttendanceOverview';
+import FeesOverview from './pages/principal/FeesOverview';
+import Reports from './pages/principal/Reports';
+import Settings from './pages/principal/Settings';
+import Classes from './pages/principal/Classes';
+import Timetable from './pages/principal/Timetable';
+import PrincipalNotices from './pages/principal/Notices';
+
+// Teacher Pages
+import TeacherDashboard from './pages/teacher/TeacherDashboard';
+import MyClasses from './pages/teacher/MyClasses';
+import TakeAttendance from './pages/teacher/TakeAttendance';
+import AttendanceHistory from './pages/teacher/AttendanceHistory';
+import TeacherProfile from './pages/teacher/TeacherProfile';
+import TeacherRoutine from './pages/teacher/TeacherRoutine';
+import ClassFees from './pages/teacher/ClassFees';
+import TeacherNotices from './pages/teacher/Notices';
+
+// Student Pages
+import StudentDashboard from './pages/student/StudentDashboard';
+import MyAttendance from './pages/student/MyAttendance';
+import MyFees from './pages/student/MyFees';
+import Notices from './pages/student/Notices';
+import MyProfile from './pages/student/MyProfile';
+
+import Unauthorized from './pages/Unauthorized';
+import NotFound from './pages/NotFound';
+
+import ProtectedRoute from './components/ProtectedRoute';
+// Redirects `/dashboard` general route to correct role-based landing subpage
+function DashboardRedirect() {
+  const { user } = useContext(AuthContext);
+
+  if (!user) return <Navigate to="/login" replace />;
+
+  if (user.role === 'PRINCIPAL') {
+    return <Navigate to="/principal/dashboard" replace />;
+  } else if (user.role === 'TEACHER') {
+    return <Navigate to="/teacher/dashboard" replace />;
+  } else if (user.role === 'STUDENT') {
+    return <Navigate to="/student/dashboard" replace />;
+  }
+
+  return <Navigate to="/login" replace />;
+}
+
+// Redirects `/login` if already authenticated
+function LoginRoute() {
+  const { isAuthenticated } = useContext(AuthContext);
+  return isAuthenticated ? <Navigate to="/dashboard" replace /> : <Login />;
+}
+
+export default function App() {
+  return (
+    <ThemeProvider>
+      <AuthProvider>
+        <Router>
+        <Routes>
+          <Route path="/" element={<Landing />} />
+          <Route path="/register" element={<RegisterSchool />} />
+          <Route path="/login" element={<LoginRoute />} />
+
+          {/* Principal Workspace Routes */}
+          <Route
+            path="/principal"
+            element={
+              <ProtectedRoute allowedRoles={['PRINCIPAL']}>
+                <DashboardLayout />
+              </ProtectedRoute>
+            }
+          >
+            <Route path="dashboard" element={<PrincipalDashboard />} />
+            <Route path="students" element={<Students />} />
+            <Route path="teachers" element={<Teachers />} />
+            <Route path="attendance" element={<AttendanceOverview />} />
+            <Route path="fees" element={<FeesOverview />} />
+            <Route path="reports" element={<Reports />} />
+            <Route path="settings" element={<Settings />} />
+            <Route path="classes" element={<Classes />} />
+            <Route path="timetable" element={<Timetable />} />
+            <Route path="notices" element={<PrincipalNotices />} />
+          </Route>
+
+          {/* Teacher Workspace Routes */}
+          <Route
+            path="/teacher"
+            element={
+              <ProtectedRoute allowedRoles={['TEACHER']}>
+                <DashboardLayout />
+              </ProtectedRoute>
+            }
+          >
+            <Route path="dashboard" element={<TeacherDashboard />} />
+            <Route path="classes" element={<MyClasses />} />
+            <Route path="take-attendance" element={<TakeAttendance />} />
+            <Route path="history" element={<AttendanceHistory />} />
+            <Route path="fees" element={<ClassFees />} />
+            <Route path="profile" element={<TeacherProfile />} />
+            <Route path="routine" element={<TeacherRoutine />} />
+            <Route path="notices" element={<TeacherNotices />} />
+          </Route>
+
+          {/* Student Workspace Routes */}
+          <Route
+            path="/student"
+            element={
+              <ProtectedRoute allowedRoles={['STUDENT']}>
+                <DashboardLayout />
+              </ProtectedRoute>
+            }
+          >
+            <Route path="dashboard" element={<StudentDashboard />} />
+            <Route path="attendance" element={<MyAttendance />} />
+            <Route path="fees" element={<MyFees />} />
+            <Route path="notices" element={<Notices />} />
+            <Route path="profile" element={<MyProfile />} />
+          </Route>
+
+          {/* Fallback routes */}
+          <Route path="/unauthorized" element={<Unauthorized />} />
+          <Route path="/404" element={<NotFound />} />
+          <Route path="/dashboard" element={<DashboardRedirect />} />
+          <Route path="*" element={<Navigate to="/404" replace />} />
+        </Routes>
+      </Router>
+    </AuthProvider>
+    </ThemeProvider>
+  );
+}
