@@ -1,8 +1,16 @@
-@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap');
+@import "tailwindcss";
 
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@theme {
+  --color-indigo-650: #4338ca;
+  --color-slate-450: #64748b;
+  --color-slate-650: #334155;
+  --color-purple-650: #7e22ce;
+  --color-emerald-650: #047857;
+  --color-emerald-850: #064e3b;
+  --color-red-650: #b91c1c;
+  --color-blue-650: #1d4ed8;
+}
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap');
 
 :root {
   --font-sans: 'Outfit', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
