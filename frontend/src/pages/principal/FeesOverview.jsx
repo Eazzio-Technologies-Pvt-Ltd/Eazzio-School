@@ -90,9 +90,10 @@ export default function FeesOverview() {
   if (loading) return <Loader message="Loading fee management..." />;
 
   return (
-    <div className="animate-fade-in" style={styles.container}>
-      <div style={styles.header}>
-        <h2>Fee Management System</h2>
+    <>
+      <div className="animate-fade-in" style={styles.container}>
+        <div style={styles.header}>
+          <h2>Fee Management System</h2>
         <p style={styles.sub}>Configure structures, generate invoices, and track payments.</p>
       </div>
 
@@ -254,6 +255,7 @@ export default function FeesOverview() {
           </table>
         </div>
       )}
+      </div>
 
       {/* Modals */}
       {showStructureModal && (
@@ -347,7 +349,7 @@ export default function FeesOverview() {
         </div>
       )}
 
-    </div>
+    </>
   );
 }
 

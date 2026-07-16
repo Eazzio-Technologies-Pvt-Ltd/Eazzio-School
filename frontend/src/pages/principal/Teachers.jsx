@@ -12,7 +12,6 @@ export default function Teachers() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [phone, setPhone] = useState('');
-  const [employeeId, setEmployeeId] = useState('');
 
   // Filters State
   const [searchQuery, setSearchQuery] = useState('');
@@ -71,7 +70,6 @@ export default function Teachers() {
         email,
         password,
         phone,
-        employeeId,
       });
 
       setFeedback({ type: 'success', message: 'Teacher successfully registered!' });
@@ -79,7 +77,6 @@ export default function Teachers() {
       setEmail('');
       setPassword('');
       setPhone('');
-      setEmployeeId('');
       await loadTeachers();
     } catch (err) {
       setFeedback({ type: 'error', message: err.response?.data?.error || 'Registration failed' });
@@ -186,18 +183,6 @@ export default function Teachers() {
               />
             </div>
 
-            <div style={styles.inputGroup}>
-              <label htmlFor="reg-emp-id">Employee ID</label>
-              <input
-                id="reg-emp-id"
-                type="text"
-                placeholder="e.g. EMP-1042"
-                value={employeeId}
-                onChange={(e) => setEmployeeId(e.target.value)}
-                required
-              />
-            </div>
-
             <button
               id="reg-submit"
               type="submit"
@@ -259,6 +244,7 @@ export default function Teachers() {
                 <thead>
                   <tr style={styles.thRow}>
                     <th style={styles.th}>Name</th>
+                    <th style={styles.th}>Employee ID</th>
                     <th style={styles.th}>Subject</th>
                     <th style={styles.th}>Assigned Classroom</th>
                     <th style={styles.th}>Phone</th>
@@ -283,6 +269,9 @@ export default function Teachers() {
                               <span style={{ fontWeight: '600' }}>{user.name}</span>
                               <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>{user.email}</span>
                             </div>
+                          </td>
+                          <td style={styles.td}>
+                            <span style={{ fontWeight: '600', fontFamily: 'monospace', color: 'var(--primary)' }}>{user.employeeId}</span>
                           </td>
                           <td style={styles.td}>{mockSubject}</td>
                           <td style={{ ...styles.td, fontWeight: '700', color: 'var(--primary)' }}>

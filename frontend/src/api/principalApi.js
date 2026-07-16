@@ -48,6 +48,11 @@ export const registerStudent = async (payload) => {
   return response.data;
 };
 
+export const deleteStudent = async (id) => {
+  const response = await api.delete(`/principal/students/${id}`);
+  return response.data;
+};
+
 // --- Attendance & Fees ---
 export const getAttendanceSummary = async () => {
   const response = await api.get('/principal/attendance-summary');

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { getStudents, registerStudent, getClasses } from '../../api/principalApi';
+import { getStudents, registerStudent, getClasses, deleteStudent } from '../../api/principalApi';
 import Loader from '../../components/Loader';
 
 export default function Students() {
@@ -47,6 +47,17 @@ export default function Students() {
     loadData();
   }, []);
 
+  const handleDelete = async (id, name) => {
+    if (window.confirm(`Are you sure you want to completely remove ${name} from the system? This action cannot be undone.`)) {
+      try {
+        await deleteStudent(id);
+        setStudentsList(studentsList.filter(s => s.id !== id));
+      } catch (err) {
+        setError(err.response?.data?.error || 'Failed to delete student.');
+      }
+    }
+  };
+
   const handleRegister = async (e) => {
     e.preventDefault();
     setError('');
@@ -72,9 +83,9 @@ export default function Students() {
       // Show credentials modal
       setCredentialsModal({
         visible: true,
-        studentId: response.credentials.studentId,
-        password: response.credentials.password,
-        name: response.student.name
+        studentId: response.studentId,
+        password: response.password,
+        name: response.name
       });
 
       // Clear form
@@ -209,6 +220,7 @@ export default function Students() {
                     <th style={styles.th}>Class</th>
                     <th style={styles.th}>Phone</th>
                     <th style={styles.th}>Admission Date</th>
+                    <th style={{ ...styles.th, textAlign: 'right' }}>Actions</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -230,6 +242,15 @@ export default function Students() {
                         </td>
                         <td style={styles.td}>{student.phone || '-'}</td>
                         <td style={styles.td}>{student.admissionDate ? new Date(student.admissionDate).toLocaleDateString() : '-'}</td>
+                        <td style={{ ...styles.td, textAlign: 'right' }}>
+                          <button 
+                            onClick={() => handleDelete(student.id, student.name)}
+                            style={{ background: 'transparent', border: 'none', cursor: 'pointer', fontSize: '1.2rem', color: 'var(--danger)' }}
+                            title="Delete Student"
+                          >
+                            🗑️
+                          </button>
+                        </td>
                       </tr>
                     ))
                   )}
