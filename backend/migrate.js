@@ -1,7 +1,7 @@
 import { PrismaClient } from '@prisma/client';
 
-const oldUrl = 'postgresql://neondb_owner:npg_BbjU54ctkSHV@ep-young-river-adpsgwyp-pooler.c-2.us-east-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require';
-const newUrl = 'postgresql://neondb_owner:npg_WmGSoDZ56RVP@ep-steep-sea-adql3qqk-pooler.c-2.us-east-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require';
+const oldUrl = process.env.OLD_DATABASE_URL;
+const newUrl = process.env.DATABASE_URL;
 
 const prismaOld = new PrismaClient({
   datasources: { db: { url: oldUrl } },

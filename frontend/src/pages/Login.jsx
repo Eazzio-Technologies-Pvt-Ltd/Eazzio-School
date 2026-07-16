@@ -38,14 +38,7 @@ export default function Login() {
 
   return (
     <div style={styles.container}>
-      <button
-        onClick={toggleTheme}
-        style={styles.cornerToggleBtn}
-        type="button"
-        title={`Switch to ${theme === 'dark' ? 'Light' : 'Dark'} Mode`}
-      >
-        {theme === 'dark' ? '☀️ Light Mode' : '🌙 Dark Mode'}
-      </button>
+
       <div style={styles.card} className="animate-fade-in">
         <div style={styles.header}>
           <div style={styles.logoRing}>

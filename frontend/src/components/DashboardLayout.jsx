@@ -164,13 +164,6 @@ export default function DashboardLayout() {
             <h2 style={styles.workspaceTitle}>{user.role} Workspace</h2>
           </div>
           <div style={styles.navbarRight}>
-            <button
-              onClick={toggleTheme}
-              style={styles.themeToggleBtn}
-              title={`Switch to ${theme === 'dark' ? 'Light' : 'Dark'} Mode`}
-            >
-              {theme === 'dark' ? '☀️' : '🌙'}
-            </button>
             <div style={styles.profileBadge}>
               <div style={styles.avatar}>
                 {user.name ? user.name[0].toUpperCase() : 'U'}
