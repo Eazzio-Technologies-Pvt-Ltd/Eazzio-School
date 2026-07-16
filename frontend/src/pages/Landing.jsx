@@ -28,7 +28,9 @@ import {
   FileSpreadsheet,
   AlertCircle,
   MapPin,
-  Check
+  Check,
+  Globe,
+  Heart
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -39,6 +41,7 @@ export default function Landing() {
   const onLaunchApp = () => navigate('/dashboard');
 
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [showBanner, setShowBanner] = useState(true);
   const [activeTab, setActiveTab] = useState("principal"); // principal, teacher, parent
   const [demoSubmitted, setDemoSubmitted] = useState(false);
   const [demoData, setDemoData] = useState({
@@ -93,10 +96,10 @@ export default function Landing() {
     }, 5000);
   };
 
-  const scrollToSection = (id) => {
+  const scrollToSection = (id, behavior = "smooth") => {
     const element = document.getElementById(id);
     if (element) {
-      element.scrollIntoView({ behavior: "smooth" });
+      element.scrollIntoView({ behavior });
       setMobileMenuOpen(false);
     }
   };
@@ -184,9 +187,26 @@ export default function Landing() {
 
   return (
     <div className="min-h-screen text-slate-800 bg-slate-50 font-sans selection:bg-indigo-600 selection:text-white overflow-x-hidden relative">
+      {showBanner && (
+        <div className="w-full bg-slate-900 text-slate-100 py-2.5 px-6 flex justify-between items-center text-xs font-semibold relative z-50 border-b border-slate-800 shadow-sm">
+          <div className="flex items-center gap-2.5 mx-auto">
+            <span className="flex items-center gap-1.5 text-slate-200 font-medium">
+              <span>🔒</span>
+              <span>Your data is safe and secure with us Encrypted by AES 256-bit Encryption</span>
+            </span>
+          </div>
+          <button
+            onClick={() => setShowBanner(false)}
+            className="text-slate-450 hover:text-white hover:bg-slate-800 p-1 rounded-lg transition-all absolute right-6"
+            aria-label="Close encryption banner"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+      )}
       {/* Background School Image with gradient mask */}
       <div className="absolute top-0 left-0 w-full h-[950px] overflow-hidden pointer-events-none z-0">
-        <div 
+        <div
           className="absolute inset-0 bg-cover bg-center bg-no-repeat opacity-[0.52] filter saturate-[0.9] contrast-[1.15]"
           style={{ backgroundImage: `url(${schoolBg})` }}
         />
@@ -208,8 +228,7 @@ export default function Landing() {
           <div className="hidden md:flex items-center gap-8 text-sm font-medium text-slate-650">
             <button onClick={() => scrollToSection("features")} className="hover:text-indigo-600 transition-colors">Key Modules</button>
             <button onClick={() => scrollToSection("dashboard-preview")} className="hover:text-indigo-600 transition-colors">Dashboard Demo</button>
-            <a href="#pricing-only" target="_blank" rel="noopener noreferrer" className="hover:text-indigo-600 transition-colors">Pricing</a>
-            <button onClick={() => scrollToSection("demo-request")} className="hover:text-indigo-600 transition-colors">Book a Demo</button>
+            <button onClick={() => scrollToSection("pricing", "auto")} className="hover:text-indigo-600 transition-colors">Pricing</button>
           </div>
 
           <div className="hidden md:flex items-center gap-4">
@@ -217,7 +236,7 @@ export default function Landing() {
               onClick={() => navigate('/register')}
               className="bg-indigo-50 text-indigo-700 hover:bg-indigo-100 font-semibold px-5 py-2.5 rounded-xl transition-all duration-200 flex items-center gap-1.5"
             >
-              Register School
+              Register Institution
             </button>
             <button
               onClick={() => navigate('/login')}
@@ -247,13 +266,12 @@ export default function Landing() {
             >
               <button onClick={() => scrollToSection("features")} className="text-left py-2 hover:text-indigo-600 transition-colors">Key Modules</button>
               <button onClick={() => scrollToSection("dashboard-preview")} className="text-left py-2 hover:text-indigo-600 transition-colors">Dashboard Demo</button>
-              <a href="#pricing-only" target="_blank" rel="noopener noreferrer" className="text-left py-2 hover:text-indigo-600 transition-colors">Pricing</a>
-              <button onClick={() => scrollToSection("demo-request")} className="text-left py-2 hover:text-indigo-600 transition-colors font-semibold text-indigo-650">Book a Demo</button>
+              <button onClick={() => scrollToSection("pricing", "auto")} className="text-left py-2 hover:text-indigo-600 transition-colors">Pricing</button>
               <button
                 onClick={() => navigate('/register')}
                 className="w-full bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-semibold py-3 rounded-xl transition-all duration-200 text-center flex items-center justify-center gap-2"
               >
-                Register School
+                Register Institution
               </button>
               <button
                 onClick={() => navigate('/login')}
@@ -278,10 +296,10 @@ export default function Landing() {
 
           <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
             <button
-              onClick={() => scrollToSection("demo-request")}
+              onClick={() => navigate('/register')}
               className="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-base px-8 py-4 rounded-xl transition-all duration-200 shadow-lg shadow-indigo-600/10 hover:shadow-indigo-600/20 active:scale-98 flex items-center justify-center gap-2 group"
             >
-              Book a Free Demo
+              Register Institution
               <ArrowRight className="w-5 h-5 transition-transform group-hover:translate-x-1" />
             </button>
             <button
@@ -363,7 +381,7 @@ export default function Landing() {
                         <h3 className="text-2xl font-bold text-slate-900">Welcome back!</h3>
                         <p className="text-sm text-slate-500 mt-1">You are logged in as {user?.name}</p>
                       </div>
-                      <button 
+                      <button
                         onClick={onLaunchApp}
                         className="w-full py-3 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-xl text-sm shadow-md shadow-indigo-600/10 active:scale-[0.98] transition-all flex items-center justify-center gap-2"
                       >
@@ -380,17 +398,17 @@ export default function Landing() {
                           Access your school dashboard and modules.
                         </p>
                       </div>
-  
+
                       {authError && (
                         <div className="p-3 bg-red-50 border border-red-200 rounded-xl text-red-600 text-xs font-semibold flex items-center gap-2">
                           <AlertCircle className="w-4 h-4" /> {authError}
                         </div>
                       )}
-  
+
                       <div>
                         <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-widest mb-1.5">Email Address / ID</label>
-                        <input 
-                          type="text" 
+                        <input
+                          type="text"
                           required
                           value={authEmail}
                           onChange={(e) => setAuthEmail(e.target.value)}
@@ -398,14 +416,14 @@ export default function Landing() {
                           className="w-full p-3 border border-slate-200 rounded-xl text-sm outline-none focus:border-indigo-600 focus:ring-1 focus:ring-indigo-600 transition-all"
                         />
                       </div>
-  
+
                       <div>
                         <div className="flex justify-between items-center mb-1.5">
                           <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-widest">Password</label>
                           <button type="button" className="text-xs text-indigo-600 hover:underline font-semibold">Forgot password?</button>
                         </div>
-                        <input 
-                          type="password" 
+                        <input
+                          type="password"
                           required
                           value={authPassword}
                           onChange={(e) => setAuthPassword(e.target.value)}
@@ -413,9 +431,9 @@ export default function Landing() {
                           className="w-full p-3 border border-slate-200 rounded-xl text-sm outline-none focus:border-indigo-600 focus:ring-1 focus:ring-indigo-600 transition-all"
                         />
                       </div>
-  
-                      <button 
-                        type="submit" 
+
+                      <button
+                        type="submit"
                         disabled={authLoading}
                         className="w-full py-3 bg-indigo-600 hover:bg-indigo-500 disabled:bg-indigo-400 text-white font-bold rounded-xl text-sm shadow-md shadow-indigo-600/10 active:scale-[0.98] transition-all flex items-center justify-center gap-1.5"
                       >
@@ -553,7 +571,7 @@ export default function Landing() {
                 onClick={() => setActiveTab("parent")}
                 className={`px-5 py-2.5 rounded-xl text-sm font-bold transition-all ${activeTab === "parent" ? "bg-white text-indigo-700 shadow-md" : "text-slate-600 hover:text-indigo-650"}`}
               >
-                Parent Portal
+                Student Portal
               </button>
             </div>
           </div>
@@ -903,181 +921,160 @@ export default function Landing() {
             </div>
 
             <div className="w-full mt-8 pt-6 border-t border-slate-200/60">
-              <button 
-                onClick={() => scrollToSection("demo-request")}
+              <button
+                onClick={() => navigate("/register")}
                 className="w-full sm:w-auto px-8 py-3.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-bold shadow-md shadow-indigo-600/10 transition-colors"
               >
-                Get Started with EduPulse
+                Register
               </button>
             </div>
           </div>
         </div>
       </section>
 
-      {/* Book a Demo Form Section */}
-      <section id="demo-request" className="py-24 bg-slate-100/50 relative z-10">
-        <div className="w-full px-6 md:px-12 lg:px-16">
-          <div className="max-w-4xl mx-auto bg-white border border-slate-200 rounded-3xl overflow-hidden shadow-2xl grid grid-cols-1 md:grid-cols-2">
 
-            {/* Left Info Column */}
-            <div className="bg-indigo-900 text-white p-8 md:p-12 flex flex-col justify-between relative overflow-hidden">
-              <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-850/50 rounded-full blur-3xl pointer-events-none z-0"></div>
-
-              <div className="space-y-6 z-10">
-                <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-indigo-800 text-[10px] font-semibold tracking-wider uppercase border border-indigo-750">
-                  <Sparkles className="w-3.5 h-3.5 text-indigo-400" />
-                  <span>On-Demand Setup</span>
-                </div>
-
-                <h3 className="text-2xl md:text-3xl font-extrabold leading-tight">
-                  Start Elevating School Operations Today
-                </h3>
-
-                <p className="text-indigo-200 text-xs md:text-sm leading-relaxed">
-                  Book a private demo session with our onboarding specialists. We will run you through a mock setup, configure your class timetables, and demonstrate our automated WhatsApp communications module.
-                </p>
-              </div>
-
-              <div className="space-y-4 pt-8 md:pt-0 z-10">
-                <div className="flex items-center gap-3 text-xs text-indigo-200">
-                  <Mail className="w-4.5 h-4.5 text-indigo-400" />
-                  <span>onboarding@edupulse.local</span>
-                </div>
-                <div className="flex items-center gap-3 text-xs text-indigo-200">
-                  <Phone className="w-4.5 h-4.5 text-indigo-400" />
-                  <span>+91 98765 43210</span>
-                </div>
-                <div className="flex items-center gap-3 text-xs text-indigo-200">
-                  <MapPin className="w-4.5 h-4.5 text-indigo-400" />
-                  <span>Bengaluru Tech Park, India</span>
-                </div>
-              </div>
-            </div>
-
-            {/* Right Form Column */}
-            <div className="p-8 md:p-12 flex flex-col justify-center bg-white relative">
-              <AnimatePresence mode="wait">
-                {!demoSubmitted ? (
-                  <motion.form
-                    key="form"
-                    initial={{ opacity: 1 }}
-                    exit={{ opacity: 0 }}
-                    onSubmit={handleDemoSubmit}
-                    className="space-y-4"
-                  >
-                    <h4 className="text-lg font-bold text-slate-900 mb-2">Request Consultation</h4>
-
-                    <div>
-                      <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1.5">School Name</label>
-                      <input
-                        type="text"
-                        required
-                        value={demoData.schoolName}
-                        onChange={(e) => setDemoData({ ...demoData, schoolName: e.target.value })}
-                        placeholder="e.g. Springdale International"
-                        className="w-full p-3 border border-slate-200 rounded-xl text-xs outline-none focus:border-indigo-600 focus:ring-1 focus:ring-indigo-600 transition-all text-slate-800"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1.5">Contact Administrator Name</label>
-                      <input
-                        type="text"
-                        required
-                        value={demoData.adminName}
-                        onChange={(e) => setDemoData({ ...demoData, adminName: e.target.value })}
-                        placeholder="e.g. Mrs. Principal Khanna"
-                        className="w-full p-3 border border-slate-200 rounded-xl text-xs outline-none focus:border-indigo-600 focus:ring-1 focus:ring-indigo-600 transition-all text-slate-800"
-                      />
-                    </div>
-
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      <div>
-                        <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1.5">Phone Number</label>
-                        <input
-                          type="tel"
-                          required
-                          value={demoData.phone}
-                          onChange={(e) => setDemoData({ ...demoData, phone: e.target.value })}
-                          placeholder="e.g. +91 9876543210"
-                          className="w-full p-3 border border-slate-200 rounded-xl text-xs outline-none focus:border-indigo-600 focus:ring-1 focus:ring-indigo-600 transition-all text-slate-800"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1.5">Work Email</label>
-                        <input
-                          type="email"
-                          required
-                          value={demoData.email}
-                          onChange={(e) => setDemoData({ ...demoData, email: e.target.value })}
-                          placeholder="e.g. admin@school.edu"
-                          className="w-full p-3 border border-slate-200 rounded-xl text-xs outline-none focus:border-indigo-600 focus:ring-1 focus:ring-indigo-600 transition-all text-slate-800"
-                        />
-                      </div>
-                    </div>
-
-                    <div>
-                      <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1.5">School Size (Students)</label>
-                      <select
-                        value={demoData.studentCount}
-                        onChange={(e) => setDemoData({ ...demoData, studentCount: e.target.value })}
-                        className="w-full p-3 border border-slate-200 rounded-xl text-xs bg-white outline-none focus:border-indigo-600 focus:ring-1 focus:ring-indigo-600 transition-all text-slate-800"
-                      >
-                        <option value="Under 100">Under 100 Students</option>
-                        <option value="100-500">100 - 500 Students</option>
-                        <option value="500-1500">500 - 1500 Students</option>
-                        <option value="Above 1500">Above 1500 Students</option>
-                      </select>
-                    </div>
-
-                    <button
-                      type="submit"
-                      className="w-full py-3.5 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-xl text-xs shadow-md shadow-indigo-600/10 hover:shadow-indigo-600/20 active:scale-98 transition-all flex items-center justify-center gap-1.5"
-                    >
-                      Book Demo Consultation <ArrowRight className="w-3.5 h-3.5" />
-                    </button>
-                  </motion.form>
-                ) : (
-                  <motion.div
-                    key="success"
-                    initial={{ opacity: 0, scale: 0.95 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    exit={{ opacity: 0, scale: 0.95 }}
-                    className="text-center space-y-4 py-8"
-                  >
-                    <div className="w-14 h-14 bg-emerald-100 rounded-full flex items-center justify-center mx-auto border border-emerald-250">
-                      <Check className="w-7 h-7 text-emerald-600 stroke-[3]" />
-                    </div>
-                    <h4 className="text-lg font-bold text-slate-900">Demo Scheduled!</h4>
-                    <p className="text-xs text-slate-500 max-w-sm mx-auto leading-relaxed">
-                      Thank you, <span className="font-semibold text-slate-800">{demoData.adminName}</span>. We've received your request for <span className="font-semibold text-slate-800">{demoData.schoolName}</span>. A configuration specialist will reach out to you within 2 business hours.
-                    </p>
-                    <div className="pt-2">
-                      <span className="text-[9px] text-indigo-600 font-mono animate-pulse font-semibold">Redirecting to composer in a few seconds...</span>
-                    </div>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </div>
-          </div>
-        </div>
-      </section>
 
       {/* Footer */}
-      <footer className="border-t border-slate-200 py-12 px-6 bg-white relative z-10">
-        <div className="w-full px-4 md:px-12 lg:px-16 flex flex-col md:flex-row justify-between items-center gap-6">
-          <div className="flex items-center gap-2">
-            <img src={logo} alt="Eazzio Logo" className="h-12 w-auto object-contain" />
+      <footer className="relative bg-slate-950 text-slate-400 pt-20 pb-10 border-t border-slate-900 overflow-hidden z-10">
+        {/* Glow effect */}
+        <div className="absolute -top-40 -left-40 w-96 h-96 bg-indigo-500/10 rounded-full blur-[100px] pointer-events-none"></div>
+        <div className="absolute -bottom-40 right-0 w-96 h-96 bg-purple-500/5 rounded-full blur-[100px] pointer-events-none"></div>
+
+        <div className="w-full px-6 md:px-12 lg:px-16 mx-auto relative z-10">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-12 pb-16 border-b border-slate-800/60">
+            {/* Brand Column */}
+            <div className="space-y-6 lg:col-span-2">
+              <div className="inline-flex items-center justify-center bg-white px-4 py-2 rounded-2xl shadow-sm cursor-pointer hover:scale-[1.02] transition-transform duration-200" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}>
+                <img src={logo} alt="Eazzio Logo" className="h-12 w-auto object-contain" />
+              </div>
+              <p className="text-slate-400 text-sm leading-relaxed max-w-sm">
+                The comprehensive operating system designed to elevate academic management, automate fee collections, and simplify school administration for modern institutions.
+              </p>
+              <div className="flex items-center gap-3">
+                <a href="#" aria-label="Twitter / X" className="w-9 h-9 rounded-xl bg-slate-900 hover:bg-indigo-600 border border-slate-800 hover:border-indigo-500 text-slate-400 hover:text-white flex items-center justify-center transition-all duration-300 hover:-translate-y-1 shadow-sm">
+                  <svg className="w-4 h-4 fill-current" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
+                  </svg>
+                </a>
+                <a href="#" aria-label="LinkedIn" className="w-9 h-9 rounded-xl bg-slate-900 hover:bg-indigo-600 border border-slate-800 hover:border-indigo-500 text-slate-400 hover:text-white flex items-center justify-center transition-all duration-300 hover:-translate-y-1 shadow-sm">
+                  <svg className="w-4 h-4 fill-current" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z" />
+                  </svg>
+                </a>
+                <a href="#" aria-label="Website" className="w-9 h-9 rounded-xl bg-slate-900 hover:bg-indigo-600 border border-slate-800 hover:border-indigo-500 text-slate-400 hover:text-white flex items-center justify-center transition-all duration-300 hover:-translate-y-1 shadow-sm">
+                  <Globe className="w-4 h-4" />
+                </a>
+              </div>
+            </div>
+
+            {/* Modules Column */}
+            <div className="space-y-4">
+              <h4 className="text-xs font-bold uppercase tracking-widest text-slate-200">Modules</h4>
+              <ul className="space-y-2.5 text-sm">
+                <li>
+                  <button onClick={() => scrollToSection("features")} className="hover:text-white transition-colors duration-250 flex items-center gap-1 group text-left">
+                    <ChevronRight className="w-3.5 h-3.5 text-slate-600 group-hover:text-indigo-400 transition-colors" />
+                    <span>Academic ERP</span>
+                  </button>
+                </li>
+                <li>
+                  <button onClick={() => scrollToSection("features")} className="hover:text-white transition-colors duration-250 flex items-center gap-1 group text-left">
+                    <ChevronRight className="w-3.5 h-3.5 text-slate-600 group-hover:text-indigo-400 transition-colors" />
+                    <span>Fee Collections</span>
+                  </button>
+                </li>
+                <li>
+                  <button onClick={() => scrollToSection("features")} className="hover:text-white transition-colors duration-250 flex items-center gap-1 group text-left">
+                    <ChevronRight className="w-3.5 h-3.5 text-slate-600 group-hover:text-indigo-400 transition-colors" />
+                    <span>Smart Attendance</span>
+                  </button>
+                </li>
+                <li>
+                  <button onClick={() => scrollToSection("features")} className="hover:text-white transition-colors duration-250 flex items-center gap-1 group text-left">
+                    <ChevronRight className="w-3.5 h-3.5 text-slate-600 group-hover:text-indigo-400 transition-colors" />
+                    <span>GPS Transit Tracking</span>
+                  </button>
+                </li>
+                <li>
+                  <button onClick={() => scrollToSection("features")} className="hover:text-white transition-colors duration-250 flex items-center gap-1 group text-left">
+                    <ChevronRight className="w-3.5 h-3.5 text-slate-600 group-hover:text-indigo-400 transition-colors" />
+                    <span>Exam & Report Cards</span>
+                  </button>
+                </li>
+              </ul>
+            </div>
+
+            {/* Resources Column */}
+            <div className="space-y-4">
+              <h4 className="text-xs font-bold uppercase tracking-widest text-slate-200">Platform</h4>
+              <ul className="space-y-2.5 text-sm">
+                <li>
+                  <button onClick={() => scrollToSection("pricing", "auto")} className="hover:text-white transition-colors duration-250 flex items-center gap-1 group text-left">
+                    <ChevronRight className="w-3.5 h-3.5 text-slate-600 group-hover:text-indigo-400 transition-colors" />
+                    <span>Pricing Plans</span>
+                  </button>
+                </li>
+                <li>
+                  <button onClick={() => scrollToSection("demo-request")} className="hover:text-white transition-colors duration-250 flex items-center gap-1 group text-left">
+                    <ChevronRight className="w-3.5 h-3.5 text-slate-600 group-hover:text-indigo-400 transition-colors" />
+                    <span>Book Consultation</span>
+                  </button>
+                </li>
+                <li>
+                  <a href="#" className="hover:text-white transition-colors duration-250 flex items-center gap-1 group">
+                    <ChevronRight className="w-3.5 h-3.5 text-slate-600 group-hover:text-indigo-400 transition-colors" />
+                    <span>Documentation</span>
+                  </a>
+                </li>
+                <li>
+                  <a href="#" className="hover:text-white transition-colors duration-250 flex items-center gap-1 group">
+                    <ChevronRight className="w-3.5 h-3.5 text-slate-600 group-hover:text-indigo-400 transition-colors" />
+                    <span>API Reference</span>
+                  </a>
+                </li>
+                <li>
+                  <div className="hover:text-white transition-colors duration-250 flex items-center gap-2 group">
+                    <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                    <span className="text-xs font-semibold text-slate-300">All Systems Operational</span>
+                  </div>
+                </li>
+              </ul>
+            </div>
+
+            {/* Contact Column */}
+            <div className="space-y-4">
+              <h4 className="text-xs font-bold uppercase tracking-widest text-slate-200">Get In Touch</h4>
+              <ul className="space-y-3.5 text-sm">
+                <li className="flex items-start gap-3">
+                  <Mail className="w-4 h-4 text-indigo-400 mt-0.5 shrink-0" />
+                  <span className="text-slate-400 hover:text-white transition-colors cursor-pointer">onboarding@edupulse.local</span>
+                </li>
+                <li className="flex items-start gap-3">
+                  <Phone className="w-4 h-4 text-indigo-400 mt-0.5 shrink-0" />
+                  <span className="text-slate-400 hover:text-white transition-colors cursor-pointer">+91 98765 43210</span>
+                </li>
+                <li className="flex items-start gap-3">
+                  <MapPin className="w-4.5 h-4.5 text-indigo-400 mt-0.5 shrink-0" />
+                  <span className="text-slate-400 leading-snug">Bengaluru Tech Park,<br />Karnataka, India</span>
+                </li>
+              </ul>
+            </div>
           </div>
 
-          <p className="text-slate-500 text-xs">
-            © {new Date().getFullYear()} EduPulse Technologies. All rights reserved.
-          </p>
+          {/* Bottom Bar */}
+          <div className="pt-8 flex flex-col md:flex-row justify-between items-center gap-6">
+            <div className="flex flex-col md:flex-row items-center gap-2 md:gap-4 text-xs text-slate-500">
+              <span>© {new Date().getFullYear()} EduPulse Technologies. All rights reserved.</span>
+              {/*<span className="hidden md:inline text-slate-700">|</span>*/}
+              <span className="flex items-center gap-1">
+              </span>
+            </div>
 
-          <div className="flex gap-4 text-xs text-slate-500">
-            <button className="hover:text-indigo-600 transition-colors">Privacy Policy</button>
-            <span>•</span>
-            <button className="hover:text-indigo-600 transition-colors">Terms of Service</button>
+            <div className="flex gap-6 text-xs text-slate-500">
+              <button className="hover:text-white transition-colors duration-200">Privacy Policy</button>
+              <button className="hover:text-white transition-colors duration-200">Terms of Service</button>
+              <button className="hover:text-white transition-colors duration-200">Cookie Preferences</button>
+            </div>
           </div>
         </div>
       </footer>
