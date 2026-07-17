@@ -51,6 +51,18 @@ export default function DashboardLayout() {
       { path: '/principal/reports', label: 'Reports', icon: '📄' },
       { path: '/principal/settings', label: 'Settings', icon: '⚙️' },
     ],
+    ADMIN: [
+      { path: '/admin/dashboard', label: 'Dashboard', icon: '📊' },
+      { path: '/admin/classes', label: 'Classes', icon: '🏫' },
+      { path: '/admin/students', label: 'Students', icon: '🎒' },
+      { path: '/admin/teachers', label: 'Teachers', icon: '👩‍🏫' },
+      { path: '/admin/attendance', label: 'Attendance', icon: '📅' },
+      { path: '/admin/fees', label: 'Fees Overview', icon: '💳' },
+      { path: '/admin/notices', label: 'Notices Board', icon: '📢' },
+      { path: '/admin/timetable', label: 'Timetables', icon: '📆' },
+      { path: '/admin/reports', label: 'Reports', icon: '📄' },
+      { path: '/admin/settings', label: 'Settings', icon: '⚙️' },
+    ],
     TEACHER: [
       { path: '/teacher/dashboard', label: 'Dashboard', icon: '📊' },
       { path: '/teacher/classes', label: 'My Classes', icon: '🏫' },
