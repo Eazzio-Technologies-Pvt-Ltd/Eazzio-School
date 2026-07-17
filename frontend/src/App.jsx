@@ -19,6 +19,18 @@ import Classes from './pages/principal/Classes';
 import Timetable from './pages/principal/Timetable';
 import PrincipalNotices from './pages/principal/Notices';
 
+// Admin Pages
+import AdminDashboard from './pages/admin/AdminDashboard';
+import AdminStudents from './pages/admin/Students';
+import AdminTeachers from './pages/admin/Teachers';
+import AdminAttendanceOverview from './pages/admin/AttendanceOverview';
+import AdminFeesOverview from './pages/admin/FeesOverview';
+import AdminReports from './pages/admin/Reports';
+import AdminSettings from './pages/admin/Settings';
+import AdminClasses from './pages/admin/Classes';
+import AdminTimetable from './pages/admin/Timetable';
+import AdminNotices from './pages/admin/Notices';
+
 // Teacher Pages
 import TeacherDashboard from './pages/teacher/TeacherDashboard';
 import MyClasses from './pages/teacher/MyClasses';
@@ -48,6 +60,8 @@ function DashboardRedirect() {
 
   if (user.role === 'PRINCIPAL') {
     return <Navigate to="/principal/dashboard" replace />;
+  } else if (user.role === 'ADMIN') {
+    return <Navigate to="/admin/dashboard" replace />;
   } else if (user.role === 'TEACHER') {
     return <Navigate to="/teacher/dashboard" replace />;
   } else if (user.role === 'STUDENT') {
@@ -92,6 +106,27 @@ export default function App() {
             <Route path="classes" element={<Classes />} />
             <Route path="timetable" element={<Timetable />} />
             <Route path="notices" element={<PrincipalNotices />} />
+          </Route>
+
+          {/* Admin Workspace Routes */}
+          <Route
+            path="/admin"
+            element={
+              <ProtectedRoute allowedRoles={['ADMIN']}>
+                <DashboardLayout />
+              </ProtectedRoute>
+            }
+          >
+            <Route path="dashboard" element={<AdminDashboard />} />
+            <Route path="students" element={<AdminStudents />} />
+            <Route path="teachers" element={<AdminTeachers />} />
+            <Route path="attendance" element={<AdminAttendanceOverview />} />
+            <Route path="fees" element={<AdminFeesOverview />} />
+            <Route path="reports" element={<AdminReports />} />
+            <Route path="settings" element={<AdminSettings />} />
+            <Route path="classes" element={<AdminClasses />} />
+            <Route path="timetable" element={<AdminTimetable />} />
+            <Route path="notices" element={<AdminNotices />} />
           </Route>
 
           {/* Teacher Workspace Routes */}
