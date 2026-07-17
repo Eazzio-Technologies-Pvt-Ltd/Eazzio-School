@@ -41,6 +41,7 @@ model School {
   createdAt          DateTime  @default(now())
 
   principals Principal[]
+  admins     Admin[]
   teachers   Teacher[]
   students   Student[]
   attendance Attendance[]
@@ -77,6 +78,18 @@ model Class {
 }
 
 model Principal {
+  id       Int    @id @default(autoincrement())
+  schoolId Int
+  school   School @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  name     String
+  email    String @unique
+  password String
+  phone    String?
+  
+  @@index([schoolId])
+}
+
+model Admin {
   id       Int    @id @default(autoincrement())
   schoolId Int
   school   School @relation(fields: [schoolId], references: [id], onDelete: Cascade)

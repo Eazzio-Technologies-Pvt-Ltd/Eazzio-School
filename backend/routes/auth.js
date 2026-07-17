@@ -18,10 +18,15 @@ router.post('/login', validate(loginSchema), async (req, res) => {
     let user = null;
     let role = null;
 
-    // 1. Try Principal (by email)
-    user = await prisma.principal.findUnique({ where: { email: loginId } });
+    // 0. Try Admin (by email)
+    user = await prisma.admin.findUnique({ where: { email: loginId } });
     if (user) {
-      role = 'PRINCIPAL';
+      role = 'ADMIN';
+    } else {
+      // 1. Try Principal (by email)
+      user = await prisma.principal.findUnique({ where: { email: loginId } });
+      if (user) {
+        role = 'PRINCIPAL';
     } else {
       // 2. Try Teacher (by email or teacherId/employeeId)
       user = await prisma.teacher.findFirst({ 
@@ -41,6 +46,7 @@ router.post('/login', validate(loginSchema), async (req, res) => {
           role = 'STUDENT';
         }
       }
+    }
     }
 
     if (!user) {
