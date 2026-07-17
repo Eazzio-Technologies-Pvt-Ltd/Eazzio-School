@@ -2,7 +2,7 @@ import React, { useState, useEffect, useContext } from "react";
 import { useNavigate } from "react-router-dom";
 import { AuthContext } from "../context/AuthContext";
 import logo from "../assets/logo.png";
-import schoolBg from "../assets/school_background.png";
+import schoolBg from "../assets/school_background.jpg";
 import {
   GraduationCap,
   Users,
@@ -188,11 +188,11 @@ export default function Landing() {
   return (
     <div className="min-h-screen text-slate-800 bg-slate-50 font-sans selection:bg-indigo-600 selection:text-white overflow-x-hidden relative">
       {showBanner && (
-        <div className="w-full bg-slate-900 text-slate-100 py-2.5 px-6 flex justify-between items-center text-xs font-semibold relative z-50 border-b border-slate-800 shadow-sm">
+        <div className="w-full bg-slate-900/95 text-slate-100 py-2.5 px-6 flex justify-between items-center text-xs font-semibold relative z-50 border-b border-slate-800 shadow-sm">
           <div className="flex items-center gap-2.5 mx-auto">
             <span className="flex items-center gap-1.5 text-slate-200 font-medium">
               <span>🔒</span>
-              <span>Your data is safe and secure with us Encrypted by AES 256-bit Encryption</span>
+              <span>Your data is safe and secure with us — Encrypted by AES 256-bit Encryption</span>
             </span>
           </div>
           <button
@@ -204,43 +204,43 @@ export default function Landing() {
           </button>
         </div>
       )}
-      {/* Background School Image with gradient mask */}
-      <div className="absolute top-0 left-0 w-full h-[950px] overflow-hidden pointer-events-none z-0">
+
+      {/* ─── HERO SECTION with full campus background ─── */}
+      <div className="relative w-full min-h-screen flex flex-col">
+        {/* Campus background image */}
         <div
-          className="absolute inset-0 bg-cover bg-center bg-no-repeat opacity-[0.52] filter saturate-[0.9] contrast-[1.15]"
+          className="absolute inset-0 bg-cover bg-center bg-no-repeat"
           style={{ backgroundImage: `url(${schoolBg})` }}
         />
-        <div className="absolute inset-0 bg-gradient-to-b from-indigo-50/5 via-slate-50/45 to-slate-50"></div>
-      </div>
+        {/* Multi-layer overlay for text legibility + premium feel */}
+        <div className="absolute inset-0 bg-gradient-to-br from-slate-950/85 via-teal-950/60 to-slate-900/80" />
+        <div className="absolute inset-0 bg-gradient-to-t from-slate-950/90 via-transparent to-transparent" />
+        {/* Subtle tinted glow orbs over image */}
+        <div className="absolute top-0 left-1/3 w-[700px] h-[700px] bg-teal-500/15 rounded-full blur-[180px] pointer-events-none" />
+        <div className="absolute bottom-0 right-1/4 w-[500px] h-[500px] bg-emerald-500/10 rounded-full blur-[140px] pointer-events-none" />
 
-      {/* Background ambient glowing blobs */}
-      <div className="absolute top-0 right-1/4 w-[600px] h-[600px] bg-indigo-500/5 rounded-full blur-[140px] pointer-events-none z-0"></div>
-      <div className="absolute top-[800px] left-1/4 w-[500px] h-[500px] bg-sky-500/5 rounded-full blur-[120px] pointer-events-none z-0"></div>
-      <div className="absolute bottom-[600px] right-10 w-[450px] h-[450px] bg-violet-600/3 rounded-full blur-[100px] pointer-events-none z-0"></div>
-
-      {/* Navigation Bar */}
-      <nav className="sticky top-0 z-50 bg-white/85 backdrop-blur-md border-b border-slate-200 px-6 py-2">
-        <div className="w-full px-4 md:px-12 lg:px-16 flex justify-between items-center">
+        {/* Navigation Bar — white background */}
+        <nav className="relative z-50 w-full px-6 py-3 flex items-center justify-between border-b border-slate-200 bg-white shadow-sm">
           <div className="flex items-center gap-2 cursor-pointer" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}>
             <img src={logo} alt="Eazzio Logo" className="h-14 w-auto object-contain" />
           </div>
 
-          <div className="hidden md:flex items-center gap-8 text-sm font-medium text-slate-650">
-            <button onClick={() => scrollToSection("features")} className="hover:text-indigo-600 transition-colors">Key Modules</button>
-            <button onClick={() => scrollToSection("dashboard-preview")} className="hover:text-indigo-600 transition-colors">Dashboard Demo</button>
-            <button onClick={() => scrollToSection("pricing", "auto")} className="hover:text-indigo-600 transition-colors">Pricing</button>
+          <div className="hidden md:flex items-center gap-8 text-sm font-medium text-slate-600">
+            <button onClick={() => scrollToSection("features")} className="hover:text-teal-600 transition-colors">Key Modules</button>
+            <button onClick={() => scrollToSection("dashboard-preview")} className="hover:text-teal-600 transition-colors">Dashboard Demo</button>
+            <button onClick={() => scrollToSection("pricing", "auto")} className="hover:text-teal-600 transition-colors">Pricing</button>
           </div>
 
-          <div className="hidden md:flex items-center gap-4">
+          <div className="hidden md:flex items-center gap-3">
             <button
               onClick={() => navigate('/register')}
-              className="bg-indigo-50 text-indigo-700 hover:bg-indigo-100 font-semibold px-5 py-2.5 rounded-xl transition-all duration-200 flex items-center gap-1.5"
+              className="bg-teal-500 hover:bg-teal-400 text-white font-semibold px-5 py-2.5 rounded-xl transition-all duration-200 flex items-center gap-1.5 shadow-lg shadow-teal-600/30"
             >
               Register Institution
             </button>
             <button
               onClick={() => navigate('/login')}
-              className="bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold px-5 py-2.5 rounded-xl transition-all duration-200 flex items-center gap-1.5"
+              className="bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold px-5 py-2.5 rounded-xl transition-all duration-200 border border-slate-200"
             >
               Sign In
             </button>
@@ -248,12 +248,12 @@ export default function Landing() {
 
           {/* Mobile menu toggle */}
           <button
-            className="md:hidden text-slate-650 hover:text-indigo-600 transition-colors p-1"
+            className="md:hidden text-slate-600 hover:text-teal-600 transition-colors p-1"
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
           >
             {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
           </button>
-        </div>
+        </nav>
 
         {/* Mobile Navigation Drawer */}
         <AnimatePresence>
@@ -262,199 +262,227 @@ export default function Landing() {
               initial={{ opacity: 0, height: 0 }}
               animate={{ opacity: 1, height: "auto" }}
               exit={{ opacity: 0, height: 0 }}
-              className="md:hidden mt-4 pt-4 border-t border-slate-200 flex flex-col gap-4 text-slate-600 text-base pb-2"
+              className="relative z-50 md:hidden bg-slate-950/95 backdrop-blur-lg px-6 pt-4 pb-6 flex flex-col gap-4 text-white/80 text-base border-b border-white/10"
             >
-              <button onClick={() => scrollToSection("features")} className="text-left py-2 hover:text-indigo-600 transition-colors">Key Modules</button>
-              <button onClick={() => scrollToSection("dashboard-preview")} className="text-left py-2 hover:text-indigo-600 transition-colors">Dashboard Demo</button>
-              <button onClick={() => scrollToSection("pricing", "auto")} className="text-left py-2 hover:text-indigo-600 transition-colors">Pricing</button>
+              <button onClick={() => scrollToSection("features")} className="text-left py-2 hover:text-teal-300 transition-colors">Key Modules</button>
+              <button onClick={() => scrollToSection("dashboard-preview")} className="text-left py-2 hover:text-teal-300 transition-colors">Dashboard Demo</button>
+              <button onClick={() => scrollToSection("pricing", "auto")} className="text-left py-2 hover:text-teal-300 transition-colors">Pricing</button>
               <button
                 onClick={() => navigate('/register')}
-                className="w-full bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-semibold py-3 rounded-xl transition-all duration-200 text-center flex items-center justify-center gap-2"
+                className="w-full bg-teal-500 hover:bg-teal-400 text-white font-semibold py-3 rounded-xl transition-all duration-200 text-center"
               >
                 Register Institution
               </button>
               <button
                 onClick={() => navigate('/login')}
-                className="w-full bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold py-3 rounded-xl transition-all duration-200 text-center flex items-center justify-center gap-2"
+                className="w-full bg-white/10 hover:bg-white/20 text-white font-semibold py-3 rounded-xl transition-all duration-200 text-center border border-white/20"
               >
                 Sign In
               </button>
             </motion.div>
           )}
         </AnimatePresence>
-      </nav>
 
-      <section className="relative w-full px-6 md:px-12 lg:px-16 pt-8 pb-16 md:pt-12 md:pb-24 grid grid-cols-1 lg:grid-cols-12 gap-8 items-center z-10">
-        <div className="lg:col-span-7 space-y-6 text-center lg:text-left">
-          <h1 className="text-4xl sm:text-5xl md:text-6xl font-extrabold tracking-tight leading-[1.15] text-slate-900">
-            The Complete Operating System for <span className="bg-gradient-to-r from-indigo-600 via-purple-650 to-blue-650 bg-clip-text text-transparent">Modern Schools</span>
-          </h1>
-
-          <p className="text-slate-650 text-lg md:text-xl max-w-2xl mx-auto lg:mx-0 leading-relaxed">
-            Empower teachers, delight parents, and simplify school administration. Manage admissions, automatic fee collections, academic timetables, attendance, and smart WhatsApp communications from a single intuitive portal.
-          </p>
-
-          <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
-            <button
-              onClick={() => navigate('/register')}
-              className="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-base px-8 py-4 rounded-xl transition-all duration-200 shadow-lg shadow-indigo-600/10 hover:shadow-indigo-600/20 active:scale-98 flex items-center justify-center gap-2 group"
+        {/* Hero Content */}
+        <div className="relative z-10 flex-1 flex items-center">
+          <div className="w-full px-6 md:px-12 lg:px-16 pt-3 pb-4 md:pt-4 md:pb-6 grid grid-cols-1 lg:grid-cols-12 gap-6 items-center">
+            {/* Left — Hero Text */}
+            <motion.div
+              initial={{ opacity: 0, y: 30 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.7, ease: "easeOut" }}
+              className="lg:col-span-7 space-y-4 text-center lg:text-left"
             >
-              Register Institution
-              <ArrowRight className="w-5 h-5 transition-transform group-hover:translate-x-1" />
-            </button>
-            <button
-              onClick={() => scrollToSection("dashboard-preview")}
-              className="bg-white hover:bg-slate-100 text-slate-800 font-semibold text-base px-8 py-4 rounded-xl transition-all duration-200 border border-slate-200 shadow-sm active:scale-98 flex items-center justify-center gap-2"
-            >
-              <Play className="w-4 h-4 text-indigo-600 fill-indigo-600/25" />
-              Explore Dashboard UI
-            </button>
-          </div>
 
-          {/* Quick Metrics Bar */}
-          <div className="pt-8 border-t border-slate-200 max-w-lg mx-auto lg:mx-0 grid grid-cols-3 gap-6 text-center lg:text-left">
-            <div>
-              <div className="text-2xl font-bold text-indigo-600">40%</div>
-              <div className="text-[11px] text-slate-500 uppercase tracking-wider font-semibold">Admin Time Saved</div>
-            </div>
-            <div>
-              <div className="text-2xl font-bold text-purple-650">98%</div>
-              <div className="text-[11px] text-slate-500 uppercase tracking-wider font-semibold">Fee Collection Rate</div>
-            </div>
-            <div>
-              <div className="text-2xl font-bold text-emerald-600">Real-time</div>
-              <div className="text-[11px] text-slate-500 uppercase tracking-wider font-semibold">WhatsApp Alerts</div>
-            </div>
-          </div>
-        </div>
 
-        {/* Hero Visual Mockup - Dashboard Graphic */}
-        <div className="lg:col-span-5 flex justify-center relative">
-          <div className="absolute inset-0 bg-indigo-500/5 rounded-full filter blur-[80px] -z-10 w-80 h-80 mx-auto my-auto"></div>
+              <h1 className="text-3xl sm:text-4xl md:text-5xl font-extrabold tracking-tight leading-[1.1] text-white drop-shadow-lg">
+                The Complete
+                <br />
+                <span className="bg-gradient-to-r from-teal-300 via-emerald-300 to-green-300 bg-clip-text text-transparent">
+                  Operating System
+                </span>
+                <br />
+                <span className="text-white/90">for Modern Schools</span>
+              </h1>
 
-          {/* Main Login / Register Widget */}
-          <div className="w-full max-w-[470px] bg-white rounded-3xl border border-slate-200 shadow-2xl overflow-hidden flex flex-col p-8 relative">
-            <div className="flex items-center justify-between border-b border-slate-100 pb-4 mb-6">
-              <div className="flex items-center gap-2">
-                <div className="w-3 h-3 rounded-full bg-red-400"></div>
-                <div className="w-3 h-3 rounded-full bg-yellow-400"></div>
-                <div className="w-3 h-3 rounded-full bg-green-400"></div>
+              <p className="text-white/70 text-sm md:text-base max-w-2xl mx-auto lg:mx-0 leading-relaxed">
+                Empower teachers, delight parents, and simplify school administration. Manage admissions, automatic fee collections, timetables, attendance, and smart WhatsApp communications — all from one intuitive portal.
+              </p>
+
+              <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
+                <button
+                  onClick={() => navigate('/register')}
+                  className="bg-teal-500 hover:bg-teal-400 text-white font-bold text-sm px-6 py-2.5 rounded-xl transition-all duration-200 shadow-2xl shadow-teal-600/40 hover:shadow-teal-500/50 active:scale-98 flex items-center justify-center gap-2 group"
+                >
+                  Register Institution
+                  <ArrowRight className="w-5 h-5 transition-transform group-hover:translate-x-1" />
+                </button>
+                <button
+                  onClick={() => scrollToSection("dashboard-preview")}
+                  className="bg-white/10 hover:bg-white/20 text-white font-semibold text-sm px-6 py-2.5 rounded-xl transition-all duration-200 border border-white/25 backdrop-blur-sm active:scale-98 flex items-center justify-center gap-2"
+                >
+                  <Play className="w-4 h-4 text-teal-300 fill-teal-300/40" />
+                  Explore Dashboard UI
+                </button>
               </div>
-              <span className="text-[10px] font-mono text-slate-400">auth.eazzio.local</span>
-            </div>
 
-            <AnimatePresence mode="wait">
-              {authSuccess ? (
-                <motion.div
-                  key="auth-success"
-                  initial={{ opacity: 0, scale: 0.95 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  exit={{ opacity: 0 }}
-                  className="flex flex-col items-center justify-center text-center py-10 space-y-4 min-h-[380px]"
-                >
-                  <div className="w-16 h-16 bg-emerald-100 rounded-full flex items-center justify-center border border-emerald-200">
-                    <Check className="w-8 h-8 text-emerald-600 stroke-[3]" />
+              {/* Quick Metrics Bar */}
+              <div className="pt-4 border-t border-white/15 max-w-lg mx-auto lg:mx-0 grid grid-cols-3 gap-4 text-center lg:text-left">
+                <div>
+                  <div className="text-2xl font-black text-teal-300">40%</div>
+                  <div className="text-[10px] text-white/50 uppercase tracking-wider font-semibold mt-0.5">Admin Time Saved</div>
+                </div>
+                <div>
+                  <div className="text-2xl font-black text-emerald-300">98%</div>
+                  <div className="text-[10px] text-white/50 uppercase tracking-wider font-semibold mt-0.5">Fee Collection Rate</div>
+                </div>
+                <div>
+                  <div className="text-2xl font-black text-emerald-300">Live</div>
+                  <div className="text-[10px] text-white/50 uppercase tracking-wider font-semibold mt-0.5">WhatsApp Alerts</div>
+                </div>
+              </div>
+            </motion.div>
+
+            {/* Right — Glassmorphic Login Widget */}
+            <motion.div
+              initial={{ opacity: 0, y: 30 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.7, delay: 0.2, ease: "easeOut" }}
+              className="lg:col-span-5 flex justify-center"
+            >
+              <div className="w-full max-w-[420px] rounded-2xl border border-white/20 shadow-2xl overflow-hidden flex flex-col p-5 relative backdrop-blur-xl bg-white/10">
+                {/* Glassmorphic glow inside card */}
+                <div className="absolute -top-10 -right-10 w-40 h-40 bg-teal-500/20 rounded-full blur-3xl pointer-events-none" />
+                <div className="absolute -bottom-10 -left-10 w-40 h-40 bg-emerald-500/15 rounded-full blur-3xl pointer-events-none" />
+
+                <div className="flex items-center justify-between border-b border-white/10 pb-3 mb-4">
+                  <div className="flex items-center gap-2">
+                    <div className="w-3 h-3 rounded-full bg-red-400/80"></div>
+                    <div className="w-3 h-3 rounded-full bg-yellow-400/80"></div>
+                    <div className="w-3 h-3 rounded-full bg-green-400/80"></div>
                   </div>
-                  <h3 className="text-2xl font-bold text-slate-900">
-                    Authentication Successful
-                  </h3>
-                  <p className="text-sm text-slate-500 max-w-[280px]">
-                    Welcome back! Redirecting you to the Eazzio Portal...
-                  </p>
-                  <div className="w-6 h-6 border-2 border-indigo-600 border-t-transparent rounded-full animate-spin"></div>
-                </motion.div>
-              ) : (
-                <motion.div
-                  key={authMode}
-                  initial={{ opacity: 0, x: authMode === "login" ? -15 : 15 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, x: authMode === "login" ? 15 : -15 }}
-                  transition={{ duration: 0.2 }}
-                  className="flex flex-col min-h-[380px] justify-between"
-                >
-                  {isAuthenticated ? (
-                    <div className="flex flex-col items-center justify-center space-y-6 py-8">
-                      <div className="w-16 h-16 bg-indigo-100 rounded-full flex items-center justify-center border border-indigo-200 text-indigo-700 font-bold text-xl">
-                        {user?.name?.charAt(0) || 'U'}
-                      </div>
-                      <div className="text-center">
-                        <h3 className="text-2xl font-bold text-slate-900">Welcome back!</h3>
-                        <p className="text-sm text-slate-500 mt-1">You are logged in as {user?.name}</p>
-                      </div>
-                      <button
-                        onClick={onLaunchApp}
-                        className="w-full py-3 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-xl text-sm shadow-md shadow-indigo-600/10 active:scale-[0.98] transition-all flex items-center justify-center gap-2"
-                      >
-                        Enter Dashboard <ArrowRight className="w-4 h-4" />
-                      </button>
-                    </div>
-                  ) : (
-                    <form onSubmit={handleAuthSubmit} className="space-y-5">
-                      <div>
-                        <h3 className="text-2xl font-bold text-slate-900">
-                          Welcome
-                        </h3>
-                        <p className="text-sm text-slate-500 mt-1">
-                          Access your school dashboard and modules.
-                        </p>
-                      </div>
+                  <span className="text-[10px] font-mono text-white/40">auth.eazzio.local</span>
+                </div>
 
-                      {authError && (
-                        <div className="p-3 bg-red-50 border border-red-200 rounded-xl text-red-600 text-xs font-semibold flex items-center gap-2">
-                          <AlertCircle className="w-4 h-4" /> {authError}
+                <AnimatePresence mode="wait">
+                  {authSuccess ? (
+                    <motion.div
+                      key="auth-success"
+                      initial={{ opacity: 0, scale: 0.95 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      exit={{ opacity: 0 }}
+                      className="flex flex-col items-center justify-center text-center py-6 space-y-3 min-h-[260px]"
+                    >
+                      <div className="w-16 h-16 bg-emerald-500/20 rounded-full flex items-center justify-center border border-emerald-400/40">
+                        <Check className="w-8 h-8 text-emerald-300 stroke-[3]" />
+                      </div>
+                      <h3 className="text-2xl font-bold text-white">
+                        Authentication Successful
+                      </h3>
+                      <p className="text-sm text-white/60 max-w-[280px]">
+                        Welcome back! Redirecting you to the Eazzio Portal...
+                      </p>
+                      <div className="w-6 h-6 border-2 border-teal-400 border-t-transparent rounded-full animate-spin"></div>
+                    </motion.div>
+                  ) : (
+                    <motion.div
+                      key={authMode}
+                      initial={{ opacity: 0, x: authMode === "login" ? -15 : 15 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      exit={{ opacity: 0, x: authMode === "login" ? 15 : -15 }}
+                      transition={{ duration: 0.2 }}
+                      className="flex flex-col min-h-[260px] justify-between"
+                    >
+                      {isAuthenticated ? (
+                        <div className="flex flex-col items-center justify-center space-y-6 py-8">
+                          <div className="w-16 h-16 bg-teal-500/20 rounded-full flex items-center justify-center border border-teal-400/40 text-teal-300 font-bold text-xl">
+                            {user?.name?.charAt(0) || 'U'}
+                          </div>
+                          <div className="text-center">
+                            <h3 className="text-2xl font-bold text-white">Welcome back!</h3>
+                            <p className="text-sm text-white/60 mt-1">You are logged in as {user?.name}</p>
+                          </div>
+                          <button
+                            onClick={onLaunchApp}
+                            className="w-full py-3 bg-teal-500 hover:bg-teal-400 text-white font-bold rounded-xl text-sm shadow-lg shadow-teal-600/30 active:scale-[0.98] transition-all flex items-center justify-center gap-2"
+                          >
+                            Enter Dashboard <ArrowRight className="w-4 h-4" />
+                          </button>
                         </div>
+                      ) : (
+                        <form onSubmit={handleAuthSubmit} className="space-y-5">
+                          <div>
+                            <h3 className="text-2xl font-bold text-white">
+                              Welcome Back
+                            </h3>
+                            <p className="text-sm text-white/55 mt-1">
+                              Access your school dashboard and modules.
+                            </p>
+                          </div>
+
+                          {authError && (
+                            <div className="p-3 bg-red-500/15 border border-red-400/30 rounded-xl text-red-300 text-xs font-semibold flex items-center gap-2">
+                              <AlertCircle className="w-4 h-4" /> {authError}
+                            </div>
+                          )}
+
+                          <div>
+                            <label className="block text-[11px] font-bold text-white/50 uppercase tracking-widest mb-1.5">Email Address / ID</label>
+                            <input
+                              type="text"
+                              required
+                              value={authEmail}
+                              onChange={(e) => setAuthEmail(e.target.value)}
+                              placeholder="admin@school.edu or ID"
+                              className="w-full p-3 bg-white/10 border border-white/20 rounded-xl text-sm text-white placeholder:text-white/35 outline-none focus:border-teal-400 focus:ring-1 focus:ring-teal-400/50 transition-all backdrop-blur-sm"
+                            />
+                          </div>
+
+                          <div>
+                            <div className="flex justify-between items-center mb-1.5">
+                              <label className="block text-[11px] font-bold text-white/50 uppercase tracking-widest">Password</label>
+                              <button type="button" className="text-xs text-teal-300 hover:text-teal-200 hover:underline font-semibold">Forgot password?</button>
+                            </div>
+                            <input
+                              type="password"
+                              required
+                              value={authPassword}
+                              onChange={(e) => setAuthPassword(e.target.value)}
+                              placeholder="••••••••"
+                              className="w-full p-3 bg-white/10 border border-white/20 rounded-xl text-sm text-white placeholder:text-white/35 outline-none focus:border-teal-400 focus:ring-1 focus:ring-teal-400/50 transition-all backdrop-blur-sm"
+                            />
+                          </div>
+
+                          <button
+                            type="submit"
+                            disabled={authLoading}
+                            className="w-full py-3.5 bg-teal-500 hover:bg-teal-400 disabled:bg-teal-600/50 text-white font-bold rounded-xl text-sm shadow-xl shadow-teal-600/30 active:scale-[0.98] transition-all flex items-center justify-center gap-1.5"
+                          >
+                            {authLoading ? (
+                              <>
+                                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                                <span>Processing...</span>
+                              </>
+                            ) : (
+                              <span>Sign In to Eazzio</span>
+                            )}
+                          </button>
+
+                          <p className="text-center text-xs text-white/40 pt-1">
+                            New institution? <button type="button" onClick={() => navigate('/register')} className="text-teal-300 hover:text-teal-200 font-semibold">Register here</button>
+                          </p>
+                        </form>
                       )}
 
-                      <div>
-                        <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-widest mb-1.5">Email Address / ID</label>
-                        <input
-                          type="text"
-                          required
-                          value={authEmail}
-                          onChange={(e) => setAuthEmail(e.target.value)}
-                          placeholder="admin@school.edu or ID"
-                          className="w-full p-3 border border-slate-200 rounded-xl text-sm outline-none focus:border-indigo-600 focus:ring-1 focus:ring-indigo-600 transition-all"
-                        />
-                      </div>
-
-                      <div>
-                        <div className="flex justify-between items-center mb-1.5">
-                          <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-widest">Password</label>
-                          <button type="button" className="text-xs text-indigo-600 hover:underline font-semibold">Forgot password?</button>
-                        </div>
-                        <input
-                          type="password"
-                          required
-                          value={authPassword}
-                          onChange={(e) => setAuthPassword(e.target.value)}
-                          placeholder="••••••••"
-                          className="w-full p-3 border border-slate-200 rounded-xl text-sm outline-none focus:border-indigo-600 focus:ring-1 focus:ring-indigo-600 transition-all"
-                        />
-                      </div>
-
-                      <button
-                        type="submit"
-                        disabled={authLoading}
-                        className="w-full py-3 bg-indigo-600 hover:bg-indigo-500 disabled:bg-indigo-400 text-white font-bold rounded-xl text-sm shadow-md shadow-indigo-600/10 active:scale-[0.98] transition-all flex items-center justify-center gap-1.5"
-                      >
-                        {authLoading ? (
-                          <>
-                            <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                            <span>Processing...</span>
-                          </>
-                        ) : (
-                          <span>Sign In</span>
-                        )}
-                      </button>
-                    </form>
+                    </motion.div>
                   )}
-
-                </motion.div>
-              )}
-            </AnimatePresence>
+                </AnimatePresence>
+              </div>
+            </motion.div>
           </div>
         </div>
-      </section>
+      </div>
+      {/* End hero section */}
 
       {/* Core Features/Modules Section */}
       <section id="features" className="py-24 bg-white border-y border-slate-200 relative z-10">
