@@ -30,7 +30,9 @@ import {
   MapPin,
   Check,
   Globe,
-  Heart
+  Heart,
+  Briefcase,
+  Calculator
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -117,69 +119,143 @@ export default function Landing() {
     return () => window.removeEventListener("hashchange", checkPricingOnly);
   }, []);
 
+  const pricingPlans = [
+    {
+      id: "standard",
+      name: "Standard",
+      price: 10,
+      tagline: "Essential tools for school management.",
+      description: "Everything a growing school needs to manage academics, attendance, and basic fees.",
+      badge: null,
+      features: [
+        { text: "Unlimited Teacher & Admin logins", exclusive: false },
+        { text: "Parent Portal App", exclusive: false },
+        { text: "Academic & Attendance Management", exclusive: false },
+        { text: "Basic Fee Collection", exclusive: false },
+        { text: "GPS Bus Route Tracking", exclusive: false },
+        { text: "Standard Support", exclusive: false }
+      ]
+    },
+    {
+      id: "premium",
+      name: "Premium",
+      price: 15,
+      tagline: "Advanced automation and reporting.",
+      description: "The complete suite with advanced accounting, reporting, and instant notifications.",
+      badge: "⭐ Most Popular",
+      features: [
+        { text: "Advanced Accounting & Fee Management", exclusive: true },
+        { text: "Automated Report Card Generation", exclusive: true },
+        { text: "Instant WhatsApp Due Alerts", exclusive: true },
+        { text: "Projected Revenue Dashboard", exclusive: true },
+        { text: "Unlimited Teacher & Admin logins", exclusive: false },
+        { text: "Parent Portal App", exclusive: false },
+        { text: "GPS Bus Route Tracking", exclusive: false },
+        { text: "24/7 Priority Support", exclusive: false }
+      ]
+    }
+  ];
+
+  const PricingCards = () => {
+    const [expandedPlans, setExpandedPlans] = useState({});
+    
+    return (
+      <div className="flex flex-wrap justify-center gap-6 mt-12 w-full max-w-5xl mx-auto">
+        {pricingPlans.map((plan) => {
+          const isPopular = plan.badge !== null;
+          const isExpanded = expandedPlans[plan.id];
+          const visibleFeatures = isExpanded ? plan.features : plan.features.slice(0, 5);
+          
+          return (
+            <div 
+              key={plan.id}
+              className={`w-[360px] max-w-full flex flex-col bg-white rounded-3xl p-8 text-left relative transition-all duration-300 hover:-translate-y-1 ${
+                isPopular 
+                  ? "border-2 border-teal-500 shadow-2xl shadow-teal-500/20 z-10 scale-[1.02]" 
+                  : "border border-slate-200 shadow-xl shadow-slate-200/50"
+              }`}
+            >
+              {plan.badge && (
+                <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-gradient-to-r from-teal-500 to-emerald-400 text-white text-[11px] font-extrabold px-4 py-1.5 rounded-full uppercase tracking-widest shadow-lg shadow-teal-500/30 whitespace-nowrap">
+                  {plan.badge}
+                </div>
+              )}
+              
+              <div className="mb-6">
+                <h3 className="text-2xl font-black text-slate-900">{plan.name}</h3>
+                <p className="text-teal-600 text-sm font-semibold italic mt-1">{plan.tagline}</p>
+                <p className="text-slate-500 text-sm mt-3 leading-relaxed">{plan.description}</p>
+              </div>
+
+              <div className="flex items-baseline gap-1 mb-8 pb-8 border-b border-slate-100">
+                <span className="text-4xl font-bold text-slate-400">₹</span>
+                <span className="text-6xl font-black text-slate-900 tracking-tight">{plan.price}</span>
+                <div className="flex flex-col ml-2">
+                  <span className="text-sm font-bold text-slate-500">/ student</span>
+                  <span className="text-xs text-slate-400">/ month</span>
+                </div>
+              </div>
+
+              <div className="flex-1">
+                <p className="text-xs font-bold text-slate-800 uppercase tracking-widest mb-4">What's included</p>
+                <ul className="space-y-3.5 mb-6">
+                  {visibleFeatures.map((feat, idx) => (
+                    <li key={idx} className="flex items-start gap-3">
+                      {feat.exclusive ? (
+                        <div className="mt-0.5 relative shrink-0">
+                          <Check className="w-4 h-4 text-amber-500 stroke-[3]" />
+                          <div className="absolute -inset-1 bg-amber-100 rounded-full blur-sm -z-10"></div>
+                        </div>
+                      ) : (
+                        <Check className="w-4 h-4 text-teal-500 shrink-0 stroke-[3] mt-0.5" />
+                      )}
+                      <span className={`text-sm ${feat.exclusive ? "text-amber-700 font-semibold" : "text-slate-600"}`}>
+                        {feat.exclusive ? `★ ${feat.text}` : feat.text}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+                
+                {plan.features.length > 5 && (
+                  <button 
+                    onClick={() => setExpandedPlans({...expandedPlans, [plan.id]: !isExpanded})}
+                    className="text-xs font-bold text-teal-600 hover:text-teal-500 mb-6 flex items-center gap-1 transition-colors"
+                  >
+                    {isExpanded ? "Show fewer features ↑" : "Show more features ↓"}
+                  </button>
+                )}
+              </div>
+
+              <button
+                onClick={() => navigate(`/register?plan=${plan.id}`)}
+                className={`w-full py-3.5 rounded-xl text-sm font-bold shadow-lg transition-all active:scale-[0.98] ${
+                  isPopular 
+                    ? "bg-teal-500 hover:bg-teal-400 text-white shadow-teal-500/25" 
+                    : "bg-slate-100 hover:bg-slate-200 text-slate-800 shadow-slate-200/50"
+                }`}
+              >
+                Start with {plan.name}
+              </button>
+            </div>
+          );
+        })}
+      </div>
+    );
+  };
+
   if (showPricingOnly) {
     return (
-      <div className="min-h-screen text-slate-800 bg-slate-50 font-sans selection:bg-indigo-600 selection:text-white p-6 md:p-12 flex items-center justify-center">
+      <div className="min-h-screen bg-slate-50 font-sans selection:bg-teal-500 selection:text-white p-6 md:p-12 flex items-center justify-center">
         <div className="w-full">
-          <div className="text-center max-w-3xl mx-auto space-y-4 mb-12">
-            <h2 className="text-3xl md:text-4xl font-extrabold text-slate-900">
-              One Flat Price for All Features
+          <div className="text-center max-w-3xl mx-auto space-y-4 mb-8">
+            <h2 className="text-3xl md:text-5xl font-extrabold text-slate-900 tracking-tight">
+              Simple, transparent pricing
             </h2>
-            <p className="text-slate-655 text-base md:text-lg">
-              No hidden tiers, setup fees, or long-term contracts. Get complete access to the entire School OS suite.
+            <p className="text-slate-500 text-base md:text-lg max-w-xl mx-auto">
+              Choose the plan that fits your school's needs. Upgrade anytime as you grow.
             </p>
           </div>
-
-          <div className="max-w-2xl mx-auto bg-white border border-slate-200 rounded-3xl p-8 md:p-12 shadow-xl relative overflow-hidden flex flex-col justify-between items-center text-center">
-            <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-500/5 rounded-full blur-2xl pointer-events-none"></div>
-            <div className="absolute bottom-0 left-0 w-32 h-32 bg-purple-500/5 rounded-full blur-2xl pointer-events-none"></div>
-
-            <div className="space-y-6 w-full">
-              <div>
-                <span className="text-xs font-bold text-indigo-600 uppercase tracking-widest bg-indigo-50 px-3 py-1 rounded-full">All-Inclusive Plan</span>
-                <h3 className="text-2xl font-bold text-slate-900 mt-4">Complete School ERP & LMS</h3>
-                <p className="text-slate-500 text-sm mt-2 max-w-md mx-auto">
-                  Includes Academic Management, Parent & Teacher Portals, GPS Tracking, Auto WhatsApp Alerts, Fees, and Exams.
-                </p>
-              </div>
-
-              <div className="flex justify-center items-center gap-2 py-6 border-y border-slate-200/60 my-6">
-                <span className="text-3xl text-slate-450 font-bold -mt-8">₹</span>
-                <span className="text-8xl md:text-9xl font-black tracking-tight text-indigo-600">10</span>
-                <div className="text-left ml-2">
-                  <span className="text-slate-500 text-base font-bold block">per student</span>
-                  <span className="text-slate-400 text-xs block">/ month</span>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-left max-w-md mx-auto">
-                <div className="flex items-center gap-3 text-xs text-slate-700 font-medium">
-                  <Check className="w-4 h-4 text-emerald-600 shrink-0 stroke-[3]" />
-                  <span>Unlimited Teacher logins</span>
-                </div>
-                <div className="flex items-center gap-3 text-xs text-slate-700 font-medium">
-                  <Check className="w-4 h-4 text-emerald-600 shrink-0 stroke-[3]" />
-                  <span>Parent Portal App</span>
-                </div>
-                <div className="flex items-center gap-3 text-xs text-slate-700 font-medium">
-                  <Check className="w-4 h-4 text-emerald-600 shrink-0 stroke-[3]" />
-                  <span>Auto WhatsApp Alerts</span>
-                </div>
-                <div className="flex items-center gap-3 text-xs text-slate-700 font-medium">
-                  <Check className="w-4 h-4 text-emerald-600 shrink-0 stroke-[3]" />
-                  <span>GPS Bus Route Tracking</span>
-                </div>
-                <div className="flex items-center gap-3 text-xs text-slate-700 font-medium">
-                  <Check className="w-4 h-4 text-emerald-600 shrink-0 stroke-[3]" />
-                  <span>Automated UPI Fees</span>
-                </div>
-                <div className="flex items-center gap-3 text-xs text-slate-700 font-medium">
-                  <Check className="w-4 h-4 text-emerald-600 shrink-0 stroke-[3]" />
-                  <span>24/7 Priority Support</span>
-                </div>
-              </div>
-            </div>
-          </div>
+          <PricingCards />
         </div>
       </div>
     );
@@ -355,14 +431,6 @@ export default function Landing() {
                 <div className="absolute -top-10 -right-10 w-40 h-40 bg-teal-500/20 rounded-full blur-3xl pointer-events-none" />
                 <div className="absolute -bottom-10 -left-10 w-40 h-40 bg-emerald-500/15 rounded-full blur-3xl pointer-events-none" />
 
-                <div className="flex items-center justify-between border-b border-white/10 pb-3 mb-4">
-                  <div className="flex items-center gap-2">
-                    <div className="w-3 h-3 rounded-full bg-red-400/80"></div>
-                    <div className="w-3 h-3 rounded-full bg-yellow-400/80"></div>
-                    <div className="w-3 h-3 rounded-full bg-green-400/80"></div>
-                  </div>
-                  <span className="text-[10px] font-mono text-white/40">auth.eazzio.local</span>
-                </div>
 
                 <AnimatePresence mode="wait">
                   {authSuccess ? (
@@ -421,11 +489,11 @@ export default function Landing() {
                             <label className="block text-[10px] font-bold text-white/50 uppercase tracking-widest mb-1.5">Login As</label>
                             <div className="grid grid-cols-5 gap-1.5">
                               {[
-                                { id: 'Admin',       icon: '🛡️' },
-                                { id: 'Principal',   icon: '🎓' },
-                                { id: 'Teacher',     icon: '📚' },
-                                { id: 'Student',     icon: '🧑‍💻' },
-                                { id: 'Accountant',  icon: '💼' },
+                                { id: 'Admin',       icon: <Shield className="w-4 h-4 mx-auto mb-1" /> },
+                                { id: 'Principal',   icon: <Briefcase className="w-4 h-4 mx-auto mb-1" /> },
+                                { id: 'Teacher',     icon: <BookOpen className="w-4 h-4 mx-auto mb-1" /> },
+                                { id: 'Student',     icon: <GraduationCap className="w-4 h-4 mx-auto mb-1" /> },
+                                { id: 'Accountant',  icon: <Calculator className="w-4 h-4 mx-auto mb-1" /> },
                               ].map(({ id, icon }) => (
                                 <button
                                   key={id}
@@ -437,8 +505,8 @@ export default function Landing() {
                                       : 'bg-white/5 border-white/15 text-white/50 hover:bg-white/10 hover:text-white/70'
                                   }`}
                                 >
-                                  <span className="text-base leading-none">{icon}</span>
-                                  <span>{id}</span>
+                                  <div className="text-center">{icon}</div>
+                                  <span className="block mt-0.5">{id}</span>
                                 </button>
                               ))}
                             </div>
@@ -920,77 +988,19 @@ export default function Landing() {
       </section>
 
       {/* Simple Pricing Section */}
-      <section id="pricing" className="py-24 bg-white relative z-10 border-b border-slate-200">
+      <section id="pricing" className="py-24 bg-slate-50 relative z-10 border-b border-slate-200">
         <div className="w-full px-6 md:px-12 lg:px-16">
-          <div className="text-center max-w-3xl mx-auto space-y-4 mb-16">
-            <h2 className="text-3xl md:text-4xl font-extrabold text-slate-900">
-              One Flat Price for All Features
+          <div className="text-center max-w-3xl mx-auto space-y-4 mb-8">
+            <h2 className="text-3xl md:text-5xl font-extrabold text-slate-900 tracking-tight">
+              Simple, transparent pricing
             </h2>
-            <p className="text-slate-655 text-base md:text-lg">
-              No hidden tiers, setup fees, or long-term contracts. Get complete access to the entire School OS suite.
+            <p className="text-slate-500 text-base md:text-lg max-w-xl mx-auto">
+              Choose the plan that fits your school's needs. Upgrade anytime as you grow.
             </p>
           </div>
-
-          <div className="max-w-2xl mx-auto bg-slate-50 border border-slate-200 rounded-3xl p-8 md:p-12 shadow-xl relative overflow-hidden flex flex-col justify-between items-center text-center">
-            {/* Ambient background decoration */}
-            <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-500/5 rounded-full blur-2xl pointer-events-none"></div>
-            <div className="absolute bottom-0 left-0 w-32 h-32 bg-purple-500/5 rounded-full blur-2xl pointer-events-none"></div>
-
-            <div className="space-y-6 w-full">
-              <div>
-                <span className="text-xs font-bold text-indigo-600 uppercase tracking-widest bg-indigo-50 px-3 py-1 rounded-full">All-Inclusive Plan</span>
-                <h3 className="text-2xl font-bold text-slate-900 mt-4">Complete School ERP & LMS</h3>
-                <p className="text-slate-500 text-sm mt-2 max-w-md mx-auto">
-                  Includes Academic Management, Parent & Teacher Portals, GPS Tracking, Auto WhatsApp Alerts, Fees, and Exams.
-                </p>
-              </div>
-
-              <div className="flex justify-center items-center gap-2 py-6 border-y border-slate-200/60 my-6">
-                <span className="text-3xl text-slate-450 font-bold -mt-8">₹</span>
-                <span className="text-8xl md:text-9xl font-black tracking-tight text-indigo-600">10</span>
-                <div className="text-left ml-2">
-                  <span className="text-slate-500 text-base font-bold block">per student</span>
-                  <span className="text-slate-400 text-xs block">/ month</span>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-left max-w-md mx-auto">
-                <div className="flex items-center gap-3 text-xs text-slate-700 font-medium">
-                  <Check className="w-4 h-4 text-emerald-600 shrink-0 stroke-[3]" />
-                  <span>Unlimited Teacher logins</span>
-                </div>
-                <div className="flex items-center gap-3 text-xs text-slate-700 font-medium">
-                  <Check className="w-4 h-4 text-emerald-600 shrink-0 stroke-[3]" />
-                  <span>Parent Portal App</span>
-                </div>
-                <div className="flex items-center gap-3 text-xs text-slate-700 font-medium">
-                  <Check className="w-4 h-4 text-emerald-600 shrink-0 stroke-[3]" />
-                  <span>Auto WhatsApp Alerts</span>
-                </div>
-                <div className="flex items-center gap-3 text-xs text-slate-700 font-medium">
-                  <Check className="w-4 h-4 text-emerald-600 shrink-0 stroke-[3]" />
-                  <span>GPS Bus Route Tracking</span>
-                </div>
-                <div className="flex items-center gap-3 text-xs text-slate-700 font-medium">
-                  <Check className="w-4 h-4 text-emerald-600 shrink-0 stroke-[3]" />
-                  <span>Automated UPI Fees</span>
-                </div>
-                <div className="flex items-center gap-3 text-xs text-slate-700 font-medium">
-                  <Check className="w-4 h-4 text-emerald-600 shrink-0 stroke-[3]" />
-                  <span>24/7 Priority Support</span>
-                </div>
-              </div>
-            </div>
-
-            <div className="w-full mt-8 pt-6 border-t border-slate-200/60">
-              <button
-                onClick={() => navigate("/register")}
-                className="w-full sm:w-auto px-8 py-3.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-bold shadow-md shadow-indigo-600/10 transition-colors"
-              >
-                Register
-              </button>
-            </div>
-          </div>
+          
+          <PricingCards />
+          
         </div>
       </section>
 

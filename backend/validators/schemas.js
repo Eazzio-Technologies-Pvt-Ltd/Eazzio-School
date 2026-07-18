@@ -7,11 +7,14 @@ export const loginSchema = z.object({
 
 export const subscriptionOrderSchema = z.object({
   studentCount: z.coerce.number().min(1, 'Valid student count is required'),
+  billingCycle: z.enum(['monthly', 'annual']).default('annual'),
+  planType: z.enum(['standard', 'premium']).default('standard'),
 });
 
 export const registerSchoolSchema = z.object({
   schoolName: z.string().min(1, 'School name is required'),
-  principalName: z.string().min(1, 'Principal name is required'),
+  adminName: z.string().min(1, 'Admin name is required').optional(),
+  principalName: z.string().min(1, 'Principal name is required').optional(),
   email: z.string().email('Invalid email address'),
   phone: z.string().min(1, 'Phone is required'),
   address: z.string().optional(),
@@ -20,6 +23,10 @@ export const registerSchoolSchema = z.object({
   razorpay_payment_id: z.string(),
   razorpay_order_id: z.string(),
   razorpay_signature: z.string(),
+  planType: z.enum(['standard', 'premium']).default('standard').optional(),
+}).refine(data => data.adminName || data.principalName, {
+  message: 'Admin or Principal name is required',
+  path: ['adminName'],
 });
 
 export const createTeacherSchema = z.object({

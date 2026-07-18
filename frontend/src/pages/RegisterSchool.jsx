@@ -1,20 +1,28 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, Link, useLocation } from 'react-router-dom';
 import { createSubscriptionOrder, registerSchool } from '../api/authApi';
-import logo from '../assets/logo.png';
+import logo from '../assets/full_logo_cropped.png';
+import schoolBg from '../assets/school_background.jpg';
 
 export default function RegisterSchool() {
   const navigate = useNavigate();
+  const location = useLocation();
   const [form, setForm] = useState({
     schoolName: '',
-    principalName: '',
+    adminName: '',
     email: '',
     phone: '',
     address: '',
-    studentCount: 100, // Default 100
+    studentCount: 10, // Default 10
     password: ''
   });
   
+  const queryParams = new URLSearchParams(location.search);
+  const initialPlan = queryParams.get('plan') || 'standard';
+
+  const [planType, setPlanType] = useState(initialPlan);
+  const [billingCycle, setBillingCycle] = useState('annual');
+  const [showBanner, setShowBanner] = useState(true);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -35,7 +43,9 @@ export default function RegisterSchool() {
 
   const calculateTotal = () => {
     const count = parseInt(form.studentCount) || 0;
-    return count * 10 * 12; // ₹10 per student per month * 12 months (Annual)
+    const months = billingCycle === 'annual' ? 12 : 1;
+    const rate = planType === 'premium' ? 15 : 10;
+    return count * rate * months;
   };
 
   const handlePaymentAndRegistration = async (e) => {
@@ -45,7 +55,7 @@ export default function RegisterSchool() {
 
     try {
       // 1. Create order on backend
-      const order = await createSubscriptionOrder(form.studentCount);
+      const order = await createSubscriptionOrder(form.studentCount, billingCycle, planType);
 
       // 2. Setup Razorpay Checkout options
       const options = {
@@ -53,23 +63,25 @@ export default function RegisterSchool() {
         amount: order.amount,
         currency: 'INR',
         name: 'EduSphere',
-        description: 'School Annual Subscription',
+        description: 'Institution Annual Subscription',
         order_id: order.id,
         handler: async function (response) {
           try {
             // 3. On successful payment, send signature to backend to verify and register
             setLoading(true);
-            const registrationPayload = {
-              ...form,
-              razorpay_payment_id: response.razorpay_payment_id,
-              razorpay_order_id: response.razorpay_order_id,
-              razorpay_signature: response.razorpay_signature
-            };
+              const registrationPayload = {
+                ...form,
+                billingCycle,
+                planType,
+                razorpay_payment_id: response.razorpay_payment_id,
+                razorpay_order_id: response.razorpay_order_id,
+                razorpay_signature: response.razorpay_signature
+              };
 
             await registerSchool(registrationPayload);
             
             // Success! Redirect to login
-            alert('School registered successfully! You can now log in.');
+            alert('Institution registered successfully! You can now log in.');
             navigate('/login');
           } catch (err) {
             console.error(err);
@@ -78,7 +90,7 @@ export default function RegisterSchool() {
           }
         },
         prefill: {
-          name: form.principalName,
+          name: form.adminName,
           email: form.email,
           contact: form.phone
         },
@@ -102,67 +114,126 @@ export default function RegisterSchool() {
   };
 
   return (
-    <div style={styles.container}>
-      <div style={styles.navBar}>
-        <div style={styles.logo} onClick={() => navigate('/')}>
-          <img src={logo} alt="Eazzio Logo" style={{ height: '40px', width: 'auto', objectFit: 'contain' }} />
+    <div style={{...styles.container, backgroundImage: `url(${schoolBg})`}}>
+      <div style={styles.overlay}></div>
+      
+      {showBanner && (
+        <div style={styles.securityBanner}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', margin: '0 auto' }}>
+            <span>🔒</span>
+            <span>Your data is safe and secure with us — Encrypted by AES 256-bit Encryption</span>
+          </div>
+          <button onClick={() => setShowBanner(false)} style={styles.bannerCloseBtn}>✕</button>
         </div>
-        <Link to="/login" style={styles.navLink}>Existing User? Login</Link>
+      )}
+
+      <div style={styles.navBar}>
+        <Link to="/" style={styles.navLink}>← Back to Home</Link>
+        <Link to="/login" style={styles.navLink}>Existing User? Login →</Link>
       </div>
 
       <div style={styles.content}>
         <div style={styles.formCard}>
-          <h2 style={styles.title}>Register Your School</h2>
+          <div style={styles.logoContainer}>
+            <img src={logo} alt="Eazzio Logo" style={styles.logoImg} />
+          </div>
+          <h2 style={styles.title}>Register Your Institution</h2>
           <p style={styles.subtitle}>Fill in the details below to start your digital transformation.</p>
 
           {error && <div style={styles.errorAlert}>{error}</div>}
 
-          <form onSubmit={handlePaymentAndRegistration} style={styles.form}>
-            <div style={styles.grid}>
-              <div style={styles.formGroup}>
-                <label>School Name</label>
+          <form onSubmit={handlePaymentAndRegistration} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', alignItems: 'start' }}>
+            {/* Left Column: Details */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+              <div style={{...styles.formGroup, gridColumn: '1 / -1'}}>
+                <label>Institution Name</label>
                 <input type="text" name="schoolName" required value={form.schoolName} onChange={handleChange} style={styles.input} />
               </div>
               <div style={styles.formGroup}>
-                <label>Principal Name</label>
-                <input type="text" name="principalName" required value={form.principalName} onChange={handleChange} style={styles.input} />
+                <label>Admin Name</label>
+                <input type="text" name="adminName" required value={form.adminName} onChange={handleChange} style={styles.input} />
+              </div>
+              <div style={styles.formGroup}>
+                <label>Phone Number</label>
+                <input type="text" name="phone" required value={form.phone} onChange={handleChange} style={styles.input} />
               </div>
               <div style={styles.formGroup}>
                 <label>Email Address</label>
                 <input type="email" name="email" required value={form.email} onChange={handleChange} style={styles.input} />
               </div>
               <div style={styles.formGroup}>
-                <label>Phone Number</label>
-                <input type="text" name="phone" required value={form.phone} onChange={handleChange} style={styles.input} />
+                <label>Login Password</label>
+                <input type="password" name="password" required value={form.password} onChange={handleChange} style={styles.input} />
               </div>
               <div style={{...styles.formGroup, gridColumn: '1 / -1'}}>
                 <label>Address</label>
                 <input type="text" name="address" required value={form.address} onChange={handleChange} style={styles.input} />
               </div>
               <div style={styles.formGroup}>
-                <label>Password (for Principal Login)</label>
-                <input type="password" name="password" required value={form.password} onChange={handleChange} style={styles.input} />
-              </div>
-              <div style={styles.formGroup}>
                 <label>Number of Students</label>
                 <input type="number" name="studentCount" min="1" required value={form.studentCount} onChange={handleChange} style={styles.input} />
               </div>
             </div>
+            
+            {/* Right Column: Plan and Payment */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', backgroundColor: '#f8fafc', padding: '12px', borderRadius: '12px', border: '1px solid #e2e8f0' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                <div style={styles.billingToggle}>
+                <button 
+                  type="button" 
+                  onClick={() => setPlanType('standard')}
+                  style={planType === 'standard' ? styles.toggleBtnActive : styles.toggleBtn}
+                >
+                  Standard (₹10)
+                </button>
+                <button 
+                  type="button" 
+                  onClick={() => setPlanType('premium')}
+                  style={planType === 'premium' ? styles.toggleBtnActivePremium : styles.toggleBtn}
+                >
+                  Premium (₹15)
+                </button>
+              </div>
+
+              <div style={styles.billingToggle}>
+                <button 
+                  type="button" 
+                  onClick={() => setBillingCycle('monthly')}
+                  style={billingCycle === 'monthly' ? styles.toggleBtnActive : styles.toggleBtn}
+                >
+                  Monthly
+                </button>
+                <button 
+                  type="button" 
+                  onClick={() => setBillingCycle('annual')}
+                  style={billingCycle === 'annual' ? styles.toggleBtnActive : styles.toggleBtn}
+                >
+                  Annually (-20%)
+                </button>
+              </div>
+              </div>
 
             <div style={styles.pricingBox}>
               <div style={styles.pricingRow}>
+                <span>Selected Plan:</span>
+                <span style={{ fontWeight: '600', color: planType === 'premium' ? '#22c55e' : 'var(--primary)', textTransform: 'capitalize' }}>
+                  {planType} Plan
+                </span>
+              </div>
+              <div style={styles.pricingRow}>
                 <span>Subscription Rate:</span>
-                <span>₹10 / student / month (Billed Annually)</span>
+                <span>₹{planType === 'premium' ? '15' : '10'} / student / month (Billed {billingCycle === 'annual' ? 'Annually' : 'Monthly'})</span>
               </div>
               <div style={styles.pricingRowTotal}>
-                <span>Total Annual Amount:</span>
+                <span>Total {billingCycle === 'annual' ? 'Annual' : 'Monthly'} Amount:</span>
                 <span style={styles.totalValue}>₹{calculateTotal().toLocaleString()}</span>
               </div>
             </div>
 
-            <button type="submit" className="btn-primary" disabled={loading} style={styles.submitBtn}>
+            <button type="submit" disabled={loading} style={styles.submitBtn}>
               {loading ? 'Processing...' : `Pay ₹${calculateTotal().toLocaleString()} & Register`}
             </button>
+            </div>
           </form>
         </div>
       </div>
@@ -171,22 +242,36 @@ export default function RegisterSchool() {
 }
 
 const styles = {
-  container: { minHeight: '100vh', display: 'flex', flexDirection: 'column', background: 'var(--bg-main)', fontFamily: "'Inter', sans-serif" },
-  navBar: { padding: '20px 40px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'var(--bg-card)', borderBottom: '1px solid var(--glass-border)' },
-  logo: { fontSize: '1.5rem', fontWeight: '800', color: 'var(--text-primary)', cursor: 'pointer' },
-  navLink: { color: 'var(--primary)', textDecoration: 'none', fontWeight: '600' },
-  content: { flex: 1, display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '40px 20px' },
-  formCard: { background: 'var(--bg-card)', border: '1px solid var(--glass-border)', borderRadius: '16px', padding: '40px', width: '100%', maxWidth: '700px', boxShadow: '0 20px 40px rgba(0, 0, 0, 0.3)' },
-  title: { fontSize: '2rem', fontWeight: '800', marginBottom: '8px', color: 'var(--text-primary)', textAlign: 'center' },
-  subtitle: { color: 'var(--text-secondary)', textAlign: 'center', marginBottom: '30px' },
-  errorAlert: { background: 'var(--danger-glow)', border: '1px solid var(--danger)', color: '#fca5a5', padding: '12px', borderRadius: '8px', marginBottom: '20px', textAlign: 'center' },
-  form: { display: 'flex', flexDirection: 'column', gap: '20px' },
-  grid: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' },
-  formGroup: { display: 'flex', flexDirection: 'column', gap: '8px' },
-  input: { padding: '12px 16px', borderRadius: '8px', border: '1px solid var(--glass-border)', background: 'var(--input-bg)', color: 'var(--text-primary)', fontSize: '1rem' },
-  pricingBox: { background: 'rgba(139, 92, 246, 0.05)', border: '1px solid var(--primary)', borderRadius: '12px', padding: '20px', display: 'flex', flexDirection: 'column', gap: '10px' },
-  pricingRow: { display: 'flex', justifyContent: 'space-between', color: 'var(--text-secondary)', fontSize: '0.95rem' },
-  pricingRowTotal: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', color: 'var(--text-primary)', fontSize: '1.1rem', fontWeight: '700', paddingTop: '10px', borderTop: '1px solid var(--glass-border)' },
-  totalValue: { fontSize: '1.8rem', color: 'var(--primary)', fontWeight: '800' },
-  submitBtn: { padding: '16px', fontSize: '1.1rem', borderRadius: '8px', width: '100%', marginTop: '10px' }
+  container: { minHeight: '100vh', display: 'flex', flexDirection: 'column', backgroundSize: 'cover', backgroundPosition: 'center', backgroundAttachment: 'fixed', fontFamily: "'Inter', sans-serif", position: 'relative' },
+  overlay: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(15, 23, 42, 0.75)', zIndex: 0 },
+  
+  securityBanner: { width: '100%', backgroundColor: '#0f172a', color: 'white', padding: '8px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.85rem', zIndex: 10, position: 'relative', borderBottom: '1px solid rgba(255,255,255,0.1)' },
+  bannerCloseBtn: { background: 'transparent', border: 'none', color: '#94a3b8', cursor: 'pointer', fontSize: '1rem', padding: '0 8px', transition: 'color 0.2s' },
+
+  navBar: { padding: '10px 40px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', position: 'relative', zIndex: 1 },
+  navLink: { color: 'white', textDecoration: 'none', fontWeight: '600', fontSize: '13px', backgroundColor: 'rgba(255,255,255,0.1)', padding: '6px 12px', borderRadius: '20px', transition: 'all 0.2s' },
+  
+  content: { flex: 1, display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '0px 20px 10px', position: 'relative', zIndex: 1 },
+  
+  formCard: { background: 'white', borderRadius: '20px', padding: '15px 30px', width: '100%', maxWidth: '900px', boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)' },
+  
+  logoContainer: { display: 'flex', justifyContent: 'center', marginBottom: '0px' },
+  logoImg: { height: '120px', width: 'auto', objectFit: 'contain' },
+
+  title: { fontSize: '1.3rem', fontWeight: '800', marginBottom: '2px', color: '#0f172a', textAlign: 'center', letterSpacing: '-0.02em' },
+  subtitle: { color: '#64748b', textAlign: 'center', marginBottom: '8px', fontSize: '0.75rem' },
+  errorAlert: { background: '#fef2f2', border: '1px solid #fecaca', color: '#ef4444', padding: '6px', borderRadius: '8px', marginBottom: '8px', textAlign: 'center', fontSize: '0.8rem' },
+  form: { display: 'flex', flexDirection: 'column', gap: '8px' },
+  grid: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' },
+  formGroup: { display: 'flex', flexDirection: 'column', gap: '2px', fontSize: '0.75rem', fontWeight: '600', color: '#475569' },
+  input: { padding: '5px 8px', borderRadius: '6px', border: '1px solid #e2e8f0', background: '#f8fafc', color: '#0f172a', fontSize: '0.8rem', transition: 'border-color 0.2s' },
+  pricingBox: { background: 'rgba(34, 197, 94, 0.05)', border: '1px solid rgba(34, 197, 94, 0.3)', borderRadius: '8px', padding: '10px', display: 'flex', flexDirection: 'column', gap: '4px' },
+  pricingRow: { display: 'flex', justifyContent: 'space-between', color: '#475569', fontSize: '0.75rem' },
+  pricingRowTotal: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', color: '#0f172a', fontSize: '0.9rem', fontWeight: '700', paddingTop: '4px', borderTop: '1px solid #e2e8f0' },
+  totalValue: { fontSize: '1.15rem', color: '#22c55e', fontWeight: '800' },
+  submitBtn: { padding: '10px', fontSize: '0.9rem', borderRadius: '8px', width: '100%', marginTop: '2px', backgroundColor: '#1e3a8a', border: 'none', color: 'white', fontWeight: 'bold', cursor: 'pointer', boxShadow: '0 4px 12px rgba(30, 58, 138, 0.3)' },
+  billingToggle: { display: 'flex', background: '#f1f5f9', borderRadius: '8px', padding: '4px', border: '1px solid #e2e8f0', width: '100%' },
+  toggleBtn: { flex: 1, padding: '6px', border: 'none', background: 'transparent', borderRadius: '6px', color: '#64748b', fontSize: '0.75rem', fontWeight: '600', cursor: 'pointer', transition: 'all 0.2s' },
+  toggleBtnActive: { flex: 1, padding: '6px', border: 'none', background: 'white', borderRadius: '6px', color: '#0f172a', fontSize: '0.75rem', fontWeight: '600', cursor: 'pointer', boxShadow: '0 2px 4px rgba(0, 0, 0, 0.05)', transition: 'all 0.2s' },
+  toggleBtnActivePremium: { flex: 1, padding: '6px', border: 'none', background: '#22c55e', borderRadius: '6px', color: 'white', fontSize: '0.75rem', fontWeight: '600', cursor: 'pointer', boxShadow: '0 2px 4px rgba(34, 197, 94, 0.3)', transition: 'all 0.2s' }
 };

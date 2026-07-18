@@ -5,8 +5,8 @@ export const login = async (email, password) => {
   return response.data;
 };
 
-export const createSubscriptionOrder = async (studentCount) => {
-  const response = await api.post('/auth/create-subscription-order', { studentCount });
+export const createSubscriptionOrder = async (studentCount, billingCycle, planType) => {
+  const response = await api.post('/auth/create-subscription-order', { studentCount, billingCycle, planType });
   return response.data;
 };
 

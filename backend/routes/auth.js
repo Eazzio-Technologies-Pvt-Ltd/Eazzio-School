@@ -92,7 +92,7 @@ router.post('/login', validate(loginSchema), async (req, res) => {
 
 // POST /api/auth/create-subscription-order
 router.post('/create-subscription-order', validate(subscriptionOrderSchema), async (req, res) => {
-  const { studentCount } = req.body;
+  const { studentCount, billingCycle, planType } = req.body;
 
   try {
     const instance = new Razorpay({
@@ -100,7 +100,9 @@ router.post('/create-subscription-order', validate(subscriptionOrderSchema), asy
       key_secret: process.env.RAZORPAY_KEY_SECRET,
     });
 
-    const amount = parseInt(studentCount, 10) * 120 * 100; // ₹10/student/month * 12 months = ₹120 per student in paisa
+    const months = billingCycle === 'monthly' ? 1 : 12;
+    const rate = planType === 'premium' ? 15 : 10;
+    const amount = parseInt(studentCount, 10) * rate * months * 100; // rate/student/month in paisa
 
     const options = {
       amount,
@@ -122,7 +124,8 @@ router.post('/create-subscription-order', validate(subscriptionOrderSchema), asy
 router.post('/register-school', validate(registerSchoolSchema), async (req, res) => {
   const {
     schoolName,
-    principalName,
+    adminName,
+    principalName,  // backward compat
     email,
     phone,
     address,
@@ -132,6 +135,8 @@ router.post('/register-school', validate(registerSchoolSchema), async (req, res)
     razorpay_order_id,
     razorpay_signature
   } = req.body;
+
+  const registrantName = adminName || principalName;
 
   try {
     // 1. Verify Razorpay Signature
@@ -177,7 +182,7 @@ router.post('/register-school', validate(registerSchoolSchema), async (req, res)
       await tx.principal.create({
         data: {
           schoolId: school.id,
-          name: principalName,
+          name: registrantName,
           email,
           password: passwordHash,
           phone
