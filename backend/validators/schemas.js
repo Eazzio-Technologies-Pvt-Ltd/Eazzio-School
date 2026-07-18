@@ -60,3 +60,11 @@ export const noticeSchema = z.object({
   audience: z.enum(['SCHOOL', 'CLASS', 'TEACHERS', 'STUDENTS']),
   classId: z.coerce.number().optional().nullable(),
 });
+
+export const createAccountantSchema = z.object({
+  name: z.string().min(1, 'Name is required'),
+  email: z.string().email('Invalid email'),
+  phone: z.string().optional(),
+  password: z.string().min(6, 'Password must be at least 6 characters'),
+});
+

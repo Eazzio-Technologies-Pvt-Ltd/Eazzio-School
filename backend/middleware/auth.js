@@ -30,8 +30,8 @@ export function requireAdmin(req, res, next) {
 }
 
 export function requirePrincipal(req, res, next) {
-  if (!req.user || req.user.role !== 'PRINCIPAL') {
-    return res.status(403).json({ error: 'Forbidden: Principal access required' });
+  if (!req.user || (req.user.role !== 'PRINCIPAL' && req.user.role !== 'ACCOUNTANT')) {
+    return res.status(403).json({ error: 'Forbidden: Principal or Accountant access required' });
   }
   next();
 }
