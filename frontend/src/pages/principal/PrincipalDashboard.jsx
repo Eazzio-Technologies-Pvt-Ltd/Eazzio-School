@@ -54,20 +54,20 @@ export default function PrincipalDashboard() {
           <h2 className="text-2xl font-bold text-gray-900">Principal Dashboard</h2>
           <p className="text-gray-500">Overview of academic and administrative metrics.</p>
         </div>
-        <button onClick={loadData} className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white flex items-center gap-2 rounded-lg text-sm transition shadow-sm">
+        <button onClick={loadData} className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white flex items-center gap-2 rounded-lg text-sm transition-colors duration-150 shadow-sm">
           <RefreshCw size={16} /> Refresh
         </button>
       </div>
 
       {/* TOP SUMMARY CARDS */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard title="Total Courses" value={data.totalCourses || 0} icon={<BookOpen size={24} />} desc="Unique subjects taught" iconColor="text-indigo-500" />
-        <StatCard title="Total Courses" value={data.totalCourses || 0} icon={<School size={24} />} desc="Active courses" iconColor="text-blue-500" />
+        <StatCard title="Total Courses" value={data.totalCourses || 0} icon={<BookOpen size={24} />} desc="Unique subjects taught" iconColor="text-emerald-500" />
+        <StatCard title="Total Classes" value={data.totalClasses || 0} icon={<School size={24} />} desc="Active class sections" iconColor="text-blue-500" />
         <StatCard title="Total Students" value={data.totalStudents || 0} icon={<Users size={24} />} desc="Enrolled students" iconColor="text-emerald-500" />
-        <StatCard title="Total Teachers" value={data.totalTeachers || 0} icon={<UserCheck size={24} />} desc="Faculty members" iconColor="text-purple-500" />
+        <StatCard title="Total Teachers" value={data.totalTeachers || 0} icon={<UserCheck size={24} />} desc="Faculty members" iconColor="text-emerald-500" />
         <StatCard title="Today's Attendance" value={`${data.todayAttendance?.percentage || 0}%`} icon={<CheckCircle size={24} />} desc="Overall presence rate" colorCourse="text-emerald-600" iconColor="text-emerald-500" />
         <StatCard title="Absent Today" value={data.todayAttendance?.absent || 0} icon={<XCircle size={24} />} desc="Students missing" colorCourse="text-red-600" iconColor="text-red-500" />
-        <StatCard title="Students with Fee Due" value={data.studentsWithFeeDue || 0} icon={<CreditCard size={24} />} desc="Outstanding balances" colorCourse="text-amber-600" iconColor="text-amber-500" />
+        <StatCard title="Students with Pending Fees" value={data.studentsWithFeeDue || 0} icon={<CreditCard size={24} />} desc="Outstanding balances" colorCourse="text-amber-600" iconColor="text-amber-500" />
         <StatCard title="Active Notices" value={data.activeNoticesCount || 0} icon={<Bell size={24} />} desc="Published announcements" iconColor="text-pink-500" />
       </div>
 
@@ -97,7 +97,7 @@ export default function PrincipalDashboard() {
                     </tr>
                   ) : (
                     data.feeAlerts?.map((fee, idx) => (
-                      <tr key={idx} className="border-b border-gray-100 hover:bg-gray-50 transition text-sm">
+                      <tr key={idx} className="border-b border-gray-100 hover:bg-gray-50 transition-colors duration-150 text-sm">
                         <td className="py-3 px-4 font-medium text-gray-800">{fee.name}</td>
                         <td className="py-3 px-4 text-gray-600">{fee.className}</td>
                         <td className="py-3 px-4 font-bold text-amber-600">₹{fee.dueAmount.toLocaleString()}</td>
@@ -124,7 +124,7 @@ export default function PrincipalDashboard() {
               ) : (
                 data.recentActivities?.map(activity => (
                   <div key={activity.id} className="flex gap-4 items-start">
-                    <div className="mt-1.5 w-2 h-2 rounded-full bg-indigo-500 shadow-[0_0_8px_rgba(99,102,241,0.4)] shrink-0"></div>
+                    <div className="mt-1.5 w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(99,102,241,0.4)] shrink-0"></div>
                     <div>
                       <p className="text-gray-800 text-sm font-medium">{activity.text}</p>
                       <p className="text-xs text-gray-500">{new Date(activity.time).toLocaleString()}</p>
@@ -157,9 +157,9 @@ export default function PrincipalDashboard() {
                 <span className="text-gray-700 text-sm font-medium">Leave</span>
                 <span className="font-bold text-blue-600">{data.todayAttendance?.leave || 0}</span>
               </div>
-              <div className="mt-4 text-center p-4 bg-indigo-50 rounded-xl border border-indigo-100">
-                <div className="text-4xl font-bold text-indigo-700">{data.todayAttendance?.percentage || 0}%</div>
-                <div className="text-xs text-indigo-500 font-medium mt-1 uppercase tracking-wider">Overall Attendance</div>
+              <div className="mt-4 text-center p-4 bg-emerald-50 rounded-xl border border-emerald-100">
+                <div className="text-4xl font-bold text-emerald-700">{data.todayAttendance?.percentage || 0}%</div>
+                <div className="text-xs text-emerald-500 font-medium mt-1 uppercase tracking-wider">Overall Attendance</div>
               </div>
             </div>
           </div>
@@ -169,23 +169,23 @@ export default function PrincipalDashboard() {
             <h3 className="text-lg font-bold text-gray-900 mb-1">Quick Actions</h3>
             <p className="text-sm text-gray-500 mb-4">Fast navigation to core modules.</p>
             <div className="grid grid-cols-2 gap-3">
-              <button onClick={() => navigate('/principal/courses')} className="flex flex-col items-center justify-center gap-2 p-4 bg-gray-50 hover:bg-gray-100 hover:shadow-sm border border-gray-200 rounded-lg transition text-indigo-600">
+              <button onClick={() => navigate('/principal/courses')} className="flex flex-col items-center justify-center gap-2 p-4 bg-gray-50 hover:bg-gray-100 hover:shadow-sm border border-gray-200 rounded-lg transition-colors duration-150 text-emerald-600">
                 <PlusSquare size={24} />
                 <span className="text-xs font-semibold text-gray-700">Add Course</span>
               </button>
-              <button onClick={() => navigate('/principal/students')} className="flex flex-col items-center justify-center gap-2 p-4 bg-gray-50 hover:bg-gray-100 hover:shadow-sm border border-gray-200 rounded-lg transition text-emerald-600">
+              <button onClick={() => navigate('/principal/students')} className="flex flex-col items-center justify-center gap-2 p-4 bg-gray-50 hover:bg-gray-100 hover:shadow-sm border border-gray-200 rounded-lg transition-colors duration-150 text-emerald-600">
                 <Upload size={24} />
                 <span className="text-xs font-semibold text-gray-700">Import Students</span>
               </button>
-              <button onClick={() => navigate('/principal/teachers')} className="flex flex-col items-center justify-center gap-2 p-4 bg-gray-50 hover:bg-gray-100 hover:shadow-sm border border-gray-200 rounded-lg transition text-purple-600">
+              <button onClick={() => navigate('/principal/teachers')} className="flex flex-col items-center justify-center gap-2 p-4 bg-gray-50 hover:bg-gray-100 hover:shadow-sm border border-gray-200 rounded-lg transition-colors duration-150 text-emerald-600">
                 <Upload size={24} />
                 <span className="text-xs font-semibold text-gray-700">Import Teachers</span>
               </button>
-              <button onClick={() => navigate('/principal/notices')} className="flex flex-col items-center justify-center gap-2 p-4 bg-gray-50 hover:bg-gray-100 hover:shadow-sm border border-gray-200 rounded-lg transition text-pink-600">
+              <button onClick={() => navigate('/principal/notices')} className="flex flex-col items-center justify-center gap-2 p-4 bg-gray-50 hover:bg-gray-100 hover:shadow-sm border border-gray-200 rounded-lg transition-colors duration-150 text-pink-600">
                 <Send size={24} />
                 <span className="text-xs font-semibold text-gray-700">Publish Notice</span>
               </button>
-              <button onClick={() => navigate('/principal/timetable')} className="col-span-2 flex flex-row items-center justify-center gap-3 p-4 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg transition shadow-sm">
+              <button onClick={() => navigate('/principal/timetable')} className="col-span-2 flex flex-row items-center justify-center gap-3 p-4 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg transition-colors duration-150 shadow-sm">
                 <Calendar size={20} />
                 <span className="text-sm font-semibold">Generate Timetable</span>
               </button>
@@ -204,7 +204,7 @@ export default function PrincipalDashboard() {
                   <div key={notice.id} className="p-4 bg-gray-50 rounded-lg border border-gray-200 hover:shadow-sm transition">
                     <div className="flex justify-between items-start mb-2">
                       <h4 className="font-semibold text-gray-800 text-sm">{notice.title}</h4>
-                      <span className="text-[10px] bg-indigo-100 text-indigo-700 font-medium px-2 py-0.5 rounded-full border border-indigo-200">{notice.audience}</span>
+                      <span className="text-[10px] bg-emerald-100 text-emerald-700 font-medium px-2 py-0.5 rounded-full border border-emerald-200">{notice.audience}</span>
                     </div>
                     <p className="text-xs text-gray-600 line-clamp-2 leading-relaxed">{notice.content}</p>
                     <p className="text-[10px] text-gray-500 mt-2 font-medium">{new Date(notice.date).toLocaleDateString()}</p>

@@ -1,29 +1,14 @@
 import React, { useState, useEffect } from 'react';
-import { getFeeCollection, getFeeStructures, createFeeStructure, generateInvoices, getInvoices, payInvoice, getCourses } from '../../api/principalApi';
+import { getFeeCollection } from '../../api/principalApi';
 import Loader from '../../components/Loader';
-import StatCard from '../../components/StatCard';
+import { CreditCard, AlertTriangle, AlertCircle, Search, Filter } from 'lucide-react';
 
 export default function FeesOverview() {
-  const [activeTab, setActiveTab] = useState('overview');
-  
-  // Data States
   const [collectionData, setCollectionData] = useState(null);
-  const [structures, setStructures] = useState([]);
-  const [invoices, setInvoices] = useState([]);
-  const [coursesList, setCoursesList] = useState([]);
-  
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  
-  // Modals & Forms
-  const [showStructureModal, setShowStructureModal] = useState(false);
-  const [showInvoiceModal, setShowInvoiceModal] = useState(false);
-  const [showPayModal, setShowPayModal] = useState(false);
-  const [selectedInvoice, setSelectedInvoice] = useState(null);
-  
-  const [structureForm, setStructureForm] = useState({ feeType: '', amount: '', courseId: '', dueDate: '' });
-  const [invoiceForm, setInvoiceForm] = useState({ structureId: '', courseId: '' });
-  const [payForm, setPayForm] = useState({ amount: '', paymentMethod: 'CASH' });
+  const [filterType, setFilterType] = useState('ALL'); // ALL, PENDING_FULL, PARTIAL, OVERDUE
+  const [searchQuery, setSearchQuery] = useState('');
 
   useEffect(() => {
     loadAllData();
@@ -32,16 +17,8 @@ export default function FeesOverview() {
   const loadAllData = async () => {
     try {
       setLoading(true);
-      const [colRes, strRes, invRes, clsRes] = await Promise.all([
-        getFeeCollection(),
-        getFeeStructures(),
-        getInvoices(),
-        getCourses()
-      ]);
+      const colRes = await getFeeCollection();
       setCollectionData(colRes);
-      setStructures(strRes);
-      setInvoices(invRes);
-      setCoursesList(clsRes);
     } catch (err) {
       console.error(err);
       setError('Failed to load fee management data.');
@@ -50,331 +27,154 @@ export default function FeesOverview() {
     }
   };
 
-  const handleCreateStructure = async (e) => {
-    e.preventDefault();
-    try {
-      await createFeeStructure(structureForm);
-      setShowStructureModal(false);
-      setStructureForm({ feeType: '', amount: '', courseId: '', dueDate: '' });
-      loadAllData();
-    } catch (err) {
-      alert(err.response?.data?.error || 'Failed to create structure');
-    }
-  };
+  if (loading) return <div className="p-8"><Loader message="Loading fee monitoring data..." /></div>;
+  if (error) return <div className="p-4 bg-red-50 text-red-600 rounded-xl border border-red-200 m-6">{error}</div>;
 
-  const handleGenerateInvoices = async (e) => {
-    e.preventDefault();
-    try {
-      await generateInvoices(invoiceForm);
-      setShowInvoiceModal(false);
-      setInvoiceForm({ structureId: '', courseId: '' });
-      loadAllData();
-    } catch (err) {
-      alert(err.response?.data?.error || 'Failed to generate invoices');
-    }
-  };
+  const students = collectionData?.students || [];
 
-  const handleRecordPayment = async (e) => {
-    e.preventDefault();
-    try {
-      await payInvoice(selectedInvoice.id, payForm);
-      setShowPayModal(false);
-      setSelectedInvoice(null);
-      setPayForm({ amount: '', paymentMethod: 'CASH' });
-      loadAllData();
-    } catch (err) {
-      alert(err.response?.data?.error || 'Failed to record payment');
-    }
-  };
+  // Categorize students
+  const pendingFull = students.filter(s => s.pending > 0 && s.paid === 0);
+  const partiallyPaid = students.filter(s => s.pending > 0 && s.paid > 0);
+  const onHold = students.filter(s => s.status === 'OVERDUE');
 
-  if (loading) return <Loader message="Loading fee management..." />;
+  // Filter for display
+  let displayedStudents = students.filter(s => s.pending > 0); // Only show students with dues
+  if (filterType === 'PENDING_FULL') displayedStudents = pendingFull;
+  if (filterType === 'PARTIAL') displayedStudents = partiallyPaid;
+  if (filterType === 'OVERDUE') displayedStudents = onHold;
+
+  if (searchQuery) {
+    displayedStudents = displayedStudents.filter(s => 
+      s.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
+      (s.rollNumber && s.rollNumber.toLowerCase().includes(searchQuery.toLowerCase()))
+    );
+  }
 
   return (
-    <>
-      <div className="animate-fade-in" style={styles.container}>
-        <div style={styles.header}>
-          <h2>Fee Management System</h2>
-        <p style={styles.sub}>Configure structures, generate invoices, and track payments.</p>
+    <div className="flex flex-col gap-6 animate-fade-in p-6 bg-gray-50 min-h-screen">
+      
+      {/* Header */}
+      <div>
+        <h2 className="text-3xl font-bold text-gray-900 tracking-tight">Fee Monitoring</h2>
+        <p className="text-gray-500 mt-1">Monitor school-wide outstanding student dues and financial standing.</p>
+        <div className="mt-4 inline-flex items-center gap-2 bg-blue-50 text-blue-700 px-3 py-2 rounded-lg text-xs font-medium border border-blue-100">
+          <AlertCircle size={14} />
+          Read-only view. Invoices and payment collection are managed by the Accountant workspace.
+        </div>
       </div>
 
-      {error && <div style={styles.errorAlert}>{error}</div>}
-
-      <div style={styles.tabs}>
-        <button 
-          style={activeTab === 'overview' ? styles.activeTab : styles.tab} 
-          onClick={() => setActiveTab('overview')}
-        >Overview</button>
-        <button 
-          style={activeTab === 'structures' ? styles.activeTab : styles.tab} 
-          onClick={() => setActiveTab('structures')}
-        >Fee Structures</button>
-        <button 
-          style={activeTab === 'invoices' ? styles.activeTab : styles.tab} 
-          onClick={() => setActiveTab('invoices')}
-        >Invoices & Payments</button>
-      </div>
-
-      {activeTab === 'overview' && (
-        <div className="animate-fade-in">
-          <div style={styles.statsGrid}>
-            <StatCard title="Total Paid" value={`$${collectionData?.paid?.toLocaleString()}`} icon="💰" color="var(--success)" />
-            <StatCard title="Total Pending (Due)" value={`$${collectionData?.dueAmount?.toLocaleString()}`} icon="⏳" color="var(--warning)" />
-            <StatCard title="Total Expected" value={`$${((collectionData?.paid || 0) + (collectionData?.dueAmount || 0)).toLocaleString()}`} icon="📈" color="var(--primary)" />
+      {/* Stats Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div 
+          onClick={() => setFilterType(filterType === 'PENDING_FULL' ? 'ALL' : 'PENDING_FULL')}
+          className={`bg-white border rounded-xl p-5 cursor-pointer transition-all ${filterType === 'PENDING_FULL' ? 'border-amber-500 ring-2 ring-amber-500/20 shadow-md' : 'border-gray-200 hover:border-amber-300 shadow-sm'}`}
+        >
+          <div className="flex justify-between items-center mb-2">
+            <h3 className="text-sm font-semibold text-gray-500">Students with Pending Fees</h3>
+            <CreditCard size={20} className="text-amber-500" />
           </div>
+          <div className="text-3xl font-bold text-gray-900">{pendingFull.length}</div>
+          <p className="text-xs text-gray-400 mt-1">No payments made yet</p>
+        </div>
 
-          <div style={styles.card}>
-            <h3 style={styles.cardTitle}>Student Collection Summary</h3>
-            <table style={styles.table}>
-              <thead>
-                <tr>
-                  <th style={styles.th}>Name</th>
-                  <th style={styles.th}>Roll No</th>
-                  <th style={styles.th}>Course</th>
-                  <th style={styles.th}>Total Billed</th>
-                  <th style={styles.th}>Paid</th>
-                  <th style={styles.th}>Pending</th>
-                  <th style={styles.th}>Status</th>
-                </tr>
-              </thead>
-              <tbody>
-                {collectionData?.students?.map(student => (
-                  <tr key={student.id} style={styles.tr}>
-                    <td style={{ ...styles.td, fontWeight: 'bold' }}>{student.name}</td>
-                    <td style={styles.td}>{student.rollNumber || '-'}</td>
-                    <td style={styles.td}>{student.className}</td>
-                    <td style={styles.td}>${student.totalFees}</td>
-                    <td style={{ ...styles.td, color: 'var(--success)' }}>${student.paid}</td>
-                    <td style={{ ...styles.td, color: 'var(--danger)' }}>${student.pending}</td>
-                    <td style={styles.td}>
-                      <span style={{
-                        ...styles.badge,
-                        color: student.status === 'PAID' ? 'var(--success)' : student.status === 'OVERDUE' ? 'var(--danger)' : 'var(--warning)',
-                        background: student.status === 'PAID' ? 'var(--success-glow)' : student.status === 'OVERDUE' ? 'var(--danger-glow)' : 'var(--warning-glow)'
-                      }}>
-                        {student.status}
-                      </span>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+        <div 
+          onClick={() => setFilterType(filterType === 'PARTIAL' ? 'ALL' : 'PARTIAL')}
+          className={`bg-white border rounded-xl p-5 cursor-pointer transition-all ${filterType === 'PARTIAL' ? 'border-blue-500 ring-2 ring-blue-500/20 shadow-md' : 'border-gray-200 hover:border-blue-300 shadow-sm'}`}
+        >
+          <div className="flex justify-between items-center mb-2">
+            <h3 className="text-sm font-semibold text-gray-500">Partially Paid Fees</h3>
+            <CreditCard size={20} className="text-blue-500" />
+          </div>
+          <div className="text-3xl font-bold text-gray-900">{partiallyPaid.length}</div>
+          <p className="text-xs text-gray-400 mt-1">Some amount paid, balance pending</p>
+        </div>
+
+        <div 
+          onClick={() => setFilterType(filterType === 'OVERDUE' ? 'ALL' : 'OVERDUE')}
+          className={`bg-white border rounded-xl p-5 cursor-pointer transition-all ${filterType === 'OVERDUE' ? 'border-red-500 ring-2 ring-red-500/20 shadow-md' : 'border-gray-200 hover:border-red-300 shadow-sm'}`}
+        >
+          <div className="flex justify-between items-center mb-2">
+            <h3 className="text-sm font-semibold text-gray-500">Result on Hold</h3>
+            <AlertTriangle size={20} className="text-red-500" />
+          </div>
+          <div className="text-3xl font-bold text-gray-900">{onHold.length}</div>
+          <p className="text-xs text-gray-400 mt-1">Deadlines missed (Overdue status)</p>
+        </div>
+      </div>
+
+      {/* Table Section */}
+      <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden flex flex-col">
+        <div className="p-5 border-b border-gray-100 flex flex-col sm:flex-row justify-between gap-4 items-center bg-gray-50/50">
+          <h3 className="font-bold text-gray-900 flex items-center gap-2">
+            <Filter size={18} className="text-emerald-500" />
+            {filterType === 'ALL' ? 'All Students with Dues' : 
+             filterType === 'PENDING_FULL' ? 'Students with Pending Fees (Full)' : 
+             filterType === 'PARTIAL' ? 'Students with Partially Paid Fees' : 
+             'Students with Result on Hold'}
+          </h3>
+          <div className="relative w-full sm:w-72">
+            <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+            <input 
+              type="text"
+              placeholder="Search student or roll number..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full pl-9 pr-4 py-2 bg-white border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 outline-none transition"
+            />
           </div>
         </div>
-      )}
 
-      {activeTab === 'structures' && (
-        <div className="animate-fade-in" style={styles.card}>
-          <div style={styles.tableHeader}>
-            <h3 style={styles.cardTitle}>Master Fee Structures</h3>
-            <button className="btn-primary" onClick={() => setShowStructureModal(true)}>+ New Fee Structure</button>
-          </div>
-          <table style={styles.table}>
+        <div className="overflow-x-auto">
+          <table className="w-full text-left border-collapse">
             <thead>
-              <tr>
-                <th style={styles.th}>Fee Type</th>
-                <th style={styles.th}>Amount</th>
-                <th style={styles.th}>Applicable Course</th>
-                <th style={styles.th}>Default Due Date</th>
+              <tr className="bg-gray-50 border-b border-gray-100">
+                <th className="py-3 px-5 font-semibold text-gray-600 text-xs uppercase tracking-wider">Student Name</th>
+                <th className="py-3 px-5 font-semibold text-gray-600 text-xs uppercase tracking-wider">Roll No</th>
+                <th className="py-3 px-5 font-semibold text-gray-600 text-xs uppercase tracking-wider">Course</th>
+                <th className="py-3 px-5 font-semibold text-gray-600 text-xs uppercase tracking-wider">Total Billed</th>
+                <th className="py-3 px-5 font-semibold text-gray-600 text-xs uppercase tracking-wider">Paid</th>
+                <th className="py-3 px-5 font-semibold text-gray-600 text-xs uppercase tracking-wider">Pending Balance</th>
+                <th className="py-3 px-5 font-semibold text-gray-600 text-xs uppercase tracking-wider text-right">Standing</th>
               </tr>
             </thead>
-            <tbody>
-              {structures.length === 0 ? (
-                <tr><td colSpan="4" style={styles.noData}>No fee structures defined</td></tr>
+            <tbody className="divide-y divide-gray-100">
+              {displayedStudents.length === 0 ? (
+                <tr>
+                  <td colSpan="7" className="py-12 text-center text-gray-400 italic">
+                    No students found matching this criteria.
+                  </td>
+                </tr>
               ) : (
-                structures.map(st => (
-                  <tr key={st.id} style={styles.tr}>
-                    <td style={styles.td}>{st.feeType}</td>
-                    <td style={styles.td}>${st.amount}</td>
-                    <td style={styles.td}>{st.courseId ? `${st.course.className}-${st.course.section}` : 'All Courses'}</td>
-                    <td style={styles.td}>{st.dueDate ? new Date(st.dueDate).toLocaleDateString() : 'N/A'}</td>
+                displayedStudents.map(student => (
+                  <tr key={student.id} className="hover:bg-gray-50/50 transition-colors duration-150">
+                    <td className="py-4 px-5 font-medium text-gray-900">{student.name}</td>
+                    <td className="py-4 px-5 text-sm text-gray-500">{student.rollNumber || '-'}</td>
+                    <td className="py-4 px-5 text-sm text-gray-700">{student.className}</td>
+                    <td className="py-4 px-5 text-sm font-medium text-gray-600">₹{student.totalFees.toLocaleString()}</td>
+                    <td className="py-4 px-5 text-sm font-medium text-emerald-600">₹{student.paid.toLocaleString()}</td>
+                    <td className="py-4 px-5 text-sm font-bold text-amber-600">₹{student.pending.toLocaleString()}</td>
+                    <td className="py-4 px-5 text-right">
+                      {student.status === 'OVERDUE' ? (
+                        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-red-100 text-red-700 border border-red-200 uppercase tracking-wider">
+                          <AlertTriangle size={12} /> Result on Hold
+                        </span>
+                      ) : student.paid > 0 ? (
+                        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-blue-50 text-blue-700 border border-blue-200 uppercase tracking-wider">
+                          Partial
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-amber-50 text-amber-700 border border-amber-200 uppercase tracking-wider">
+                          Pending
+                        </span>
+                      )}
+                    </td>
                   </tr>
                 ))
               )}
             </tbody>
           </table>
         </div>
-      )}
-
-      {activeTab === 'invoices' && (
-        <div className="animate-fade-in" style={styles.card}>
-          <div style={styles.tableHeader}>
-            <h3 style={styles.cardTitle}>Student Invoices</h3>
-            <button className="btn-secondary" onClick={() => setShowInvoiceModal(true)}>Generate Invoices</button>
-          </div>
-          <table style={styles.table}>
-            <thead>
-              <tr>
-                <th style={styles.th}>Student Name</th>
-                <th style={styles.th}>Course</th>
-                <th style={styles.th}>Fee Type</th>
-                <th style={styles.th}>Amount</th>
-                <th style={styles.th}>Due Date</th>
-                <th style={styles.th}>Status</th>
-                <th style={styles.th}>Action</th>
-              </tr>
-            </thead>
-            <tbody>
-              {invoices.length === 0 ? (
-                <tr><td colSpan="7" style={styles.noData}>No invoices found</td></tr>
-              ) : (
-                invoices.map(inv => {
-                  const paid = inv.payments.filter(p => p.status === 'SUCCESS').reduce((acc, p) => acc + p.amount, 0);
-                  const pending = Math.max(0, inv.amount - paid);
-                  return (
-                    <tr key={inv.id} style={styles.tr}>
-                      <td style={styles.td}>{inv.student.name}</td>
-                      <td style={styles.td}>{inv.student.course ? `${inv.student.course.className}-${inv.student.course.section}` : 'N/A'}</td>
-                      <td style={styles.td}>{inv.feeType}</td>
-                      <td style={styles.td}>${inv.amount}</td>
-                      <td style={styles.td}>{new Date(inv.dueDate).toLocaleDateString()}</td>
-                      <td style={styles.td}>
-                        <span style={{
-                          ...styles.badge,
-                          color: inv.status === 'PAID' ? 'var(--success)' : inv.status === 'OVERDUE' ? 'var(--danger)' : 'var(--warning)',
-                          background: inv.status === 'PAID' ? 'var(--success-glow)' : inv.status === 'OVERDUE' ? 'var(--danger-glow)' : 'var(--warning-glow)'
-                        }}>
-                          {inv.status}
-                        </span>
-                      </td>
-                      <td style={styles.td}>
-                        {inv.status !== 'PAID' && (
-                          <button className="btn-primary" style={{ padding: '6px 12px', fontSize: '0.8rem' }} onClick={() => {
-                            setSelectedInvoice({ ...inv, pending });
-                            setPayForm({ ...payForm, amount: pending });
-                            setShowPayModal(true);
-                          }}>
-                            Record Payment
-                          </button>
-                        )}
-                      </td>
-                    </tr>
-                  )
-                })
-              )}
-            </tbody>
-          </table>
-        </div>
-      )}
       </div>
-
-      {/* Modals */}
-      {showStructureModal && (
-        <div style={styles.modalOverlay}>
-          <div style={styles.modal}>
-            <h3 style={{ marginBottom: '20px' }}>New Fee Structure</h3>
-            <form onSubmit={handleCreateStructure} style={styles.form}>
-              <div style={styles.formGroup}>
-                <label>Fee Type Name</label>
-                <input type="text" required placeholder="e.g. Tuition Fee" value={structureForm.feeType} onChange={e => setStructureForm({...structureForm, feeType: e.target.value})} style={styles.input} />
-              </div>
-              <div style={styles.formGroup}>
-                <label>Amount ($)</label>
-                <input type="number" required min="1" value={structureForm.amount} onChange={e => setStructureForm({...structureForm, amount: e.target.value})} style={styles.input} />
-              </div>
-              <div style={styles.formGroup}>
-                <label>Target Course (Optional)</label>
-                <select value={structureForm.courseId} onChange={e => setStructureForm({...structureForm, courseId: e.target.value})} style={styles.input}>
-                  <option value="">All Courses (School-wide)</option>
-                  {coursesList.map(c => <option key={c.id} value={c.id}>{c.className} - {c.section}</option>)}
-                </select>
-              </div>
-              <div style={styles.formGroup}>
-                <label>Default Due Date (Optional)</label>
-                <input type="date" value={structureForm.dueDate} onChange={e => setStructureForm({...structureForm, dueDate: e.target.value})} style={styles.input} />
-              </div>
-              <div style={styles.modalActions}>
-                <button type="button" onClick={() => setShowStructureModal(false)} className="btn-secondary">Cancel</button>
-                <button type="submit" className="btn-primary">Save Structure</button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {showInvoiceModal && (
-        <div style={styles.modalOverlay}>
-          <div style={styles.modal}>
-            <h3 style={{ marginBottom: '20px' }}>Generate Invoices</h3>
-            <form onSubmit={handleGenerateInvoices} style={styles.form}>
-              <div style={styles.formGroup}>
-                <label>Select Fee Structure</label>
-                <select required value={invoiceForm.structureId} onChange={e => setInvoiceForm({...invoiceForm, structureId: e.target.value})} style={styles.input}>
-                  <option value="">-- Select Structure --</option>
-                  {structures.map(s => <option key={s.id} value={s.id}>{s.feeType} (${s.amount})</option>)}
-                </select>
-              </div>
-              <div style={styles.formGroup}>
-                <label>Target Course (Optional - overrides structure default)</label>
-                <select value={invoiceForm.courseId} onChange={e => setInvoiceForm({...invoiceForm, courseId: e.target.value})} style={styles.input}>
-                  <option value="">-- Use Structure Default --</option>
-                  {coursesList.map(c => <option key={c.id} value={c.id}>{c.className} - {c.section}</option>)}
-                </select>
-              </div>
-              <div style={styles.modalActions}>
-                <button type="button" onClick={() => setShowInvoiceModal(false)} className="btn-secondary">Cancel</button>
-                <button type="submit" className="btn-primary">Generate</button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {showPayModal && (
-        <div style={styles.modalOverlay}>
-          <div style={styles.modal}>
-            <h3 style={{ marginBottom: '20px' }}>Record Payment</h3>
-            <p style={{ color: 'var(--text-secondary)', marginBottom: '16px', fontSize: '0.9rem' }}>
-              Invoice: {selectedInvoice?.feeType} for {selectedInvoice?.student?.name}
-            </p>
-            <form onSubmit={handleRecordPayment} style={styles.form}>
-              <div style={styles.formGroup}>
-                <label>Amount ($)</label>
-                <input type="number" required min="1" max={selectedInvoice?.pending} value={payForm.amount} onChange={e => setPayForm({...payForm, amount: e.target.value})} style={styles.input} />
-              </div>
-              <div style={styles.formGroup}>
-                <label>Payment Method</label>
-                <select required value={payForm.paymentMethod} onChange={e => setPayForm({...payForm, paymentMethod: e.target.value})} style={styles.input}>
-                  <option value="CASH">Cash</option>
-                  <option value="CARD">Card</option>
-                  <option value="ONLINE">Online Transfer</option>
-                  <option value="CHEQUE">Cheque</option>
-                </select>
-              </div>
-              <div style={styles.modalActions}>
-                <button type="button" onClick={() => setShowPayModal(false)} className="btn-secondary">Cancel</button>
-                <button type="submit" className="btn-primary">Record Payment</button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-    </>
+    </div>
   );
 }
-
-const styles = {
-  container: { display: 'flex', flexDirection: 'column', gap: '24px' },
-  header: { marginBottom: '10px' },
-  sub: { color: 'var(--text-secondary)' },
-  tabs: { display: 'flex', gap: '10px', borderBottom: '1px solid var(--glass-border)' },
-  tab: { padding: '10px 20px', background: 'transparent', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer', fontSize: '1rem', fontWeight: '500' },
-  activeTab: { padding: '10px 20px', background: 'transparent', border: 'none', color: 'var(--primary)', cursor: 'pointer', fontSize: '1rem', fontWeight: '700', borderBottom: '2px solid var(--primary)' },
-  errorAlert: { padding: '10px', background: 'var(--danger-glow)', border: '1px solid var(--danger)', color: '#fca5a5', borderRadius: '4px' },
-  statsGrid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '20px', marginBottom: '24px' },
-  card: { background: 'var(--bg-card)', padding: '24px', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border-glow)' },
-  tableHeader: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' },
-  cardTitle: { fontSize: '1.2rem', fontWeight: 'bold', margin: 0 },
-  table: { width: '100%', borderCollapse: 'collapse', textAlign: 'left' },
-  th: { color: 'var(--text-secondary)', padding: '12px 14px', fontWeight: '600', borderBottom: '2px solid var(--glass-border)' },
-  td: { padding: '14px', borderBottom: '1px solid var(--glass-border)' },
-  tr: { transition: 'var(--transition-fast)', '&:hover': { background: 'var(--bg-card-hover)' } },
-  badge: { padding: '4px 10px', borderRadius: '20px', fontSize: '0.75rem', fontWeight: 'bold' },
-  noData: { textAlign: 'center', padding: '20px', color: 'var(--text-muted)' },
-  modalOverlay: { position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(5, 6, 12, 0.85)', backdropFilter: 'blur(8px)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 9999 },
-  modal: { background: 'var(--bg-card)', border: '1px solid var(--glass-border)', boxShadow: 'var(--shadow-glow)', borderRadius: 'var(--radius-md)', padding: '30px', maxWidth: '400px', width: '90%' },
-  form: { display: 'flex', flexDirection: 'column', gap: '16px' },
-  formGroup: { display: 'flex', flexDirection: 'column', gap: '6px' },
-  input: { padding: '10px 12px', borderRadius: 'var(--radius-sm)', border: '1px solid var(--glass-border)', background: 'var(--input-bg)', color: 'var(--text-primary)' },
-  modalActions: { display: 'flex', justifyContent: 'flex-end', gap: '12px', marginTop: '10px' }
-};

@@ -1,10 +1,12 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { getCourseDetails, updateCourse, deleteCourse, getTeachers, assignCourseTeacher } from '../../api/principalApi';
 import Loader from '../../components/Loader';
+import { ToastContext } from '../../context/ToastContext';
 import { ArrowLeft, Edit2, Trash2, Users, Check, X, Calendar, BookOpen, AlertCircle, UserCheck } from 'lucide-react';
 
 export default function CourseDetails() {
+  const { showToast } = useContext(ToastContext);
   const { id } = useParams();
   const navigate = useNavigate();
   
@@ -52,7 +54,7 @@ export default function CourseDetails() {
       setEditMode(false);
       loadData();
     } catch (err) {
-      alert(err.response?.data?.error || 'Failed to update course.');
+      showToast(err.response?.data?.error || 'Failed to update course.', 'error');
     }
   };
 
@@ -62,7 +64,7 @@ export default function CourseDetails() {
         await deleteCourse(id);
         navigate('/principal/courses');
       } catch (err) {
-        alert('Failed to delete course.');
+        showToast('Failed to delete course.', 'error');
       }
     }
   };
@@ -76,10 +78,10 @@ export default function CourseDetails() {
   return (
     <div className="flex flex-col gap-6 animate-fade-in text-gray-800">
       <div className="flex justify-between items-center">
-        <button onClick={() => navigate('/principal/courses')} className="flex items-center gap-2 text-indigo-600 hover:text-indigo-800 font-medium w-fit">
+        <button onClick={() => navigate('/principal/courses')} className="flex items-center gap-2 text-emerald-600 hover:text-emerald-800 font-medium w-fit">
           <ArrowLeft size={16} /> Back to Courses
         </button>
-        <button onClick={handleDelete} className="flex items-center gap-2 text-red-500 hover:text-red-700 font-medium px-3 py-1.5 border border-red-200 hover:bg-red-50 rounded-lg transition">
+        <button onClick={handleDelete} className="flex items-center gap-2 text-red-500 hover:text-red-700 font-medium px-3 py-1.5 border border-red-200 hover:bg-red-50 rounded-lg transition-colors duration-150">
           <Trash2 size={16} /> Delete Course
         </button>
       </div>
@@ -91,35 +93,35 @@ export default function CourseDetails() {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Course Name</label>
-                <input type="text" value={formData.courseName} onChange={e => setFormData({...formData, courseName: e.target.value})} className="w-full p-2 border border-gray-300 rounded-lg outline-none focus:border-indigo-500" />
+                <input type="text" value={formData.courseName} onChange={e => setFormData({...formData, courseName: e.target.value})} className="w-full p-2 border border-gray-300 rounded-lg outline-none focus:border-emerald-500" />
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Section</label>
-                <input type="text" value={formData.section} onChange={e => setFormData({...formData, section: e.target.value})} className="w-full p-2 border border-gray-300 rounded-lg outline-none focus:border-indigo-500" />
+                <input type="text" value={formData.section} onChange={e => setFormData({...formData, section: e.target.value})} className="w-full p-2 border border-gray-300 rounded-lg outline-none focus:border-emerald-500" />
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Academic Year</label>
-                <input type="text" value={formData.academicYear} onChange={e => setFormData({...formData, academicYear: e.target.value})} className="w-full p-2 border border-gray-300 rounded-lg outline-none focus:border-indigo-500" />
+                <input type="text" value={formData.academicYear} onChange={e => setFormData({...formData, academicYear: e.target.value})} className="w-full p-2 border border-gray-300 rounded-lg outline-none focus:border-emerald-500" />
               </div>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-2">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Course Teacher</label>
-                <select value={teacherId} onChange={e => setTeacherId(e.target.value)} className="w-full p-2 border border-gray-300 rounded-lg outline-none focus:border-indigo-500 bg-white">
+                <select value={teacherId} onChange={e => setTeacherId(e.target.value)} className="w-full p-2 border border-gray-300 rounded-lg outline-none focus:border-emerald-500 bg-white">
                   <option value="">-- Unassigned --</option>
                   {teachers.map(t => <option key={t.id} value={t.id}>{t.name} ({t.employeeId})</option>)}
                 </select>
               </div>
             </div>
             <div className="flex gap-3 mt-4">
-              <button onClick={handleUpdate} className="px-4 py-2 bg-indigo-600 text-white rounded-lg flex items-center gap-2 hover:bg-indigo-700"><Check size={16}/> Save Changes</button>
+              <button onClick={handleUpdate} className="px-4 py-2 bg-emerald-600 text-white rounded-lg flex items-center gap-2 hover:bg-emerald-700"><Check size={16}/> Save Changes</button>
               <button onClick={() => setEditMode(false)} className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg flex items-center gap-2 hover:bg-gray-200"><X size={16}/> Cancel</button>
             </div>
           </div>
         ) : (
           <div className="flex justify-between items-start">
             <div className="flex gap-5 items-start">
-              <div className="p-5 bg-indigo-50 text-indigo-600 rounded-2xl">
+              <div className="p-5 bg-emerald-50 text-emerald-600 rounded-2xl">
                 <Users size={48} />
               </div>
               <div>
@@ -153,7 +155,7 @@ export default function CourseDetails() {
                 </div>
               </div>
             </div>
-            <button onClick={() => setEditMode(true)} className="px-4 py-2 text-indigo-600 border border-indigo-200 rounded-lg hover:bg-indigo-50 transition flex items-center gap-2 font-medium">
+            <button onClick={() => setEditMode(true)} className="px-4 py-2 text-emerald-600 border border-emerald-200 rounded-lg hover:bg-emerald-50 transition-colors duration-150 flex items-center gap-2 font-medium">
               <Edit2 size={16} /> Edit Details
             </button>
           </div>
@@ -181,7 +183,7 @@ export default function CourseDetails() {
                   </tr>
                 ) : (
                   crs.students?.map(s => (
-                    <tr key={s.id} className="border-b border-gray-100 hover:bg-gray-50">
+                    <tr key={s.id} className="border-b border-gray-100 hover:bg-gray-50 transition-colors duration-150">
                       <td className="py-3 px-4 font-medium text-gray-700">{s.rollNumber || 'N/A'}</td>
                       <td className="py-3 px-4 text-gray-900">{s.name}</td>
                       <td className="py-3 px-4 text-gray-600">{s.phone || 'N/A'}</td>
@@ -200,7 +202,7 @@ export default function CourseDetails() {
           ) : (
             <div className="flex flex-wrap gap-2">
               {subjects.map((sub, i) => (
-                <span key={i} className="px-3 py-1.5 bg-indigo-50 text-indigo-700 rounded-lg text-sm font-medium border border-indigo-100">
+                <span key={i} className="px-3 py-1.5 bg-emerald-50 text-emerald-700 rounded-lg text-sm font-medium border border-emerald-100">
                   {sub}
                 </span>
               ))}

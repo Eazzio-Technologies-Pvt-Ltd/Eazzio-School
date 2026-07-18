@@ -216,13 +216,80 @@ router.get('/teachers', async (req, res) => {
   try {
     const teachers = await prisma.teacher.findMany({
       where: { schoolId },
-      include: { assignedCourse: true },
+      include: { 
+        assignedCourse: true,
+        timetables: { select: { subject: true } }
+      },
       orderBy: { name: 'asc' }
     });
     return res.json({ success: true, data: teachers });
   } catch (err) {
     console.error('Error fetching teachers:', err);
     return res.status(500).json({ success: false, error: 'Internal server error' });
+  }
+});
+
+// POST /teachers/bulk-import-update
+router.post('/teachers/bulk-import-update', async (req, res) => {
+  const { teachers } = req.body;
+  const schoolId = req.user.schoolId;
+  
+  if (!teachers || !Array.isArray(teachers) || teachers.length === 0) {
+    return res.status(400).json({ error: 'Valid teachers array is required' });
+  }
+
+  try {
+    const school = await prisma.school.findUnique({ where: { id: schoolId } });
+    
+    let createdCount = 0;
+    let updatedCount = 0;
+    
+    for (const teacherData of teachers) {
+      if (!teacherData.name || !teacherData.email) continue;
+      
+      const existingTeacher = await prisma.teacher.findUnique({
+        where: { email: String(teacherData.email) }
+      });
+      
+      if (existingTeacher) {
+         // Prevent updating teachers across different schools
+         if (existingTeacher.schoolId !== schoolId) continue;
+         
+         await prisma.teacher.update({
+           where: { id: existingTeacher.id },
+           data: {
+             name: String(teacherData.name),
+             phone: teacherData.phone ? String(teacherData.phone) : existingTeacher.phone
+           }
+         });
+         updatedCount++;
+      } else {
+         const teacherCount = await prisma.teacher.count({ where: { schoolId } });
+         const newEmployeeId = `${school.schoolCode}-TCH${(teacherCount + 1 + createdCount).toString().padStart(3, '0')}`;
+         const password = Math.random().toString(36).slice(-8);
+         const passwordHash = await bcrypt.hash(password, 10);
+         
+         await prisma.teacher.create({
+           data: {
+             schoolId,
+             employeeId: newEmployeeId,
+             password: passwordHash,
+             name: String(teacherData.name),
+             email: String(teacherData.email),
+             phone: teacherData.phone ? String(teacherData.phone) : null
+           }
+         });
+         createdCount++;
+      }
+    }
+    
+    return res.json({
+      success: true,
+      message: `Bulk operation complete. Created: ${createdCount}, Updated: ${updatedCount}`
+    });
+  } catch (err) {
+    console.error('Error in teachers bulk import:', err);
+    return res.status(500).json({ error: 'Internal server error during bulk import' });
   }
 });
 
@@ -522,7 +589,7 @@ router.get('/students/:id', async (req, res) => {
       where: { id },
       include: { 
         course: true,
-        attendance: true,
+        attendance: { orderBy: { date: 'asc' } },
         feeInvoices: { include: { payments: { where: { status: 'SUCCESS' } } } }
       }
     });
@@ -533,9 +600,32 @@ router.get('/students/:id', async (req, res) => {
     
     // Process stats
     let attendancePercentage = 100;
+    const monthlyAttendance = [];
+    
     if (student.attendance && student.attendance.length > 0) {
       const presentCount = student.attendance.filter(a => a.status === 'PRESENT').length;
       attendancePercentage = Math.round((presentCount / student.attendance.length) * 100);
+      
+      // Calculate monthly breakdown
+      const months = {};
+      student.attendance.forEach(record => {
+        const d = new Date(record.date);
+        const monthKey = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+        if (!months[monthKey]) {
+          months[monthKey] = { total: 0, present: 0 };
+        }
+        months[monthKey].total += 1;
+        if (record.status === 'PRESENT') {
+          months[monthKey].present += 1;
+        }
+      });
+      
+      for (const [month, data] of Object.entries(months)) {
+        monthlyAttendance.push({
+          month,
+          percentage: Math.round((data.present / data.total) * 100)
+        });
+      }
     }
     
     let feeStatus = 'PAID';
@@ -546,16 +636,50 @@ router.get('/students/:id', async (req, res) => {
         const invPaid = inv.payments.reduce((acc, p) => acc + p.amount, 0);
         const pendingAmount = Math.max(0, inv.amount - invPaid);
         if (pendingAmount > 0) {
-          if (inv.status === 'OVERDUE') hasOverdue = true;
-          else hasPending = true;
+          if (inv.status === 'OVERDUE' || new Date(inv.dueDate) < new Date()) {
+            hasOverdue = true;
+          } else {
+            hasPending = true;
+          }
         }
       });
       if (hasOverdue) feeStatus = 'OVERDUE';
       else if (hasPending) feeStatus = 'PENDING';
     }
 
+    // Fetch Timetables
+    const timetables = student.courseId ? await prisma.timetable.findMany({
+      where: { courseId: student.courseId },
+      include: { teacher: true }
+    }) : [];
+
+    // Fetch Notices
+    const notices = await prisma.notice.findMany({
+      where: {
+        schoolId,
+        OR: [
+          { audience: 'SCHOOL' },
+          { audience: 'STUDENTS' },
+          ...(student.courseId ? [{ audience: 'COURSE', courseId: student.courseId }] : [])
+        ]
+      },
+      orderBy: { date: 'desc' },
+      take: 5
+    });
+
     const { attendance, feeInvoices, ...studentData } = student;
-    return res.json({ success: true, data: { ...studentData, attendancePercentage, feeStatus, feeInvoices } });
+    return res.json({ 
+      success: true, 
+      data: { 
+        ...studentData, 
+        attendancePercentage, 
+        monthlyAttendance,
+        feeStatus, 
+        feeInvoices,
+        timetables,
+        notices
+      } 
+    });
   } catch (err) {
     console.error('Error fetching student:', err);
     return res.status(500).json({ success: false, error: 'Internal server error' });
@@ -658,6 +782,69 @@ router.get('/attendance-summary', async (req, res) => {
     return res.json(summary);
   } catch (err) {
     console.error('Error fetching attendance summary:', err);
+    return res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+router.get('/attendance-detail', async (req, res) => {
+  const schoolId = req.user.schoolId;
+  const { courseId, date } = req.query;
+
+  if (!courseId || !date) {
+    return res.status(400).json({ error: 'courseId and date are required' });
+  }
+
+  try {
+    const targetDate = new Date(date);
+    targetDate.setHours(0, 0, 0, 0);
+    const nextDay = new Date(targetDate);
+    nextDay.setDate(targetDate.getDate() + 1);
+
+    const students = await prisma.student.findMany({
+      where: { schoolId, courseId: parseInt(courseId) },
+      orderBy: { name: 'asc' },
+      include: {
+        attendance: {
+          where: {
+            date: {
+              gte: targetDate,
+              lt: nextDay
+            }
+          }
+        }
+      }
+    });
+
+    let presentLogs = 0;
+    const totalStudents = students.length;
+
+    const details = students.map(student => {
+      const record = student.attendance.length > 0 ? student.attendance[0] : null;
+      if (record && record.status === 'PRESENT') presentLogs++;
+      
+      return {
+        id: student.id,
+        studentId: student.studentId,
+        name: student.name,
+        rollNumber: student.rollNumber || '-',
+        status: record ? record.status : 'UNMARKED'
+      };
+    });
+
+    const percentage = totalStudents > 0 ? Math.round((presentLogs / totalStudents) * 100) : 0;
+
+    return res.json({
+      success: true,
+      data: {
+        percentage,
+        totalStudents,
+        present: presentLogs,
+        absent: totalStudents - presentLogs,
+        students: details
+      }
+    });
+  } catch (err) {
+    console.error('Error fetching attendance detail:', err);
     return res.status(500).json({ error: 'Internal server error' });
   }
 });
@@ -1039,6 +1226,67 @@ router.delete('/courses/:id', async (req, res) => {
     await prisma.course.delete({ where: { id } });
     return res.json({ success: true });
   } catch (err) {
+    return res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// --- Settings & Profile ---
+router.get('/settings', async (req, res) => {
+  const schoolId = req.user.schoolId;
+  const principalId = req.user.userId;
+  try {
+    const principal = await prisma.principal.findUnique({
+      where: { id: principalId },
+      select: { id: true, name: true, email: true, phone: true }
+    });
+    const school = await prisma.school.findUnique({
+      where: { id: schoolId },
+      select: { schoolName: true, email: true, phone: true, address: true, maxStudents: true, studentCount: true, schoolCode: true, subscriptionStatus: true }
+    });
+    return res.json({ success: true, data: { principal, school } });
+  } catch (err) {
+    console.error('Error fetching settings:', err);
+    return res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+router.put('/settings/profile', async (req, res) => {
+  const principalId = req.user.userId;
+  const { name, email, phone } = req.body;
+  try {
+    // Check if email is taken by another principal
+    const existing = await prisma.principal.findUnique({ where: { email } });
+    if (existing && existing.id !== principalId) {
+      return res.status(400).json({ error: 'Email already in use' });
+    }
+    const updated = await prisma.principal.update({
+      where: { id: principalId },
+      data: { name, email, phone }
+    });
+    return res.json({ success: true, data: { name: updated.name, email: updated.email, phone: updated.phone } });
+  } catch (err) {
+    console.error('Error updating profile:', err);
+    return res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+router.put('/settings/password', async (req, res) => {
+  const principalId = req.user.userId;
+  const { currentPassword, newPassword } = req.body;
+  try {
+    const principal = await prisma.principal.findUnique({ where: { id: principalId } });
+    const isMatch = await bcrypt.compare(currentPassword, principal.password);
+    if (!isMatch) {
+      return res.status(400).json({ error: 'Incorrect current password' });
+    }
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+    await prisma.principal.update({
+      where: { id: principalId },
+      data: { password: hashedPassword }
+    });
+    return res.json({ success: true, message: 'Password updated successfully' });
+  } catch (err) {
+    console.error('Error updating password:', err);
     return res.status(500).json({ error: 'Internal server error' });
   }
 });

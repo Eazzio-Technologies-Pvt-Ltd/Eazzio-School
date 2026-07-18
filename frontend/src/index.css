@@ -1,22 +1,23 @@
-@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap');
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 :root {
-  --font-sans: 'Outfit', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  --font-heading: 'Plus Jakarta Sans', sans-serif;
   
   /* White Mode Default Theme */
   --bg-main: #f3f4f6;
   --bg-card: rgba(255, 255, 255, 0.85);
   --bg-card-hover: rgba(255, 255, 255, 0.95);
-  --border-glow: rgba(139, 92, 246, 0.15);
-  --border-glow-focus: rgba(139, 92, 246, 0.45);
+  --border-glow: rgba(5, 150, 105, 0.15);
+  --border-glow-focus: rgba(5, 150, 105, 0.45);
   
-  --primary: #7c3aed;
-  --primary-hover: #6d28d9;
-  --primary-glow: rgba(124, 58, 237, 0.2);
+  --primary: #059669;
+  --primary-hover: #047857;
+  --primary-glow: rgba(5, 150, 105, 0.2);
   
   --success: #059669;
   --success-glow: rgba(5, 150, 105, 0.1);
@@ -41,15 +42,15 @@
   --transition-fast: 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   --transition-normal: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   
-  --shadow-glow: 0 8px 30px rgba(124, 58, 237, 0.06);
+  --shadow-glow: 0 8px 30px rgba(5, 150, 105, 0.06);
   
-  --bg-gradient: radial-gradient(at 10% 20%, rgba(139, 92, 246, 0.06) 0px, transparent 50%),
+  --bg-gradient: radial-gradient(at 10% 20%, rgba(5, 150, 105, 0.06) 0px, transparent 50%),
                  radial-gradient(at 90% 80%, rgba(16, 185, 129, 0.04) 0px, transparent 50%),
                  radial-gradient(at 50% 50%, #f3f4f6 0px, #e5e7eb 100%);
   --sidebar-bg: rgba(255, 255, 255, 0.95);
   --navbar-bg: rgba(243, 244, 246, 0.6);
   --input-bg: rgba(255, 255, 255, 0.95);
-  --title-gradient: linear-gradient(to right, #111827, #6d28d9);
+  --title-gradient: linear-gradient(to right, #111827, #047857);
 }
 
 * {
@@ -78,13 +79,26 @@ body {
   background: var(--bg-main);
 }
 ::-webkit-scrollbar-thumb {
-  background: rgba(139, 92, 246, 0.3);
+  background: rgba(5, 150, 105, 0.3);
   border-radius: var(--radius-sm);
 }
 ::-webkit-scrollbar-thumb:hover {
   background: var(--primary);
 }
 
+.custom-scrollbar-emerald::-webkit-scrollbar {
+  width: 4px;
+}
+.custom-scrollbar-emerald::-webkit-scrollbar-track {
+  background: transparent;
+}
+.custom-scrollbar-emerald::-webkit-scrollbar-thumb {
+  background: rgba(16, 185, 129, 0.3);
+  border-radius: 4px;
+}
+.custom-scrollbar-emerald::-webkit-scrollbar-thumb:hover {
+  background: rgba(16, 185, 129, 0.6);
+}
 /* Form Styles */
 input, select, textarea {
   font-family: var(--font-sans);
@@ -124,13 +138,13 @@ button {
 }
 
 .btn-primary {
-  background: linear-gradient(135deg, var(--primary), #a78bfa);
+  background: linear-gradient(135deg, var(--primary), #34d399);
   color: #fff;
   box-shadow: 0 4px 15px var(--primary-glow);
 }
 .btn-primary:hover {
   transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(139, 92, 246, 0.5);
+  box-shadow: 0 6px 20px rgba(5, 150, 105, 0.5);
 }
 .btn-primary:active {
   transform: translateY(0);
@@ -147,7 +161,8 @@ button {
 }
 
 /* Typography Helpers */
-h1, h2, h3, h4, h5 {
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-heading);
   font-weight: 700;
   color: var(--text-primary);
   letter-spacing: -0.02em;
@@ -160,8 +175,8 @@ h1, h2, h3, h4, h5 {
 }
 
 @keyframes pulseGlow {
-  0%, 100% { box-shadow: 0 0 20px rgba(139, 92, 246, 0.25); }
-  50% { box-shadow: 0 0 35px rgba(139, 92, 246, 0.45); }
+  0%, 100% { box-shadow: 0 0 20px rgba(5, 150, 105, 0.25); }
+  50% { box-shadow: 0 0 35px rgba(5, 150, 105, 0.45); }
 }
 
 .animate-fade-in {

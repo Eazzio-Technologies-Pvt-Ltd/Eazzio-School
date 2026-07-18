@@ -124,8 +124,8 @@ export default function Landing() {
       id: "standard",
       name: "Standard",
       price: 10,
-      tagline: "Essential tools for school management.",
-      description: "Everything a growing school needs to manage academics, attendance, and basic fees.",
+      tagline: "Essential tools for institution management.",
+      description: "Everything a growing institution needs to manage academics, attendance, and basic fees.",
       badge: null,
       features: [
         { text: "Unlimited Teacher & Admin logins", exclusive: false },
@@ -191,7 +191,7 @@ export default function Landing() {
                 <span className="text-4xl font-bold text-slate-400">₹</span>
                 <span className="text-6xl font-black text-slate-900 tracking-tight">{plan.price}</span>
                 <div className="flex flex-col ml-2">
-                  <span className="text-sm font-bold text-slate-500">/ student</span>
+                  <span className="text-sm font-bold text-slate-500">/ learner</span>
                   <span className="text-xs text-slate-400">/ month</span>
                 </div>
               </div>
@@ -252,7 +252,7 @@ export default function Landing() {
               Simple, transparent pricing
             </h2>
             <p className="text-slate-500 text-base md:text-lg max-w-xl mx-auto">
-              Choose the plan that fits your school's needs. Upgrade anytime as you grow.
+              Choose the plan that fits your institution's needs. Upgrade anytime as you grow.
             </p>
           </div>
           <PricingCards />
@@ -378,11 +378,11 @@ export default function Landing() {
                   Operating System
                 </span>
                 <br />
-                <span className="text-white/90">for Modern Schools</span>
+                <span className="text-white/90">for Modern Institutions</span>
               </h1>
 
               <p className="text-white/70 text-sm md:text-base max-w-2xl mx-auto lg:mx-0 leading-relaxed">
-                Empower teachers, delight parents, and simplify school administration. Manage admissions, automatic fee collections, timetables, attendance, and smart WhatsApp communications — all from one intuitive portal.
+                Empower teachers, delight parents, and simplify institution administration. Manage admissions, automatic fee collections, timetables, attendance, and smart WhatsApp communications — all from one intuitive portal.
               </p>
 
               <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
@@ -531,7 +531,7 @@ export default function Landing() {
                                 authRole === 'Student'    ? 'e.g. STU2025001' :
                                 authRole === 'Teacher'    ? 'email or EMP001' :
                                 authRole === 'Accountant' ? 'email or EMP001' :
-                                'admin@school.edu'
+                                'admin@institution.edu'
                               }
                               className="w-full px-3 py-2 bg-white/10 border border-white/20 rounded-lg text-xs text-white placeholder:text-white/30 outline-none focus:border-teal-400 focus:ring-1 focus:ring-teal-400/50 transition-all"
                             />
@@ -610,7 +610,7 @@ export default function Landing() {
               </div>
               <h3 className="text-xl font-bold text-slate-900 mb-2">Academic Management</h3>
               <p className="text-slate-655 text-sm leading-relaxed">
-                Effortlessly build student/teacher schedules, draft lesson planners, track course progress diaries, and maintain school curriculum structures.
+                Effortlessly build learner/teacher schedules, draft lesson planners, track course progress diaries, and maintain institution curriculum structures.
               </p>
             </div>
 
@@ -632,7 +632,7 @@ export default function Landing() {
               </div>
               <h3 className="text-xl font-bold text-slate-900 mb-2">Smart Attendance & Leave</h3>
               <p className="text-slate-655 text-sm leading-relaxed">
-                Supports biometric scans, RFID integrations, or manual teacher app tracking. Instantly notifies parents in case of an unexcused student absence.
+                Supports biometric scans, RFID integrations, or manual teacher app tracking. Instantly notifies parents in case of an unexcused learner absence.
               </p>
             </div>
 
@@ -643,7 +643,7 @@ export default function Landing() {
               </div>
               <h3 className="text-xl font-bold text-slate-900 mb-2">LMS & Assignment Portal</h3>
               <p className="text-slate-655 text-sm leading-relaxed">
-                Create subject folders, upload homework tasks, attach learning resources, and grade student submissions in real time with interactive report cards.
+                Create subject folders, upload homework tasks, attach learning resources, and grade learner submissions in real time with interactive report cards.
               </p>
             </div>
 
@@ -654,7 +654,7 @@ export default function Landing() {
               </div>
               <h3 className="text-xl font-bold text-slate-900 mb-2">GPS Fleet & Transport ERP</h3>
               <p className="text-slate-655 text-sm leading-relaxed">
-                Map bus routes, assign drivers, monitor GPS coordinates, and notify parents when the school bus is within 10 minutes of their designated stop.
+                Map bus routes, assign drivers, monitor GPS coordinates, and notify parents when the institution bus is within 10 minutes of their designated stop.
               </p>
             </div>
 
@@ -684,24 +684,36 @@ export default function Landing() {
             </p>
 
             {/* Interactive Tab Controller */}
-            <div className="inline-flex bg-slate-200/70 p-1.5 rounded-2xl gap-1 mt-6 border border-slate-300/40">
+            <div className="inline-flex bg-slate-200/70 p-1.5 rounded-2xl gap-1 mt-6 border border-slate-300/40 flex-wrap justify-center">
+              <button
+                onClick={() => setActiveTab("admin")}
+                className={`px-5 py-2.5 rounded-xl text-sm font-bold transition-all ${activeTab === "admin" ? "bg-white text-emerald-700 shadow-md" : "text-slate-600 hover:text-emerald-650"}`}
+              >
+                Admin Portal
+              </button>
               <button
                 onClick={() => setActiveTab("principal")}
-                className={`px-5 py-2.5 rounded-xl text-sm font-bold transition-all ${activeTab === "principal" ? "bg-white text-indigo-700 shadow-md" : "text-slate-600 hover:text-indigo-650"}`}
+                className={`px-5 py-2.5 rounded-xl text-sm font-bold transition-all ${activeTab === "principal" ? "bg-white text-emerald-700 shadow-md" : "text-slate-600 hover:text-emerald-650"}`}
               >
                 Principal Portal
               </button>
               <button
                 onClick={() => setActiveTab("teacher")}
-                className={`px-5 py-2.5 rounded-xl text-sm font-bold transition-all ${activeTab === "teacher" ? "bg-white text-indigo-700 shadow-md" : "text-slate-600 hover:text-indigo-650"}`}
+                className={`px-5 py-2.5 rounded-xl text-sm font-bold transition-all ${activeTab === "teacher" ? "bg-white text-emerald-700 shadow-md" : "text-slate-600 hover:text-emerald-650"}`}
               >
                 Teacher Portal
               </button>
               <button
                 onClick={() => setActiveTab("parent")}
-                className={`px-5 py-2.5 rounded-xl text-sm font-bold transition-all ${activeTab === "parent" ? "bg-white text-indigo-700 shadow-md" : "text-slate-600 hover:text-indigo-650"}`}
+                className={`px-5 py-2.5 rounded-xl text-sm font-bold transition-all ${activeTab === "parent" ? "bg-white text-emerald-700 shadow-md" : "text-slate-600 hover:text-emerald-650"}`}
               >
                 Student Portal
+              </button>
+              <button
+                onClick={() => setActiveTab("accountant")}
+                className={`px-5 py-2.5 rounded-xl text-sm font-bold transition-all ${activeTab === "accountant" ? "bg-white text-emerald-700 shadow-md" : "text-slate-600 hover:text-emerald-650"}`}
+              >
+                Accountant Portal
               </button>
             </div>
           </div>
@@ -713,16 +725,16 @@ export default function Landing() {
             <div className="w-full md:w-60 bg-slate-900 text-slate-300 p-5 flex flex-col justify-between border-r border-slate-800">
               <div className="space-y-6">
                 <div className="flex items-center gap-2 pb-4 border-b border-slate-800">
-                  <div className="w-8 h-8 rounded-lg bg-indigo-600 flex items-center justify-center font-bold text-white text-sm">EP</div>
+                  <div className="w-8 h-8 rounded-lg bg-emerald-600 flex items-center justify-center font-bold text-white text-sm">EZ</div>
                   <div>
-                    <span className="font-bold text-white text-sm block leading-none">EduPulse ERP</span>
-                    <span className="text-[9px] text-slate-400">Springdale School</span>
+                    <span className="font-bold text-white text-sm block leading-none">Eazzio ERP</span>
+                    <span className="text-[9px] text-slate-400">Springdale Institution</span>
                   </div>
                 </div>
 
                 <div className="space-y-1">
                   <div className="text-[9px] font-bold text-slate-500 uppercase tracking-widest px-2 mb-2">Main Navigation</div>
-                  <div className="flex items-center gap-2.5 px-3 py-2 bg-indigo-600/10 text-indigo-400 font-semibold rounded-lg text-xs cursor-pointer">
+                  <div className="flex items-center gap-2.5 px-3 py-2 bg-emerald-600/10 text-emerald-400 font-semibold rounded-lg text-xs cursor-pointer">
                     <Layers className="w-4 h-4" />
                     <span>Dashboard Home</span>
                   </div>
@@ -743,11 +755,11 @@ export default function Landing() {
 
               <div className="pt-4 border-t border-slate-800 flex items-center gap-2.5">
                 <div className="w-8 h-8 rounded-full bg-slate-800 flex items-center justify-center text-xs font-bold text-slate-300">
-                  {activeTab === "principal" ? "PK" : activeTab === "teacher" ? "MS" : "AS"}
+                  {activeTab === "admin" ? "AD" : activeTab === "principal" ? "PK" : activeTab === "teacher" ? "MS" : activeTab === "parent" ? "AS" : "AC"}
                 </div>
                 <div>
                   <span className="text-xs font-semibold text-white block leading-none">
-                    {activeTab === "principal" ? "Principal Khanna" : activeTab === "teacher" ? "Mrs. Sharma" : "Amit (Aarav's Dad)"}
+                    {activeTab === "admin" ? "System Admin" : activeTab === "principal" ? "Principal Khanna" : activeTab === "teacher" ? "Mrs. Sharma" : activeTab === "parent" ? "Amit (Aarav's Dad)" : "Accountant Roy"}
                   </span>
                   <span className="text-[9px] text-slate-500 capitalize">{activeTab} Account</span>
                 </div>
@@ -758,6 +770,80 @@ export default function Landing() {
             <div className="flex-1 p-6 md:p-8 bg-slate-50/50 flex flex-col justify-between space-y-6">
 
               <AnimatePresence mode="wait">
+                {activeTab === "admin" && (
+                  <motion.div
+                    key="admin"
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -10 }}
+                    transition={{ duration: 0.2 }}
+                    className="space-y-6"
+                  >
+                    {/* Header */}
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                      <div>
+                        <h3 className="text-xl font-extrabold text-slate-900">System Administration</h3>
+                        <p className="text-xs text-slate-500">Manage institution-wide settings, user roles, and backups.</p>
+                      </div>
+                      <span className="px-3 py-1 bg-emerald-50 border border-emerald-100 text-emerald-700 text-xs font-bold rounded-lg self-start sm:self-center">
+                        Global Access
+                      </span>
+                    </div>
+
+                    {/* Stats Grid */}
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                      <div className="bg-white p-4 rounded-xl border border-slate-200/70 shadow-sm flex items-center gap-4">
+                        <div className="w-10 h-10 rounded-lg bg-emerald-50 flex items-center justify-center">
+                          <Shield className="w-5 h-5 text-emerald-600" />
+                        </div>
+                        <div>
+                          <span className="text-[10px] text-slate-450 block font-bold uppercase tracking-wider">Active Users</span>
+                          <span className="text-lg font-bold text-slate-800">1,305 Total</span>
+                        </div>
+                      </div>
+
+                      <div className="bg-white p-4 rounded-xl border border-slate-200/70 shadow-sm flex items-center gap-4">
+                        <div className="w-10 h-10 rounded-lg bg-emerald-50 flex items-center justify-center">
+                          <Globe className="w-5 h-5 text-emerald-600" />
+                        </div>
+                        <div>
+                          <span className="text-[10px] text-slate-450 block font-bold uppercase tracking-wider">System Status</span>
+                          <span className="text-lg font-bold text-slate-800">All Systems Online</span>
+                        </div>
+                      </div>
+
+                      <div className="bg-white p-4 rounded-xl border border-slate-200/70 shadow-sm flex items-center gap-4">
+                        <div className="w-10 h-10 rounded-lg bg-emerald-50 flex items-center justify-center">
+                          <Clock className="w-5 h-5 text-emerald-650" />
+                        </div>
+                        <div>
+                          <span className="text-[10px] text-slate-450 block font-bold uppercase tracking-wider">Last Backup</span>
+                          <span className="text-lg font-bold text-slate-800">12 Mins Ago</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Visual table / chart mockup */}
+                    <div className="bg-white rounded-xl border border-slate-200/70 p-4 shadow-sm">
+                      <div className="flex items-center justify-between mb-3">
+                        <h4 className="text-xs font-bold text-slate-700 uppercase tracking-widest">Recent System Activity</h4>
+                        <span className="text-[10px] text-emerald-650 hover:underline cursor-pointer font-bold">View logs</span>
+                      </div>
+                      <div className="space-y-2">
+                        <div className="p-2.5 hover:bg-slate-50 rounded-lg border border-slate-100 flex justify-between items-center text-xs">
+                          <div>
+                            <span className="font-semibold text-slate-800 block">New Teacher Account Created</span>
+                            <span className="text-[10px] text-slate-400">IP: 192.168.1.45 • 2 hours ago</span>
+                          </div>
+                          <div className="flex gap-2">
+                            <button className="px-2.5 py-1 bg-emerald-600 text-white rounded font-medium text-[10px] hover:bg-emerald-500">View Details</button>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </motion.div>
+                )}
+
                 {activeTab === "principal" && (
                   <motion.div
                     key="principal"
@@ -771,9 +857,9 @@ export default function Landing() {
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                       <div>
                         <h3 className="text-xl font-extrabold text-slate-900">Administrator Console</h3>
-                        <p className="text-xs text-slate-500">Live operational snapshot of Springdale School.</p>
+                        <p className="text-xs text-slate-500">Live operational snapshot of Springdale Institution.</p>
                       </div>
-                      <span className="px-3 py-1 bg-indigo-50 border border-indigo-100 text-indigo-700 text-xs font-bold rounded-lg self-start sm:self-center">
+                      <span className="px-3 py-1 bg-emerald-50 border border-emerald-100 text-emerald-700 text-xs font-bold rounded-lg self-start sm:self-center">
                         Academic Year: 2026-27
                       </span>
                     </div>
@@ -781,8 +867,8 @@ export default function Landing() {
                     {/* Stats Grid */}
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                       <div className="bg-white p-4 rounded-xl border border-slate-200/70 shadow-sm flex items-center gap-4">
-                        <div className="w-10 h-10 rounded-lg bg-indigo-50 flex items-center justify-center">
-                          <Users className="w-5 h-5 text-indigo-600" />
+                        <div className="w-10 h-10 rounded-lg bg-emerald-50 flex items-center justify-center">
+                          <Users className="w-5 h-5 text-emerald-600" />
                         </div>
                         <div>
                           <span className="text-[10px] text-slate-450 block font-bold uppercase tracking-wider">Total Enrolled</span>
@@ -801,8 +887,8 @@ export default function Landing() {
                       </div>
 
                       <div className="bg-white p-4 rounded-xl border border-slate-200/70 shadow-sm flex items-center gap-4">
-                        <div className="w-10 h-10 rounded-lg bg-purple-50 flex items-center justify-center">
-                          <Award className="w-5 h-5 text-purple-650" />
+                        <div className="w-10 h-10 rounded-lg bg-emerald-50 flex items-center justify-center">
+                          <Award className="w-5 h-5 text-emerald-650" />
                         </div>
                         <div>
                           <span className="text-[10px] text-slate-450 block font-bold uppercase tracking-wider">Teacher Presence</span>
@@ -815,7 +901,7 @@ export default function Landing() {
                     <div className="bg-white rounded-xl border border-slate-200/70 p-4 shadow-sm">
                       <div className="flex items-center justify-between mb-3">
                         <h4 className="text-xs font-bold text-slate-700 uppercase tracking-widest">Pending Administrative Approvals</h4>
-                        <span className="text-[10px] text-indigo-650 hover:underline cursor-pointer font-bold">View all request queue</span>
+                        <span className="text-[10px] text-emerald-650 hover:underline cursor-pointer font-bold">View all request queue</span>
                       </div>
                       <div className="space-y-2">
                         <div className="p-2.5 hover:bg-slate-50 rounded-lg border border-slate-100 flex justify-between items-center text-xs">
@@ -824,7 +910,7 @@ export default function Landing() {
                             <span className="text-[10px] text-slate-400">Submitted by: HOD Physics • ₹24,500</span>
                           </div>
                           <div className="flex gap-2">
-                            <button className="px-2.5 py-1 bg-indigo-600 text-white rounded font-medium text-[10px] hover:bg-indigo-500">Approve</button>
+                            <button className="px-2.5 py-1 bg-emerald-600 text-white rounded font-medium text-[10px] hover:bg-emerald-500">Approve</button>
                             <button className="px-2.5 py-1 bg-slate-100 text-slate-600 rounded font-medium text-[10px] hover:bg-slate-200">Decline</button>
                           </div>
                         </div>
@@ -848,7 +934,7 @@ export default function Landing() {
                         <h3 className="text-xl font-extrabold text-slate-900">Academic Instructor Dashboard</h3>
                         <p className="text-xs text-slate-500">Grade uploads, course diaries, and parent correspondence.</p>
                       </div>
-                      <span className="px-3 py-1 bg-amber-50 border border-amber-100 text-amber-800 text-xs font-bold rounded-lg self-start sm:self-center">
+                      <span className="px-3 py-1 bg-emerald-50 border border-emerald-100 text-emerald-800 text-xs font-bold rounded-lg self-start sm:self-center">
                         Subject: Grade 10 Math
                       </span>
                     </div>
@@ -856,8 +942,8 @@ export default function Landing() {
                     {/* Stats Grid */}
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                       <div className="bg-white p-4 rounded-xl border border-slate-200/70 shadow-sm flex items-center gap-4">
-                        <div className="w-10 h-10 rounded-lg bg-amber-50 flex items-center justify-center">
-                          <Calendar className="w-5 h-5 text-amber-600" />
+                        <div className="w-10 h-10 rounded-lg bg-emerald-50 flex items-center justify-center">
+                          <Calendar className="w-5 h-5 text-emerald-600" />
                         </div>
                         <div>
                           <span className="text-[10px] text-slate-450 block font-bold uppercase tracking-wider">Today's Courses</span>
@@ -866,8 +952,8 @@ export default function Landing() {
                       </div>
 
                       <div className="bg-white p-4 rounded-xl border border-slate-200/70 shadow-sm flex items-center gap-4">
-                        <div className="w-10 h-10 rounded-lg bg-purple-50 flex items-center justify-center">
-                          <FileSpreadsheet className="w-5 h-5 text-purple-600" />
+                        <div className="w-10 h-10 rounded-lg bg-emerald-50 flex items-center justify-center">
+                          <FileSpreadsheet className="w-5 h-5 text-emerald-600" />
                         </div>
                         <div>
                           <span className="text-[10px] text-slate-450 block font-bold uppercase tracking-wider">Pending Grading</span>
@@ -925,7 +1011,7 @@ export default function Landing() {
                         <h3 className="text-xl font-extrabold text-slate-900">Parent Portal Interface</h3>
                         <p className="text-xs text-slate-500">Track child academic grades, fee payments, and daily notifications.</p>
                       </div>
-                      <span className="px-3 py-1 bg-purple-50 border border-purple-100 text-purple-800 text-xs font-bold rounded-lg self-start sm:self-center">
+                      <span className="px-3 py-1 bg-emerald-50 border border-emerald-100 text-emerald-800 text-xs font-bold rounded-lg self-start sm:self-center">
                         Student: Aarav Sharma (Grade X-A)
                       </span>
                     </div>
@@ -933,8 +1019,8 @@ export default function Landing() {
                     {/* Stats Grid */}
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                       <div className="bg-white p-4 rounded-xl border border-slate-200/70 shadow-sm flex items-center gap-4">
-                        <div className="w-10 h-10 rounded-lg bg-indigo-50 flex items-center justify-center">
-                          <Award className="w-5 h-5 text-indigo-600" />
+                        <div className="w-10 h-10 rounded-lg bg-emerald-50 flex items-center justify-center">
+                          <Award className="w-5 h-5 text-emerald-600" />
                         </div>
                         <div>
                           <span className="text-[10px] text-slate-450 block font-bold uppercase tracking-wider">Exam Performance</span>
@@ -943,22 +1029,22 @@ export default function Landing() {
                       </div>
 
                       <div className="bg-white p-4 rounded-xl border border-slate-200/70 shadow-sm flex items-center gap-4">
-                        <div className="w-10 h-10 rounded-lg bg-red-50 flex items-center justify-center">
-                          <DollarSign className="w-5 h-5 text-red-500" />
+                        <div className="w-10 h-10 rounded-lg bg-emerald-50 flex items-center justify-center">
+                          <DollarSign className="w-5 h-5 text-emerald-600" />
                         </div>
                         <div>
                           <span className="text-[10px] text-slate-450 block font-bold uppercase tracking-wider">Pending Dues</span>
-                          <span className="text-lg font-bold text-red-650">₹4,200 (Term-1)</span>
+                          <span className="text-lg font-bold text-emerald-650">₹4,200 (Term-1)</span>
                         </div>
                       </div>
 
                       <div className="bg-white p-4 rounded-xl border border-slate-200/70 shadow-sm flex items-center gap-4">
-                        <div className="w-10 h-10 rounded-lg bg-sky-50 flex items-center justify-center">
-                          <Bus className="w-5 h-5 text-sky-600" />
+                        <div className="w-10 h-10 rounded-lg bg-emerald-50 flex items-center justify-center">
+                          <Bus className="w-5 h-5 text-emerald-600" />
                         </div>
                         <div>
                           <span className="text-[10px] text-slate-450 block font-bold uppercase tracking-wider">Bus Route GPS Status</span>
-                          <span className="text-lg font-bold text-sky-850">1.8 km away</span>
+                          <span className="text-lg font-bold text-emerald-850">1.8 km away</span>
                         </div>
                       </div>
                     </div>
@@ -969,18 +1055,92 @@ export default function Landing() {
                         <h4 className="text-xs font-bold text-slate-700 uppercase tracking-widest">Active Invoice Notice</h4>
                         <p className="text-xs text-slate-500 mt-1">First term examinations fee invoice due before 25-July.</p>
                       </div>
-                      <button className="px-5 py-2.5 bg-red-600 hover:bg-red-500 text-white font-semibold rounded-xl text-xs flex items-center gap-1.5 transition-colors">
+                      <button className="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-semibold rounded-xl text-xs flex items-center gap-1.5 transition-colors">
                         <DollarSign className="w-3.5 h-3.5" /> Pay Now via UPI
                       </button>
+                    </div>
+                  </motion.div>
+                )}
+
+                {activeTab === "accountant" && (
+                  <motion.div
+                    key="accountant"
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -10 }}
+                    transition={{ duration: 0.2 }}
+                    className="space-y-6"
+                  >
+                    {/* Header */}
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                      <div>
+                        <h3 className="text-xl font-extrabold text-slate-900">Finance & Accounting Portal</h3>
+                        <p className="text-xs text-slate-500">Track fee collections, generate invoices, and manage expenses.</p>
+                      </div>
+                      <span className="px-3 py-1 bg-emerald-50 border border-emerald-100 text-emerald-700 text-xs font-bold rounded-lg self-start sm:self-center">
+                        Department: Finance
+                      </span>
+                    </div>
+
+                    {/* Stats Grid */}
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                      <div className="bg-white p-4 rounded-xl border border-slate-200/70 shadow-sm flex items-center gap-4">
+                        <div className="w-10 h-10 rounded-lg bg-emerald-50 flex items-center justify-center">
+                          <DollarSign className="w-5 h-5 text-emerald-600" />
+                        </div>
+                        <div>
+                          <span className="text-[10px] text-slate-450 block font-bold uppercase tracking-wider">Today's Collections</span>
+                          <span className="text-lg font-bold text-slate-800">₹85,400</span>
+                        </div>
+                      </div>
+
+                      <div className="bg-white p-4 rounded-xl border border-slate-200/70 shadow-sm flex items-center gap-4">
+                        <div className="w-10 h-10 rounded-lg bg-emerald-50 flex items-center justify-center">
+                          <AlertCircle className="w-5 h-5 text-emerald-600" />
+                        </div>
+                        <div>
+                          <span className="text-[10px] text-slate-450 block font-bold uppercase tracking-wider">Pending Dues</span>
+                          <span className="text-lg font-bold text-slate-800">₹3.2 Lakhs</span>
+                        </div>
+                      </div>
+
+                      <div className="bg-white p-4 rounded-xl border border-slate-200/70 shadow-sm flex items-center gap-4">
+                        <div className="w-10 h-10 rounded-lg bg-emerald-50 flex items-center justify-center">
+                          <FileSpreadsheet className="w-5 h-5 text-emerald-650" />
+                        </div>
+                        <div>
+                          <span className="text-[10px] text-slate-450 block font-bold uppercase tracking-wider">Invoices Generated</span>
+                          <span className="text-lg font-bold text-slate-800">45 Today</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Visual table / chart mockup */}
+                    <div className="bg-white rounded-xl border border-slate-200/70 p-4 shadow-sm">
+                      <div className="flex items-center justify-between mb-3">
+                        <h4 className="text-xs font-bold text-slate-700 uppercase tracking-widest">Recent Transactions</h4>
+                        <span className="text-[10px] text-emerald-650 hover:underline cursor-pointer font-bold">View ledger</span>
+                      </div>
+                      <div className="space-y-2">
+                        <div className="p-2.5 hover:bg-slate-50 rounded-lg border border-slate-100 flex justify-between items-center text-xs">
+                          <div>
+                            <span className="font-semibold text-slate-800 block">Term 2 Fee - Aarav Sharma</span>
+                            <span className="text-[10px] text-slate-400">Paid via UPI • Ref: TRNX89234</span>
+                          </div>
+                          <div className="flex gap-2">
+                            <span className="px-2.5 py-1 text-emerald-600 font-bold text-[10px]">+ ₹12,500</span>
+                          </div>
+                        </div>
+                      </div>
                     </div>
                   </motion.div>
                 )}
               </AnimatePresence>
 
               {/* Tips footer */}
-              <div className="p-3 bg-indigo-50/50 border-t border-indigo-100/50 text-center rounded-2xl flex items-center justify-center gap-2 text-xs text-indigo-850">
-                <AlertCircle className="w-4 h-4 shrink-0 text-indigo-600" />
-                <span>Parent portals are fully responsive and feature single-touch payment gateway integrations with automated receipt generation.</span>
+              <div className="p-3 bg-emerald-50/50 border-t border-emerald-100/50 text-center rounded-2xl flex items-center justify-center gap-2 text-xs text-emerald-850">
+                <AlertCircle className="w-4 h-4 shrink-0 text-emerald-600" />
+                <span>Portals are fully responsive and feature single-touch payment gateway integrations with automated receipt generation.</span>
               </div>
             </div>
           </div>
@@ -995,7 +1155,7 @@ export default function Landing() {
               Simple, transparent pricing
             </h2>
             <p className="text-slate-500 text-base md:text-lg max-w-xl mx-auto">
-              Choose the plan that fits your school's needs. Upgrade anytime as you grow.
+              Choose the plan that fits your institution's needs. Upgrade anytime as you grow.
             </p>
           </div>
           
@@ -1020,7 +1180,7 @@ export default function Landing() {
                 <img src={logo} alt="Eazzio Logo" className="h-12 w-auto object-contain" />
               </div>
               <p className="text-slate-400 text-sm leading-relaxed max-w-sm">
-                The comprehensive operating system designed to elevate academic management, automate fee collections, and simplify school administration for modern institutions.
+                The comprehensive operating system designed to elevate academic management, automate fee collections, and simplify administration for modern institutions.
               </p>
               <div className="flex items-center gap-3">
                 <a href="#" aria-label="Twitter / X" className="w-9 h-9 rounded-xl bg-slate-900 hover:bg-indigo-600 border border-slate-800 hover:border-indigo-500 text-slate-400 hover:text-white flex items-center justify-center transition-all duration-300 hover:-translate-y-1 shadow-sm">
@@ -1119,7 +1279,7 @@ export default function Landing() {
               <ul className="space-y-3.5 text-sm">
                 <li className="flex items-start gap-3">
                   <Mail className="w-4 h-4 text-indigo-400 mt-0.5 shrink-0" />
-                  <span className="text-slate-400 hover:text-white transition-colors cursor-pointer">onboarding@edupulse.local</span>
+                  <span className="text-slate-400 hover:text-white transition-colors cursor-pointer">onboarding@eazzio.local</span>
                 </li>
                 <li className="flex items-start gap-3">
                   <Phone className="w-4 h-4 text-indigo-400 mt-0.5 shrink-0" />
@@ -1136,7 +1296,7 @@ export default function Landing() {
           {/* Bottom Bar */}
           <div className="pt-8 flex flex-col md:flex-row justify-between items-center gap-6">
             <div className="flex flex-col md:flex-row items-center gap-2 md:gap-4 text-xs text-slate-500">
-              <span>© {new Date().getFullYear()} EduPulse Technologies. All rights reserved.</span>
+              <span>© {new Date().getFullYear()} Eazzio Technologies. All rights reserved.</span>
               {/*<span className="hidden md:inline text-slate-700">|</span>*/}
               <span className="flex items-center gap-1">
               </span>

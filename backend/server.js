@@ -8,6 +8,7 @@ import teacherRoutes from './routes/teacher.js';
 import studentRoutes from './routes/student.js';
 import noticeRoutes from './routes/notice.js';
 import accountantRoutes from './routes/accountant.js';
+import prisma from './prismaClient.js';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { dirname } from 'path';
@@ -54,3 +55,27 @@ app.use((err, req, res, next) => {
 app.listen(PORT, () => {
   console.log(`🚀 Server running on http://localhost:${PORT}`);
 });
+
+// --- CRON JOBS ---
+// Auto-publish scheduled notices every minute
+setInterval(async () => {
+  try {
+    const now = new Date();
+    const result = await prisma.notice.updateMany({
+      where: {
+        status: 'SCHEDULED',
+        scheduledAt: { lte: now }
+      },
+      data: {
+        status: 'PUBLISHED',
+        date: now,
+        scheduledAt: null
+      }
+    });
+    if (result.count > 0) {
+      console.log(`[Cron] Auto-published ${result.count} scheduled notice(s) at ${now.toISOString()}`);
+    }
+  } catch (error) {
+    console.error('[Cron Error] Failed to publish scheduled notices:', error);
+  }
+}, 60000);

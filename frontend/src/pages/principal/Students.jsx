@@ -1,13 +1,15 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getStudents, deleteStudent, bulkImportUpdateStudents, registerStudent, getCourses } from '../../api/principalApi';
 import Loader from '../../components/Loader';
+import { ToastContext } from '../../context/ToastContext';
 import { Search, Download, Upload, Plus, Trash2, User, Users, ChevronRight } from 'lucide-react';
-import * as XLSX from 'xlsx';
+import { parseExcelFile, exportToExcel, downloadExcelTemplate } from '../../utils/excelUtils';
 
 export default function Students() {
   const navigate = useNavigate();
   const fileInputRef = useRef(null);
+  const { showToast } = useContext(ToastContext);
 
   // State
   const [students, setStudents] = useState([]);
@@ -50,52 +52,44 @@ export default function Students() {
     }
   };
 
-  const handleFileUpload = (e) => {
+  const handleFileUpload = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
 
     setUploading(true);
-    const reader = new FileReader();
-    reader.onload = async (evt) => {
-      try {
-        const bstr = evt.target.result;
-        const wb = XLSX.read(bstr, { type: 'binary' });
-        const wsname = wb.SheetNames[0];
-        const ws = wb.Sheets[wsname];
-        const data = XLSX.utils.sheet_to_json(ws);
+    try {
+      const data = await parseExcelFile(file);
 
-        // Map data to expected backend format
-        const mappedData = data.map(row => ({
-          studentId: row['Student ID'] || row['studentId'] || '',
-          rollNumber: row['Roll Number'] || row['Roll'] || row['rollNumber'] || '',
-          name: row['Name'] || row['name'] || '',
-          courseName: row['Course Name'] || row['Course'] || row['courseName'] || '',
-          section: row['Section'] || row['section'] || '',
-          academicYear: row['Academic Year'] || row['academicYear'] || '',
-          fatherName: row['Father Name'] || row['fatherName'] || '',
-          motherName: row['Mother Name'] || row['motherName'] || '',
-          phone: row['Phone'] || row['phone'] || '',
-          address: row['Address'] || row['address'] || ''
-        })).filter(row => row.name); // require name
+      // Map data to expected backend format
+      const mappedData = data.map(row => ({
+        studentId: row['Student ID'] || row['studentId'] || '',
+        rollNumber: row['Roll Number'] || row['Roll'] || row['rollNumber'] || '',
+        name: row['Name'] || row['name'] || '',
+        courseName: row['Course Name'] || row['Course'] || row['courseName'] || '',
+        section: row['Section'] || row['section'] || '',
+        academicYear: row['Academic Year'] || row['academicYear'] || '',
+        fatherName: row['Father Name'] || row['fatherName'] || '',
+        motherName: row['Mother Name'] || row['motherName'] || '',
+        phone: row['Phone'] || row['phone'] || '',
+        address: row['Address'] || row['address'] || ''
+      })).filter(row => row.name); // require name
 
-        if (mappedData.length === 0) {
-          setError('No valid data found in file. Ensure the "Name" column exists.');
-          setUploading(false);
-          return;
-        }
-
-        const res = await bulkImportUpdateStudents({ students: mappedData });
-        alert(res.message || 'Import successful!');
-        loadData();
-      } catch (err) {
-        console.error(err);
-        setError('Failed to process file. ' + (err.response?.data?.error || err.message));
-      } finally {
+      if (mappedData.length === 0) {
+        setError('No valid data found in file. Ensure the "Name" column exists.');
         setUploading(false);
-        if (fileInputRef.current) fileInputRef.current.value = '';
+        return;
       }
-    };
-    reader.readAsBinaryString(file);
+
+      const res = await bulkImportUpdateStudents({ students: mappedData });
+      showToast(res.message || 'Import successful!', 'success');
+      loadData();
+    } catch (err) {
+      console.error(err);
+      setError('Failed to process file. ' + (err.response?.data?.error || err.message));
+    } finally {
+      setUploading(false);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    }
   };
 
   const handleExport = () => {
@@ -110,10 +104,7 @@ export default function Students() {
       'Father Name': s.fatherName || ''
     }));
 
-    const ws = XLSX.utils.json_to_sheet(exportData);
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, "Students");
-    XLSX.writeFile(wb, "Eazzio_Students.xlsx");
+    exportToExcel(exportData, "Eazzio_Students.xlsx", "Students");
   };
 
   const downloadTemplate = () => {
@@ -129,10 +120,8 @@ export default function Students() {
       'Phone': '9876543210',
       'Address': '123 Main St'
     }];
-    const ws = XLSX.utils.json_to_sheet(templateData);
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, "Template");
-    XLSX.writeFile(wb, "Student_Import_Template.xlsx");
+    
+    downloadExcelTemplate(templateData, "Student_Import_Template.xlsx", "Template");
   };
 
   // Filter students dynamically
@@ -166,25 +155,25 @@ export default function Students() {
           />
           
           <div className="group relative">
-            <button className="px-4 py-2.5 bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 hover:text-indigo-600 rounded-lg shadow-sm text-sm font-medium transition-all flex items-center gap-2">
+            <button className="px-4 py-2.5 bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 hover:text-emerald-600 rounded-lg shadow-sm text-sm font-medium transition-colors duration-150 flex items-center gap-2">
               <Upload size={16} /> Import
             </button>
-            <div className="absolute right-0 mt-2 w-48 bg-white border border-gray-100 shadow-xl rounded-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-10 p-2">
-              <button onClick={() => fileInputRef.current.click()} disabled={uploading} className="w-full text-left px-4 py-2 hover:bg-indigo-50 hover:text-indigo-700 rounded-lg text-sm text-gray-700 transition">
+            <div className="absolute right-0 mt-2 w-48 bg-white border border-gray-100 shadow-xl rounded-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-colors duration-150 z-10 p-2">
+              <button onClick={() => fileInputRef.current.click()} disabled={uploading} className="w-full text-left px-4 py-2 hover:bg-emerald-50 hover:text-emerald-700 rounded-lg text-sm text-gray-700 transition-colors duration-150">
                 {uploading ? 'Processing...' : 'Upload Excel/CSV'}
               </button>
-              <button onClick={downloadTemplate} className="w-full text-left px-4 py-2 hover:bg-indigo-50 hover:text-indigo-700 rounded-lg text-sm text-gray-700 transition">
+              <button onClick={downloadTemplate} className="w-full text-left px-4 py-2 hover:bg-emerald-50 hover:text-emerald-700 rounded-lg text-sm text-gray-700 transition-colors duration-150">
                 Download Template
               </button>
             </div>
           </div>
 
-          <button onClick={handleExport} className="px-4 py-2.5 bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 hover:text-green-600 rounded-lg shadow-sm text-sm font-medium transition-all flex items-center gap-2">
+          <button onClick={handleExport} className="px-4 py-2.5 bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 hover:text-green-600 rounded-lg shadow-sm text-sm font-medium transition-colors duration-150 flex items-center gap-2">
             <Download size={16} /> Export
           </button>
           
           {/* We will route to a new /principal/students/new or use modal. For now, manual addition via excel is primary, but we'll leave a placeholder */}
-          <button onClick={() => alert('Single manual addition coming soon. Please use Bulk Import for now.')} className="px-4 py-2.5 bg-indigo-600 text-white hover:bg-indigo-700 rounded-lg shadow-sm text-sm font-medium transition-all flex items-center gap-2">
+          <button onClick={() => showToast('Single manual addition coming soon. Please use Bulk Import for now.', 'info')} className="px-4 py-2.5 bg-emerald-600 text-white hover:bg-emerald-700 rounded-lg shadow-sm text-sm font-medium transition-colors duration-150 flex items-center gap-2">
             <Plus size={16} /> Add Student
           </button>
         </div>
@@ -203,7 +192,7 @@ export default function Students() {
           <input 
             type="text" 
             placeholder="Search by name, roll number, or ID..." 
-            className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition"
+            className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
           />
@@ -212,7 +201,7 @@ export default function Students() {
           <select 
             value={courseFilter} 
             onChange={(e) => setCourseFilter(e.target.value)} 
-            className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 outline-none transition"
+            className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 outline-none transition"
           >
             <option value="">All Courses</option>
             {courses.map(crs => (
@@ -251,10 +240,10 @@ export default function Students() {
                   </tr>
                 ) : (
                   filteredStudents.map((student) => (
-                    <tr key={student.id} className="hover:bg-gray-50/50 transition duration-150 group">
+                    <tr key={student.id} className="hover:bg-gray-50/50 transition-colors duration-150 group">
                       <td className="py-4 px-6">
                         <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center font-bold text-sm shrink-0">
+                          <div className="w-10 h-10 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center font-bold text-sm shrink-0">
                             {student.name.charAt(0).toUpperCase()}
                           </div>
                           <div>
@@ -300,11 +289,11 @@ export default function Students() {
                         {student.feeStatus === 'OVERDUE' && <span className="inline-flex items-center px-2.5 py-0.5 rounded-md font-medium bg-red-50 text-red-700 border border-red-200">Overdue</span>}
                       </td>
                       <td className="py-4 px-6 text-right">
-                        <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition">
-                          {/* <button onClick={() => navigate(`/principal/students/${student.id}`)} className="p-2 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition" title="View Details">
+                        <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-colors duration-150">
+                          <button onClick={() => navigate(`/principal/students/${student.id}`)} className="p-2 text-gray-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors duration-150" title="View Details">
                             <ChevronRight size={18} />
-                          </button> */}
-                          <button onClick={() => handleDelete(student.id, student.name)} className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition" title="Delete Student">
+                          </button>
+                          <button onClick={() => handleDelete(student.id, student.name)} className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors duration-150" title="Delete Student">
                             <Trash2 size={18} />
                           </button>
                         </div>

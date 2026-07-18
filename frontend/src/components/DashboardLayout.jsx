@@ -3,6 +3,11 @@ import { useNavigate, useLocation, Link, Outlet } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
 import { ThemeContext } from '../context/ThemeContext';
 import logo from '../assets/logo.png';
+import {
+  LayoutDashboard, GraduationCap, Users, UsersRound, Calendar,
+  CreditCard, Megaphone, Clock, FileText, Settings,
+  LogOut, Menu, ChevronLeft, ChevronRight
+} from 'lucide-react';
 
 export default function DashboardLayout() {
   const { user, logout } = useContext(AuthContext);
@@ -40,367 +45,186 @@ export default function DashboardLayout() {
 
   const menuConfig = {
     PRINCIPAL: [
-      { path: '/principal/dashboard', label: 'Dashboard', icon: '📊' },
-      { path: '/principal/courses', label: 'Courses', icon: '🎓' },
-      { path: '/principal/students', label: 'Students', icon: '🎒' },
-      { path: '/principal/teachers', label: 'Teachers', icon: '👩‍🏫' },
-      { path: '/principal/attendance', label: 'Attendance', icon: '📅' },
-      { path: '/principal/fees', label: 'Fees Overview', icon: '💳' },
-      { path: '/principal/notices', label: 'Notices Board', icon: '📢' },
-      { path: '/principal/timetable', label: 'Timetables', icon: '📆' },
-      { path: '/principal/reports', label: 'Reports', icon: '📄' },
-      { path: '/principal/settings', label: 'Settings', icon: '⚙️' },
+      { path: '/principal/dashboard', label: 'Dashboard', icon: <LayoutDashboard size={20} /> },
+      { path: '/principal/courses', label: 'Courses', icon: <GraduationCap size={20} /> },
+      { path: '/principal/students', label: 'Students', icon: <Users size={20} /> },
+      { path: '/principal/teachers', label: 'Teachers', icon: <UsersRound size={20} /> },
+      { path: '/principal/attendance', label: 'Attendance', icon: <Calendar size={20} /> },
+      { path: '/principal/fees', label: 'Fees Overview', icon: <CreditCard size={20} /> },
+      { path: '/principal/notices', label: 'Notice Board', icon: <Megaphone size={20} /> },
+      { path: '/principal/timetable', label: 'Timetables', icon: <Clock size={20} /> },
+      { path: '/principal/reports', label: 'Reports', icon: <FileText size={20} /> },
+      { path: '/principal/settings', label: 'Settings', icon: <Settings size={20} /> },
     ],
     ADMIN: [
-      { path: '/admin/dashboard', label: 'Dashboard', icon: '📊' },
-      { path: '/admin/courses', label: 'Courses', icon: '🏫' },
-      { path: '/admin/students', label: 'Students', icon: '🎒' },
-      { path: '/admin/teachers', label: 'Teachers', icon: '👩‍🏫' },
-      { path: '/admin/attendance', label: 'Attendance', icon: '📅' },
-      { path: '/admin/fees', label: 'Fees Overview', icon: '💳' },
-      { path: '/admin/notices', label: 'Notices Board', icon: '📢' },
-      { path: '/admin/timetable', label: 'Timetables', icon: '📆' },
-      { path: '/admin/reports', label: 'Reports', icon: '📄' },
-      { path: '/admin/settings', label: 'Settings', icon: '⚙️' },
+      { path: '/admin/dashboard', label: 'Dashboard', icon: <LayoutDashboard size={20} /> },
+      { path: '/admin/courses', label: 'Courses', icon: <GraduationCap size={20} /> },
+      { path: '/admin/students', label: 'Students', icon: <Users size={20} /> },
+      { path: '/admin/teachers', label: 'Teachers', icon: <UsersRound size={20} /> },
+      { path: '/admin/attendance', label: 'Attendance', icon: <Calendar size={20} /> },
+      { path: '/admin/fees', label: 'Fees Overview', icon: <CreditCard size={20} /> },
+      { path: '/admin/notices', label: 'Notice Board', icon: <Megaphone size={20} /> },
+      { path: '/admin/timetable', label: 'Timetables', icon: <Clock size={20} /> },
+      { path: '/admin/reports', label: 'Reports', icon: <FileText size={20} /> },
+      { path: '/admin/settings', label: 'Settings', icon: <Settings size={20} /> },
     ],
     TEACHER: [
-      { path: '/teacher/dashboard', label: 'Dashboard', icon: '📊' },
-      { path: '/teacher/courses', label: 'My Courses', icon: '🏫' },
-      { path: '/teacher/take-attendance', label: 'Take Attendance', icon: '📝' },
-      { path: '/teacher/history', label: 'Roster History', icon: '🕒' },
-      { path: '/teacher/fees', label: 'Course Fees', icon: '💳' },
-      { path: '/teacher/notices', label: 'Notices Board', icon: '📢' },
-      { path: '/teacher/routine', label: 'My Routine', icon: '📆' },
-      { path: '/teacher/profile', label: 'My Profile', icon: '👤' },
+      { path: '/teacher/dashboard', label: 'Dashboard', icon: <LayoutDashboard size={20} /> },
+      { path: '/teacher/courses', label: 'My Courses', icon: <GraduationCap size={20} /> },
+      { path: '/teacher/take-attendance', label: 'Take Attendance', icon: <Calendar size={20} /> },
+      { path: '/teacher/history', label: 'Roster History', icon: <Clock size={20} /> },
+      { path: '/teacher/fees', label: 'Course Fees', icon: <CreditCard size={20} /> },
+      { path: '/teacher/notices', label: 'Notice Board', icon: <Megaphone size={20} /> },
+      { path: '/teacher/routine', label: 'My Routine', icon: <Clock size={20} /> },
+      { path: '/teacher/profile', label: 'My Profile', icon: <Users size={20} /> },
     ],
     STUDENT: [
-      { path: '/student/dashboard', label: 'Dashboard', icon: '📊' },
-      { path: '/student/attendance', label: 'My Attendance', icon: '📅' },
-      { path: '/student/fees', label: 'My Fees', icon: '💳' },
-      { path: '/student/notices', label: 'Notices Board', icon: '📢' },
-      { path: '/student/profile', label: 'My Profile', icon: '👤' },
+      { path: '/student/dashboard', label: 'Dashboard', icon: <LayoutDashboard size={20} /> },
+      { path: '/student/attendance', label: 'My Attendance', icon: <Calendar size={20} /> },
+      { path: '/student/fees', label: 'My Fees', icon: <CreditCard size={20} /> },
+      { path: '/student/notices', label: 'Notice Board', icon: <Megaphone size={20} /> },
+      { path: '/student/profile', label: 'My Profile', icon: <Users size={20} /> },
     ],
     ACCOUNTANT: [
-      { path: '/accountant/dashboard', label: 'Dashboard', icon: '📊' },
-      { path: '/accountant/students', label: 'Students', icon: '🎒' },
-      { path: '/accountant/fees', label: 'Fees Overview', icon: '💳' },
+      { path: '/accountant/dashboard', label: 'Dashboard', icon: <LayoutDashboard size={20} /> },
+      { path: '/accountant/students', label: 'Students', icon: <Users size={20} /> },
+      { path: '/accountant/fees', label: 'Fees Overview', icon: <CreditCard size={20} /> },
     ],
   };
 
   const menuItems = menuConfig[user.role] || [];
-
-  // Sidebar styles merged based on layout width
-  const sidebarStyles = {
-    ...styles.sidebar,
-    ...(isMobile
-      ? {
-          position: 'fixed',
-          top: 0,
-          bottom: 0,
-          left: mobileOpen ? 0 : '-260px',
-          width: '260px',
-          height: '100vh',
-          zIndex: 1000,
-        }
-      : {
-          width: sidebarOpen ? '260px' : '72px',
-        }),
-  };
-
+  
+  const sidebarWidthClass = sidebarOpen ? 'w-64' : 'w-20';
+  
   return (
-    <div style={styles.container}>
-      {/* Mobile Sidebar Backdrop Overlay */}
+    <div className="flex h-screen bg-gray-50 overflow-hidden font-sans">
+      
       {isMobile && mobileOpen && (
-        <div style={styles.backdrop} onClick={() => setMobileOpen(false)} />
+        <div 
+          className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40" 
+          onClick={() => setMobileOpen(false)} 
+        />
       )}
 
-      {/* Sidebar Drawer */}
-      <aside style={sidebarStyles}>
-        <div style={styles.sidebarHeader}>
-          <div style={styles.logoContainer}>
-            <img src={logo} alt="Eazzio Logo" style={{ width: '140px', height: 'auto', objectFit: 'contain' }} />
+      <aside 
+        className={`fixed inset-y-0 left-0 z-50 flex flex-col bg-emerald-800 text-emerald-50 transition-all duration-300 ease-in-out shadow-xl
+          ${isMobile ? (mobileOpen ? 'translate-x-0 w-64' : '-translate-x-full w-64') : `translate-x-0 ${sidebarWidthClass}`}
+        `}
+      >
+        <div className="h-20 flex items-center justify-between px-4 border-b border-emerald-700/50 shrink-0">
+          <div className={`flex items-center w-full ${!sidebarOpen && !isMobile ? 'justify-center' : ''}`}>
+            {(sidebarOpen || isMobile) ? (
+              <div className="flex items-center w-full px-1">
+                <img src={logo} alt="Eazzio Logo" className="h-16 w-full max-w-[200px] object-contain object-left scale-110 origin-left" />
+              </div>
+            ) : (
+              <div className="flex items-center justify-center w-full">
+                <img 
+                  src="/favicon.png" 
+                  alt="E" 
+                  className="h-10 w-10 object-contain"
+                  onError={(e) => {
+                    e.target.style.display = 'none';
+                    e.target.nextElementSibling.style.display = 'block';
+                  }}
+                />
+                <span style={{ display: 'none' }} className="font-bold text-2xl tracking-tighter">E</span>
+              </div>
+            )}
           </div>
+          
           {!isMobile && (
-            <button style={styles.toggleBtn} onClick={() => setSidebarOpen(!sidebarOpen)}>
-              {sidebarOpen ? '◀' : '▶'}
+            <button 
+              onClick={() => setSidebarOpen(!sidebarOpen)}
+              className="p-1 rounded-md text-emerald-300 hover:text-white hover:bg-emerald-700/50 transition-colors"
+            >
+              {sidebarOpen ? <ChevronLeft size={18} /> : <ChevronRight size={18} />}
             </button>
           )}
         </div>
 
-        <nav style={styles.navMenu}>
+        <nav className="flex-1 overflow-y-auto py-4 px-3 flex flex-col gap-1 custom-scrollbar-emerald">
           {menuItems.map((item) => {
-            const isActive = location.pathname === item.path;
+            const isActive = location.pathname.startsWith(item.path);
             return (
               <Link
                 key={item.path}
                 to={item.path}
-                onClick={() => {
-                  if (isMobile) setMobileOpen(false);
-                }}
-                style={{
-                  ...styles.navLink,
-                  ...(isActive ? styles.navLinkActive : {}),
-                  justifyContent: (isMobile || sidebarOpen) ? 'flex-start' : 'center',
-                }}
-                title={item.label}
+                onClick={() => isMobile && setMobileOpen(false)}
+                className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200
+                  ${isActive 
+                    ? 'bg-emerald-50 text-emerald-800 shadow-sm' 
+                    : 'text-emerald-100 hover:bg-emerald-700 hover:text-white'
+                  }
+                  ${!sidebarOpen && !isMobile ? 'justify-center' : 'justify-start'}
+                `}
+                title={!sidebarOpen && !isMobile ? item.label : ''}
               >
-                <span style={styles.navIcon}>{item.icon}</span>
-                {(isMobile || sidebarOpen) && <span style={styles.navLabel}>{item.label}</span>}
+                <div className={`${isActive ? 'text-emerald-600' : 'text-emerald-200'} shrink-0`}>
+                  {item.icon}
+                </div>
+                {(sidebarOpen || isMobile) && (
+                  <span className="truncate">{item.label}</span>
+                )}
               </Link>
             );
           })}
         </nav>
 
-        <div style={styles.sidebarFooter}>
+        <div className="p-3 border-t border-emerald-700/50 shrink-0">
           <button
-            id="btn-logout"
             onClick={handleLogout}
-            style={{
-              ...styles.logoutBtn,
-              justifyContent: (isMobile || sidebarOpen) ? 'flex-start' : 'center',
-            }}
+            className={`flex items-center gap-3 px-3 py-2.5 w-full rounded-lg text-sm font-medium text-emerald-200 hover:bg-emerald-700 hover:text-white transition-all duration-200
+              ${!sidebarOpen && !isMobile ? 'justify-center' : 'justify-start'}
+            `}
+            title={!sidebarOpen && !isMobile ? 'Sign Out' : ''}
           >
-            <span style={styles.navIcon}>🚪</span>
-            {(isMobile || sidebarOpen) && <span>Sign Out</span>}
+            <LogOut size={20} className="shrink-0" />
+            {(sidebarOpen || isMobile) && <span>Sign Out</span>}
           </button>
         </div>
       </aside>
 
-      {/* Main Workspace Frame */}
-      <div style={styles.mainWrapper}>
-        <header style={styles.navbar}>
-          <div style={styles.navbarLeft}>
+      <div 
+        className={`flex-1 flex flex-col min-h-screen transition-all duration-300 ease-in-out
+          ${isMobile ? 'ml-0' : (sidebarOpen ? 'ml-64' : 'ml-20')}
+        `}
+      >
+        <header className="h-16 bg-white/80 backdrop-blur-md border-b border-gray-200 flex items-center justify-between px-4 lg:px-8 sticky top-0 z-30 shadow-sm shrink-0">
+          <div className="flex items-center gap-3">
             {isMobile && (
               <button
                 onClick={() => setMobileOpen(true)}
-                style={styles.hamburgerBtn}
+                className="p-2 -ml-2 rounded-md text-gray-600 hover:bg-gray-100 transition-colors"
               >
-                ☰
+                <Menu size={24} />
               </button>
             )}
-            <h2 style={styles.workspaceTitle}>{user.role} Workspace</h2>
+            <h2 className="text-lg font-bold text-gray-800 capitalize tracking-tight hidden sm:block">
+              {user.role.toLowerCase()} Workspace
+            </h2>
           </div>
-          <div style={styles.navbarRight}>
-            <div style={styles.profileBadge}>
-              <div style={styles.avatar}>
+
+          <div className="flex items-center gap-4">
+            <div className="flex items-center gap-3 bg-gray-50 border border-gray-100 rounded-full py-1.5 pr-4 pl-1.5 shadow-sm">
+              <div className="w-8 h-8 rounded-full bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center text-white font-bold text-sm shadow-inner shrink-0">
                 {user.name ? user.name[0].toUpperCase() : 'U'}
               </div>
-              {!isMobile && (
-                <div style={styles.profileText}>
-                  <span style={styles.userName}>{user.name}</span>
-                  <span style={styles.userEmail}>{user.email}</span>
-                </div>
-              )}
+              <div className="hidden md:flex flex-col">
+                <span className="text-sm font-semibold text-gray-800 leading-tight">{user.name}</span>
+                <span className="text-xs text-gray-500 font-medium leading-tight">{user.email}</span>
+              </div>
             </div>
           </div>
         </header>
 
-        {/* View outlet embedding pages */}
-        <main style={styles.content}>
-          <Outlet />
+        <main className="flex-1 overflow-y-auto p-4 md:p-6 lg:p-8 relative">
+          <div className="max-w-7xl mx-auto h-full">
+            <Outlet />
+          </div>
         </main>
       </div>
+
     </div>
   );
 }
-
-const styles = {
-  container: {
-    display: 'flex',
-    minHeight: '100vh',
-    background: 'var(--bg-main)',
-    overflowX: 'hidden',
-  },
-  sidebar: {
-    background: 'var(--sidebar-bg)',
-    backdropFilter: 'blur(20px)',
-    borderRight: '1px solid var(--glass-border)',
-    display: 'flex',
-    flexDirection: 'column',
-    transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-    zIndex: 90,
-  },
-  sidebarHeader: {
-    padding: '24px 20px',
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    borderBottom: '1px solid rgba(255, 255, 255, 0.03)',
-  },
-  logoContainer: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '10px',
-  },
-  logo: {
-    fontSize: '1.25rem',
-    fontWeight: '800',
-    color: 'var(--text-primary)',
-    whiteSpace: 'nowrap',
-    letterSpacing: '-0.02em',
-  },
-  toggleBtn: {
-    background: 'transparent',
-    color: 'var(--text-secondary)',
-    border: 'none',
-    fontSize: '0.8rem',
-    cursor: 'pointer',
-    padding: '4px',
-  },
-  navMenu: {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '6px',
-    padding: '20px 12px',
-    flex: 1,
-  },
-  navLink: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '14px',
-    padding: '12px 16px',
-    borderRadius: 'var(--radius-sm)',
-    color: 'var(--text-secondary)',
-    textDecoration: 'none',
-    fontSize: '0.95rem',
-    fontWeight: '500',
-    transition: 'var(--transition-fast)',
-  },
-  navLinkActive: {
-    background: 'rgba(139, 92, 246, 0.12)',
-    color: 'var(--text-primary)',
-    borderLeft: '3px solid var(--primary)',
-    boxShadow: '0 0 10px rgba(139, 92, 246, 0.1)',
-  },
-  navIcon: {
-    fontSize: '1.2rem',
-  },
-  navLabel: {
-    whiteSpace: 'nowrap',
-  },
-  sidebarFooter: {
-    padding: '20px 12px',
-    borderTop: '1px solid rgba(255, 255, 255, 0.03)',
-  },
-  logoutBtn: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '14px',
-    padding: '12px 16px',
-    width: '100%',
-    background: 'transparent',
-    border: 'none',
-    color: '#f87171',
-    borderRadius: 'var(--radius-sm)',
-    fontSize: '0.95rem',
-    fontWeight: '600',
-    textAlign: 'left',
-    cursor: 'pointer',
-    transition: 'var(--transition-fast)',
-  },
-  mainWrapper: {
-    flex: 1,
-    display: 'flex',
-    flexDirection: 'column',
-    overflow: 'hidden',
-    width: '100%',
-  },
-  navbar: {
-    background: 'var(--navbar-bg)',
-    backdropFilter: 'blur(12px)',
-    borderBottom: '1px solid var(--glass-border)',
-    padding: '16px 30px',
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  navbarLeft: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '12px',
-  },
-  hamburgerBtn: {
-    background: 'transparent',
-    color: 'var(--text-primary)',
-    border: 'none',
-    fontSize: '1.5rem',
-    cursor: 'pointer',
-    padding: '4px',
-  },
-  workspaceTitle: {
-    textTransform: 'capitalize',
-    fontSize: '1.2rem',
-    fontWeight: '700',
-  },
-  navbarRight: {
-    display: 'flex',
-    alignItems: 'center',
-  },
-  profileBadge: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '12px',
-    background: 'rgba(255, 255, 255, 0.02)',
-    border: '1px solid var(--glass-border)',
-    padding: '6px 14px',
-    borderRadius: '24px',
-  },
-  avatar: {
-    width: '32px',
-    height: '32px',
-    borderRadius: '50%',
-    background: 'linear-gradient(135deg, var(--primary), #a78bfa)',
-    display: 'flex',
-    justifyContent: 'center',
-    alignItems: 'center',
-    fontWeight: '700',
-    color: '#fff',
-    fontSize: '0.9rem',
-    boxShadow: '0 0 10px var(--primary-glow)',
-  },
-  profileText: {
-    display: 'flex',
-    flexDirection: 'column',
-  },
-  userName: {
-    fontSize: '0.85rem',
-    fontWeight: '600',
-    color: 'var(--text-primary)',
-  },
-  themeToggleBtn: {
-    background: 'rgba(255, 255, 255, 0.03)',
-    border: '1px solid var(--glass-border)',
-    color: 'var(--text-primary)',
-    padding: '8px',
-    width: '36px',
-    height: '36px',
-    borderRadius: '50%',
-    cursor: 'pointer',
-    marginRight: '14px',
-    fontSize: '1rem',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    transition: 'var(--transition-fast)',
-  },
-  userEmail: {
-    fontSize: '0.75rem',
-    color: 'var(--text-muted)',
-  },
-  content: {
-    flex: 1,
-    overflowY: 'auto',
-    padding: '24px 30px',
-    width: '100%',
-  },
-  backdrop: {
-    position: 'fixed',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    background: 'rgba(5, 6, 12, 0.75)',
-    backdropFilter: 'blur(4px)',
-    zIndex: 990,
-  },
-};

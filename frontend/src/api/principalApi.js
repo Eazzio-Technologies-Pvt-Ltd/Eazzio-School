@@ -21,6 +21,11 @@ export const registerTeacher = async (payload) => {
   return response.data;
 };
 
+export const bulkImportUpdateTeachers = async (payload) => {
+  const response = await api.post('/principal/teachers/bulk-import-update', payload);
+  return response.data;
+};
+
 // --- Courses ---
 export const getCourses = async () => {
   const response = await api.get('/principal/courses');
@@ -89,6 +94,13 @@ export const getAttendanceSummary = async () => {
   return response.data;
 };
 
+export const getAttendanceDetail = async (courseId, date) => {
+  const response = await api.get('/principal/attendance-detail', {
+    params: { courseId, date }
+  });
+  return response.data;
+};
+
 export const getFeeCollection = async () => {
   const response = await api.get('/principal/fee-collection');
   return response.data;
@@ -133,5 +145,21 @@ export const createTimetable = async (payload) => {
 
 export const deleteTimetable = async (id) => {
   const response = await api.delete(`/principal/timetables/${id}`);
+  return response.data;
+};
+
+// --- Settings ---
+export const getPrincipalSettings = async () => {
+  const response = await api.get('/principal/settings');
+  return response.data;
+};
+
+export const updatePrincipalProfile = async (payload) => {
+  const response = await api.put('/principal/settings/profile', payload);
+  return response.data;
+};
+
+export const updatePrincipalPassword = async (payload) => {
+  const response = await api.put('/principal/settings/password', payload);
   return response.data;
 };

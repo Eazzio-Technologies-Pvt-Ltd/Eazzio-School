@@ -1,5 +1,5 @@
 import express from 'express';
-import { PrismaClient } from '@prisma/client';
+import prisma from '../prismaClient.js';
 import multer from 'multer';
 import path from 'path';
 import fs from 'fs';
@@ -12,7 +12,6 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
 const router = express.Router();
-const prisma = new PrismaClient();
 
 // Multer setup for PDF uploads
 const storage = multer.diskStorage({
@@ -29,7 +28,7 @@ const storage = multer.diskStorage({
   }
 });
 
-const upload = multer({ 
+const upload = multer({
   storage: storage,
   fileFilter: (req, file, cb) => {
     if (file.mimetype === 'application/pdf') {
@@ -43,14 +42,22 @@ const upload = multer({
 // Create Notice (Principal Only)
 router.post('/', upload.single('attachment'), validate(noticeSchema), async (req, res) => {
   try {
-    const { schoolId, title, content, audience, courseId } = req.body;
-    
+    const { schoolId, title, content, audience, courseId, scheduledAt } = req.body;
+
     const noticeData = {
       schoolId: parseInt(schoolId),
       title,
       content,
       audience
     };
+
+    if (scheduledAt) {
+      const scheduledDate = new Date(scheduledAt);
+      if (scheduledDate > new Date()) {
+        noticeData.scheduledAt = scheduledDate;
+        noticeData.status = 'SCHEDULED';
+      }
+    }
 
     if (courseId && audience === 'COURSE') {
       noticeData.courseId = parseInt(courseId);
@@ -75,8 +82,8 @@ router.post('/', upload.single('attachment'), validate(noticeSchema), async (req
 router.put('/:id', upload.single('attachment'), validate(noticeSchema), async (req, res) => {
   try {
     const { id } = req.params;
-    const { title, content, audience, courseId } = req.body;
-    
+    const { title, content, audience, courseId, scheduledAt } = req.body;
+
     // Check if notice exists
     const existingNotice = await prisma.notice.findUnique({
       where: { id: parseInt(id) }
@@ -92,6 +99,20 @@ router.put('/:id', upload.single('attachment'), validate(noticeSchema), async (r
       audience
     };
 
+    if (scheduledAt) {
+      const scheduledDate = new Date(scheduledAt);
+      if (scheduledDate > new Date()) {
+        updateData.scheduledAt = scheduledDate;
+        updateData.status = 'SCHEDULED';
+      } else {
+        updateData.scheduledAt = null;
+        updateData.status = 'PUBLISHED';
+      }
+    } else {
+      updateData.scheduledAt = null;
+      updateData.status = 'PUBLISHED';
+    }
+
     if (audience === 'COURSE' && courseId) {
       updateData.courseId = parseInt(courseId);
     } else {
@@ -100,7 +121,7 @@ router.put('/:id', upload.single('attachment'), validate(noticeSchema), async (r
 
     if (req.file) {
       updateData.attachmentUrl = `/uploads/notices/${req.file.filename}`;
-      
+
       // Delete old attachment if exists
       if (existingNotice.attachmentUrl) {
         const oldFilePath = path.join(__dirname, '..', existingNotice.attachmentUrl);
@@ -158,7 +179,7 @@ router.delete('/:id', async (req, res) => {
 router.get('/', async (req, res) => {
   try {
     const { schoolId, role, courseId } = req.query;
-    
+
     let audienceFilter = ['SCHOOL'];
 
     if (role === 'TEACHER') {
@@ -175,11 +196,14 @@ router.get('/', async (req, res) => {
       // Principal sees everything in their school
       // whereClause remains just schoolId
     } else {
+      // Teachers and Students only see PUBLISHED notices
+      whereClause.status = 'PUBLISHED';
+
       // Teachers and Students see SCHOOL + their specific audience + their CLASS (if applicable)
       whereClause.OR = [
         { audience: { in: audienceFilter } }
       ];
-      
+
       if (courseId) {
         whereClause.OR.push({
           audience: 'COURSE',

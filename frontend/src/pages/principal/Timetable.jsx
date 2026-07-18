@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { getCourses, getTeachers, getTimetables, createTimetable, deleteTimetable } from '../../api/principalApi';
 import Loader from '../../components/Loader';
+import { Trash2 } from 'lucide-react';
 
 export default function Timetable() {
   const [courses, setCourses] = useState([]);
@@ -95,87 +96,87 @@ export default function Timetable() {
   if (loading) return <Loader message="Loading timetable data..." />;
 
   return (
-    <div style={styles.container} className="animate-fade-in">
-      <div style={styles.header}>
-        <h2>Master Timetable</h2>
-        <p style={styles.sub}>Assign weekly routines for teachers and courses.</p>
+    <div className="flex flex-col gap-6 animate-fade-in text-gray-800">
+      <div className="mb-4">
+        <h2 className="text-3xl font-bold text-gray-900 tracking-tight">Master Timetable</h2>
+        <p className="text-gray-500 mt-1">Assign weekly routines for teachers and courses.</p>
       </div>
 
-      <div style={styles.mainGrid}>
+      <div className="grid grid-cols-1 lg:grid-cols-[1fr_2fr] gap-6 items-start">
         {/* Left: Form */}
-        <div style={styles.pane}>
-          <h3 style={styles.paneTitle}>Add Routine Entry</h3>
-          {error && <div style={styles.errorAlert}>{error}</div>}
+        <div className="bg-white border border-gray-200 shadow-sm rounded-xl p-6">
+          <h3 className="text-lg font-bold text-gray-900 mb-5 border-b border-gray-100 pb-3">Add Routine Entry</h3>
+          {error && <div className="p-3 bg-red-50 text-red-600 border border-red-200 rounded-lg mb-4 text-sm">{error}</div>}
           
-          <form onSubmit={handleCreate} style={styles.form}>
-            <div style={styles.inputGroup}>
-              <label>Teacher</label>
-              <select value={teacherId} onChange={e => setTeacherId(e.target.value)} required>
+          <form onSubmit={handleCreate} className="flex flex-col gap-4">
+            <div className="flex flex-col gap-1.5">
+              <label className="block text-sm font-medium text-gray-700">Teacher</label>
+              <select className="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 outline-none" value={teacherId} onChange={e => setTeacherId(e.target.value)} required>
                 <option value="">Select Teacher</option>
                 {teachers.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
               </select>
             </div>
             
-            <div style={styles.inputGroup}>
-              <label>Course</label>
-              <select value={courseId} onChange={e => setCourseId(e.target.value)} required>
+            <div className="flex flex-col gap-1.5">
+              <label className="block text-sm font-medium text-gray-700">Course</label>
+              <select className="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 outline-none" value={courseId} onChange={e => setCourseId(e.target.value)} required>
                 <option value="">Select Course</option>
                 {courses.map(c => <option key={c.id} value={c.id}>{c.className}-{c.section}</option>)}
               </select>
             </div>
 
-            <div style={styles.inputGroup}>
-              <label>Day of Week</label>
-              <select value={dayOfWeek} onChange={e => setDayOfWeek(e.target.value)}>
+            <div className="flex flex-col gap-1.5">
+              <label className="block text-sm font-medium text-gray-700">Day of Week</label>
+              <select className="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 outline-none" value={dayOfWeek} onChange={e => setDayOfWeek(e.target.value)}>
                 {days.map(d => <option key={d} value={d}>{d}</option>)}
               </select>
             </div>
 
-            <div style={styles.inputGroup}>
-              <label>Period</label>
-              <select value={period} onChange={e => setPeriod(e.target.value)}>
+            <div className="flex flex-col gap-1.5">
+              <label className="block text-sm font-medium text-gray-700">Period</label>
+              <select className="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 outline-none" value={period} onChange={e => setPeriod(e.target.value)}>
                 {periods.map(p => <option key={p} value={p}>{p}</option>)}
               </select>
             </div>
 
-            <div style={styles.inputGroup}>
-              <label>Subject</label>
-              <input type="text" value={subject} onChange={e => setSubject(e.target.value)} placeholder="e.g. Mathematics" required />
+            <div className="flex flex-col gap-1.5">
+              <label className="block text-sm font-medium text-gray-700">Subject</label>
+              <input type="text" className="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 outline-none" value={subject} onChange={e => setSubject(e.target.value)} placeholder="e.g. Mathematics" required />
             </div>
 
-            <button type="submit" className="btn-primary" disabled={submitting} style={styles.submitBtn}>
+            <button type="submit" disabled={submitting} className="mt-2 bg-emerald-600 hover:bg-emerald-700 text-white font-medium py-2.5 px-6 rounded-lg transition-colors duration-150 shadow-sm disabled:opacity-50">
               {submitting ? 'Adding...' : 'Add Entry'}
             </button>
           </form>
         </div>
 
         {/* Right: View */}
-        <div style={styles.viewPane}>
-          <div style={styles.viewHeader}>
-            <h3 style={styles.paneTitle}>Routine Viewer</h3>
-            <select style={styles.filterSelect} value={filterCourse} onChange={e => setFilterCourse(e.target.value)}>
+        <div className="bg-white border border-gray-200 shadow-sm rounded-xl p-6 h-full">
+          <div className="flex justify-between items-center mb-5 border-b border-gray-100 pb-3">
+            <h3 className="text-lg font-bold text-gray-900">Routine Viewer</h3>
+            <select className="px-3 py-1.5 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 outline-none" value={filterCourse} onChange={e => setFilterCourse(e.target.value)}>
               <option value="">All Courses</option>
               {courses.map(c => <option key={c.id} value={c.id}>{c.className}-{c.section}</option>)}
             </select>
           </div>
 
-          <div style={styles.routineWrapper}>
+          <div className="flex flex-col gap-6">
             {days.map(day => (
-              <div key={day} style={styles.daySection}>
-                <h4 style={styles.dayTitle}>{day}</h4>
+              <div key={day} className="flex flex-col gap-3">
+                <h4 className="text-emerald-700 font-bold text-lg">{day}</h4>
                 {grouped[day].length === 0 ? (
-                  <p style={styles.noData}>No periods assigned.</p>
+                  <p className="text-gray-400 italic text-sm">No periods assigned.</p>
                 ) : (
-                  <div style={styles.cardsGrid}>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                     {grouped[day].map(t => (
-                      <div key={t.id} style={styles.card}>
-                        <div style={styles.cardTop}>
-                          <span style={styles.periodBadge}>{t.period}</span>
-                          <button onClick={() => handleDelete(t.id)} style={styles.deleteBtn}>✕</button>
+                      <div key={t.id} className="bg-gray-50 border border-gray-100 rounded-lg p-3 flex flex-col gap-1.5 hover:shadow-sm transition-colors duration-150 group">
+                        <div className="flex justify-between items-center">
+                          <span className="bg-emerald-600 text-white px-2 py-0.5 rounded-full text-xs font-bold">{t.period}</span>
+                          <button onClick={() => handleDelete(t.id)} className="text-gray-400 hover:text-red-600 opacity-0 group-hover:opacity-100 transition-colors duration-150"><Trash2 size={16} /></button>
                         </div>
-                        <div style={styles.subjectText}>{t.subject}</div>
-                        <div style={styles.metaText}>Course: {t.course.className}-{t.course.section}</div>
-                        <div style={styles.metaText}>Teacher: {t.teacher.name}</div>
+                        <div className="font-bold text-gray-900 text-base mt-1">{t.subject}</div>
+                        <div className="text-xs text-gray-500">Course: {t.course.className}-{t.course.section}</div>
+                        <div className="text-xs text-gray-500">Teacher: {t.teacher.name}</div>
                       </div>
                     ))}
                   </div>
@@ -188,30 +189,3 @@ export default function Timetable() {
     </div>
   );
 }
-
-const styles = {
-  container: { display: 'flex', flexDirection: 'column', gap: '20px' },
-  header: { marginBottom: '10px' },
-  sub: { color: 'var(--text-secondary)' },
-  errorAlert: { padding: '10px', background: 'var(--danger-glow)', border: '1px solid var(--danger)', color: '#fca5a5', borderRadius: '4px', marginBottom: '16px' },
-  mainGrid: { display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '24px', alignItems: 'start' },
-  pane: { background: 'var(--bg-card)', padding: '24px', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border-glow)' },
-  viewPane: { background: 'var(--bg-card)', padding: '24px', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border-glow)', height: '100%' },
-  paneTitle: { fontSize: '1.2rem', fontWeight: 'bold', marginBottom: '20px', borderBottom: '1px solid var(--glass-border)', paddingBottom: '10px' },
-  form: { display: 'flex', flexDirection: 'column', gap: '16px' },
-  inputGroup: { display: 'flex', flexDirection: 'column', gap: '8px' },
-  submitBtn: { padding: '12px', marginTop: '10px' },
-  viewHeader: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', borderBottom: '1px solid var(--glass-border)', paddingBottom: '10px' },
-  filterSelect: { padding: '8px', borderRadius: 'var(--radius-sm)', border: '1px solid var(--glass-border)', background: 'var(--input-bg)', color: 'var(--text-primary)' },
-  routineWrapper: { display: 'flex', flexDirection: 'column', gap: '24px' },
-  daySection: { display: 'flex', flexDirection: 'column', gap: '12px' },
-  dayTitle: { color: 'var(--primary)', fontSize: '1.1rem' },
-  noData: { color: 'var(--text-muted)', fontStyle: 'italic', fontSize: '0.9rem' },
-  cardsGrid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '12px' },
-  card: { background: 'rgba(255,255,255,0.02)', border: '1px solid var(--glass-border)', borderRadius: 'var(--radius-sm)', padding: '12px', display: 'flex', flexDirection: 'column', gap: '6px' },
-  cardTop: { display: 'flex', justifyContent: 'space-between', alignItems: 'center' },
-  periodBadge: { background: 'var(--primary)', color: '#fff', padding: '2px 8px', borderRadius: '12px', fontSize: '0.75rem', fontWeight: 'bold' },
-  deleteBtn: { background: 'transparent', border: 'none', color: 'var(--danger)', cursor: 'pointer', fontSize: '1rem' },
-  subjectText: { fontWeight: 'bold', fontSize: '1rem', color: 'var(--text-primary)' },
-  metaText: { fontSize: '0.8rem', color: 'var(--text-secondary)' }
-};

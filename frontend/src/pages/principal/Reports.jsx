@@ -1,29 +1,29 @@
-import React, { useState, useEffect } from 'react';
-import { getSummary, getAIInsights } from '../../api/principalApi';
+import React, { useState, useEffect, useContext } from 'react';
+import { getSummary, getAIInsights, getAttendanceSummary } from '../../api/principalApi';
 import Loader from '../../components/Loader';
+import { ToastContext } from '../../context/ToastContext';
 
 export default function Reports() {
   const [activeTab, setActiveTab] = useState('attendance');
   const [summary, setSummary] = useState(null);
   const [insights, setInsights] = useState(null);
+  const [attendanceData, setAttendanceData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [downloading, setDownloading] = useState(false);
   const [reportType, setReportType] = useState('');
-  const [toast, setToast] = useState({ visible: false, message: '' });
-
-  const triggerToast = (msg) => {
-    setToast({ visible: true, message: msg });
-    setTimeout(() => {
-      setToast({ visible: false, message: '' });
-    }, 3000);
-  };
+  const { showToast } = useContext(ToastContext);
 
   const loadData = async () => {
     try {
       setLoading(true);
-      const [sumData, insData] = await Promise.all([getSummary(), getAIInsights()]);
+      const [sumData, insData, attData] = await Promise.all([
+        getSummary(), 
+        getAIInsights(),
+        getAttendanceSummary()
+      ]);
       setSummary(sumData);
       setInsights(insData);
+      setAttendanceData(attData);
     } catch (err) {
       console.error(err);
     } finally {
@@ -40,78 +40,67 @@ export default function Reports() {
     setDownloading(true);
     setTimeout(() => {
       setDownloading(false);
-      triggerToast(`CSV sheet compiled and downloaded for "${type}"!`);
+      showToast(`CSV sheet compiled and downloaded for "${type}"!`, 'success');
     }, 1500);
   };
 
   if (loading) return <Loader message="Compiling administrative audit data..." />;
 
   // Pure-CSS chart items course-wise
-  const coursesAttendanceData = [
-    { className: 'Grade 10-A', rate: summary?.globalAttendanceRate || 95 },
-    { className: 'Grade 10-B', rate: 89 },
-    { className: 'Grade 9-A', rate: 92 },
-    { className: 'Grade 9-B', rate: 74 },
-  ];
+  const coursesAttendanceData = attendanceData.map(c => ({
+    className: c.courseName,
+    rate: c.percentage
+  }));
 
   return (
-    <div style={styles.container} className="animate-fade-in">
-      <div style={styles.header}>
-        <h2>Institutional Reports & Audits</h2>
-        <p style={styles.sub}>Access detailed summaries, financial records, and operational logs.</p>
+    <div className="flex flex-col gap-6 animate-fade-in text-gray-800">
+      <div className="mb-4">
+        <h2 className="text-3xl font-bold text-gray-900 tracking-tight">Institutional Reports & Audits</h2>
+        <p className="text-gray-500 mt-1">Access detailed summaries, financial records, and operational logs.</p>
       </div>
 
-      {toast.visible && (
-        <div style={styles.toast}>
-          <span>📥</span> {toast.message}
-        </div>
-      )}
-
       {/* Tabs Menu */}
-      <div style={styles.tabsContainer}>
+      <div className="flex gap-3 border-b border-gray-200 pb-px flex-wrap">
         <button
           onClick={() => setActiveTab('attendance')}
-          style={{ ...styles.tabBtn, ...(activeTab === 'attendance' ? styles.activeTabBtn : {}) }}
+          className={`px-4 py-2 text-sm font-semibold border-b-2 transition-colors ${activeTab === 'attendance' ? 'border-emerald-600 text-emerald-700' : 'border-transparent text-gray-500 hover:text-gray-700'}`}
         >
           📊 Attendance Report
         </button>
         <button
           onClick={() => setActiveTab('finance')}
-          style={{ ...styles.tabBtn, ...(activeTab === 'finance' ? styles.activeTabBtn : {}) }}
+          className={`px-4 py-2 text-sm font-semibold border-b-2 transition-colors ${activeTab === 'finance' ? 'border-emerald-600 text-emerald-700' : 'border-transparent text-gray-500 hover:text-gray-700'}`}
         >
           💳 Tuition & Finances
         </button>
         <button
           onClick={() => setActiveTab('audit')}
-          style={{ ...styles.tabBtn, ...(activeTab === 'audit' ? styles.activeTabBtn : {}) }}
+          className={`px-4 py-2 text-sm font-semibold border-b-2 transition-colors ${activeTab === 'audit' ? 'border-emerald-600 text-emerald-700' : 'border-transparent text-gray-500 hover:text-gray-700'}`}
         >
           📁 Export CSV Sheets
         </button>
       </div>
 
       {/* Tab Contents */}
-      <div style={styles.pane}>
+      <div className="bg-white border border-gray-200 shadow-sm rounded-xl p-6 md:p-8">
         {activeTab === 'attendance' && (
-          <div style={styles.tabContent}>
-            <div style={styles.sectionHeader}>
-              <h3>Course-wise Attendance Audit</h3>
-              <p style={styles.sectionDesc}>Aggregate attendance rates compared by course levels.</p>
+          <div className="flex flex-col gap-6">
+            <div className="mb-4 border-b border-gray-100 pb-4">
+              <h3 className="text-xl font-bold text-gray-900">Course-wise Attendance Audit</h3>
+              <p className="text-sm text-gray-500 mt-1">Aggregate attendance rates compared by course levels.</p>
             </div>
 
             {/* CSS Horizontal Bar Chart */}
-            <div style={styles.chartContainer}>
+            <div className="flex flex-col gap-4 bg-gray-50 p-6 rounded-lg border border-gray-100">
               {coursesAttendanceData.map((item, idx) => (
-                <div key={idx} style={styles.chartBarRow}>
-                  <span style={styles.barLabel}>{item.className}</span>
-                  <div style={styles.barWrapper}>
+                <div key={idx} className="flex items-center gap-4">
+                  <span className="w-24 text-sm font-semibold text-gray-600">{item.className}</span>
+                  <div className="flex-1 h-6 bg-gray-200 rounded-full overflow-hidden">
                     <div
-                      style={{
-                        ...styles.barFill,
-                        width: `${item.rate}%`,
-                        background: item.rate >= 90 ? 'var(--success)' : item.rate >= 75 ? 'var(--warning)' : 'var(--danger)',
-                      }}
+                      className={`h-full rounded-full flex items-center justify-end pr-3 transition-all duration-700 ${item.rate >= 90 ? 'bg-emerald-500' : item.rate >= 75 ? 'bg-amber-500' : 'bg-red-500'}`}
+                      style={{ width: `${item.rate}%` }}
                     >
-                      <span style={styles.barPercent}>{item.rate}%</span>
+                      <span className="text-xs font-bold text-white">{item.rate}%</span>
                     </div>
                   </div>
                 </div>
@@ -119,29 +108,29 @@ export default function Reports() {
             </div>
 
             {/* Risk Warnings List */}
-            <div style={{ marginTop: '30px' }}>
-              <h4 style={{ marginBottom: '12px' }}>⚠️ Students at Attendance Risk (&lt; 75%)</h4>
+            <div className="mt-6">
+              <h4 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">⚠️ Students at Attendance Risk (&lt; 75%)</h4>
               {insights?.lowAttendance?.length === 0 ? (
-                <p style={styles.emptyText}>All student attendance parameters remain within bounds.</p>
+                <p className="text-sm text-gray-400 italic bg-gray-50 p-4 rounded-lg text-center">All student attendance parameters remain within bounds.</p>
               ) : (
-                <div style={styles.tableContainer}>
-                  <table style={styles.table}>
+                <div className="overflow-x-auto border border-gray-100 rounded-lg">
+                  <table className="w-full text-left border-collapse">
                     <thead>
-                      <tr style={styles.thRow}>
-                        <th style={styles.th}>Name</th>
-                        <th style={styles.th}>Roll Number</th>
-                        <th style={styles.th}>Current Rate</th>
-                        <th style={styles.th}>Status</th>
+                      <tr className="border-b-2 border-gray-100 bg-gray-50">
+                        <th className="text-gray-500 px-4 py-3 font-semibold text-sm">Name</th>
+                        <th className="text-gray-500 px-4 py-3 font-semibold text-sm">Roll Number</th>
+                        <th className="text-gray-500 px-4 py-3 font-semibold text-sm">Current Rate</th>
+                        <th className="text-gray-500 px-4 py-3 font-semibold text-sm">Status</th>
                       </tr>
                     </thead>
                     <tbody>
                       {insights?.lowAttendance?.map((student, idx) => (
-                        <tr key={idx} style={styles.tr}>
-                          <td style={{ ...styles.td, color: 'var(--text-primary)', fontWeight: '600' }}>{student.name}</td>
-                          <td style={styles.td}>{student.rollNumber}</td>
-                          <td style={{ ...styles.td, color: 'var(--danger)', fontWeight: '700' }}>{student.percentage}%</td>
-                          <td style={styles.td}>
-                            <span style={{ ...styles.badge, color: 'var(--danger)', background: 'var(--danger-glow)' }}>
+                        <tr key={idx} className="transition-colors duration-150 hover:bg-gray-50 border-b border-gray-100">
+                          <td className="px-4 py-3 text-gray-900 font-semibold text-sm">{student.name}</td>
+                          <td className="px-4 py-3 text-gray-600 text-sm">{student.rollNumber}</td>
+                          <td className="px-4 py-3 text-red-600 font-bold text-sm">{student.percentage}%</td>
+                          <td className="px-4 py-3 text-sm">
+                            <span className="px-2.5 py-1 rounded-md text-xs font-bold uppercase text-red-700 bg-red-100 border border-red-200">
                               CRITICAL
                             </span>
                           </td>
@@ -156,28 +145,28 @@ export default function Reports() {
         )}
 
         {activeTab === 'finance' && (
-          <div style={styles.tabContent}>
-            <div style={styles.sectionHeader}>
-              <h3>Tuition & Fee Collections Report</h3>
-              <p style={styles.sectionDesc}>Detailed statement of institutional collections and outstanding invoices.</p>
+          <div className="flex flex-col gap-6">
+            <div className="mb-4 border-b border-gray-100 pb-4">
+              <h3 className="text-xl font-bold text-gray-900">Tuition & Fee Collections Report</h3>
+              <p className="text-sm text-gray-500 mt-1">Detailed statement of institutional collections and outstanding invoices.</p>
             </div>
 
-            <div style={styles.financeSplit}>
+            <div className="flex flex-col lg:flex-row gap-8 items-start">
               {/* Financial Progress Indicator */}
-              <div style={styles.financeCard}>
-                <h4>Collection Summary</h4>
-                <div style={styles.finRow}>
-                  <span>Fees Collected:</span>
-                  <span style={{ color: 'var(--success)', fontWeight: '700' }}>${summary?.paidFees?.toLocaleString()}</span>
+              <div className="flex-1 bg-gray-50 border border-gray-100 rounded-xl p-6 flex flex-col gap-3 min-w-[280px] w-full lg:w-auto">
+                <h4 className="text-lg font-bold text-gray-900 mb-2">Collection Summary</h4>
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-600 font-medium">Fees Collected:</span>
+                  <span className="text-emerald-600 font-bold">${summary?.paidFees?.toLocaleString()}</span>
                 </div>
-                <div style={styles.finRow}>
-                  <span>Outstanding Balances:</span>
-                  <span style={{ color: 'var(--warning)', fontWeight: '700' }}>${summary?.pendingFees?.toLocaleString()}</span>
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-600 font-medium">Outstanding Balances:</span>
+                  <span className="text-amber-500 font-bold">${summary?.pendingFees?.toLocaleString()}</span>
                 </div>
-                <div style={styles.progressBarBg}>
+                <div className="w-full h-2 bg-gray-200 rounded-full overflow-hidden mt-3">
                   <div
+                    className="h-full bg-gradient-to-r from-emerald-500 to-emerald-400 rounded-full"
                     style={{
-                      ...styles.progressBarFill,
                       width: `${
                         summary?.paidFees + summary?.pendingFees > 0
                           ? Math.round((summary.paidFees / (summary.paidFees + summary.pendingFees)) * 100)
@@ -186,37 +175,37 @@ export default function Reports() {
                     }}
                   ></div>
                 </div>
-                <p style={{ ...styles.emptyText, marginTop: '8px', fontSize: '0.8rem' }}>
+                <p className="text-xs text-gray-400 italic mt-2">
                   Institutional target: 100% tuition collection completion rate.
                 </p>
               </div>
 
               {/* Dues Ledger */}
-              <div style={{ flex: 1.5 }}>
-                <h4 style={{ marginBottom: '12px' }}>💳 Outstanding Dues Ledger</h4>
+              <div className="flex-[1.5] w-full">
+                <h4 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">💳 Outstanding Dues Ledger</h4>
                 {insights?.pendingFees?.length === 0 ? (
-                  <p style={styles.emptyText}>All tuition fee payments have been finalized.</p>
+                  <p className="text-sm text-gray-400 italic bg-gray-50 p-4 rounded-lg text-center">All tuition fee payments have been finalized.</p>
                 ) : (
-                  <div style={styles.tableContainer}>
-                    <table style={styles.table}>
+                  <div className="overflow-x-auto border border-gray-100 rounded-lg">
+                    <table className="w-full text-left border-collapse">
                       <thead>
-                        <tr style={styles.thRow}>
-                          <th style={styles.th}>Name</th>
-                          <th style={styles.th}>Roll Number</th>
-                          <th style={styles.th}>Outstanding Amount</th>
-                          <th style={styles.th}>Status</th>
+                        <tr className="border-b-2 border-gray-100 bg-gray-50">
+                          <th className="text-gray-500 px-4 py-3 font-semibold text-sm">Name</th>
+                          <th className="text-gray-500 px-4 py-3 font-semibold text-sm">Roll Number</th>
+                          <th className="text-gray-500 px-4 py-3 font-semibold text-sm">Outstanding Amount</th>
+                          <th className="text-gray-500 px-4 py-3 font-semibold text-sm">Status</th>
                         </tr>
                       </thead>
                       <tbody>
                         {insights?.pendingFees?.map((student, idx) => (
-                          <tr key={idx} style={styles.tr}>
-                            <td style={{ ...styles.td, color: 'var(--text-primary)', fontWeight: '600' }}>{student.name}</td>
-                            <td style={styles.td}>{student.rollNumber}</td>
-                            <td style={{ ...styles.td, color: 'var(--warning)', fontWeight: '700' }}>
+                          <tr key={idx} className="transition-colors duration-150 hover:bg-gray-50 border-b border-gray-100">
+                            <td className="px-4 py-3 text-gray-900 font-semibold text-sm">{student.name}</td>
+                            <td className="px-4 py-3 text-gray-600 text-sm">{student.rollNumber}</td>
+                            <td className="px-4 py-3 text-amber-500 font-bold text-sm">
                               ${student.totalFees?.toLocaleString()}
                             </td>
-                            <td style={styles.td}>
-                              <span style={{ ...styles.badge, color: 'var(--warning)', background: 'var(--warning-glow)' }}>
+                            <td className="px-4 py-3 text-sm">
+                              <span className="px-2.5 py-1 rounded-md text-xs font-bold uppercase text-amber-700 bg-amber-100 border border-amber-200">
                                 OVERDUE
                               </span>
                             </td>
@@ -232,49 +221,46 @@ export default function Reports() {
         )}
 
         {activeTab === 'audit' && (
-          <div style={styles.tabContent}>
-            <div style={styles.sectionHeader}>
-              <h3>Export Administrative Sheets</h3>
-              <p style={styles.sectionDesc}>Download raw registration audit sheets for academic governance.</p>
+          <div className="flex flex-col gap-6">
+            <div className="mb-4 border-b border-gray-100 pb-4">
+              <h3 className="text-xl font-bold text-gray-900">Export Administrative Sheets</h3>
+              <p className="text-sm text-gray-500 mt-1">Download raw registration audit sheets for academic governance.</p>
             </div>
 
-            <div style={styles.exportGrid}>
-              <div style={styles.exportCard}>
-                <span style={styles.exportIcon}>🎒</span>
-                <h3>Enrollment Roster</h3>
-                <p style={styles.exportDesc}>Active student profiles, courses, and registration directories.</p>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+              <div className="bg-gray-50 border border-gray-100 rounded-xl p-6 text-center flex flex-col items-center gap-3 transition hover:bg-white hover:border-emerald-500 hover:shadow-sm">
+                <span className="text-3xl">🎒</span>
+                <h3 className="text-lg font-bold text-gray-900">Enrollment Roster</h3>
+                <p className="text-sm text-gray-500 leading-relaxed mb-3">Active student profiles, courses, and registration directories.</p>
                 <button
                   onClick={() => triggerExport('Student Enrollment')}
-                  className="btn-primary"
-                  style={styles.actionBtn}
+                  className="w-full py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-medium rounded-lg transition disabled:opacity-50 text-sm shadow-sm"
                   disabled={downloading}
                 >
                   {downloading && reportType === 'Student Enrollment' ? 'Generating...' : 'Download CSV'}
                 </button>
               </div>
 
-              <div style={styles.exportCard}>
-                <span style={styles.exportIcon}>👩‍🏫</span>
-                <h3>Faculty Roster</h3>
-                <p style={styles.exportDesc}>Faculty profiles, subject distributions, and assignments.</p>
+              <div className="bg-gray-50 border border-gray-100 rounded-xl p-6 text-center flex flex-col items-center gap-3 transition hover:bg-white hover:border-emerald-500 hover:shadow-sm">
+                <span className="text-3xl">👩‍🏫</span>
+                <h3 className="text-lg font-bold text-gray-900">Faculty Roster</h3>
+                <p className="text-sm text-gray-500 leading-relaxed mb-3">Faculty profiles, subject distributions, and assignments.</p>
                 <button
                   onClick={() => triggerExport('Faculty Directory')}
-                  className="btn-primary"
-                  style={styles.actionBtn}
+                  className="w-full py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-medium rounded-lg transition disabled:opacity-50 text-sm shadow-sm"
                   disabled={downloading}
                 >
                   {downloading && reportType === 'Faculty Directory' ? 'Generating...' : 'Download CSV'}
                 </button>
               </div>
 
-              <div style={styles.exportCard}>
-                <span style={styles.exportIcon}>📅</span>
-                <h3>Attendance Ledger</h3>
-                <p style={styles.exportDesc}>Aggregated attendance statistics and absence counts.</p>
+              <div className="bg-gray-50 border border-gray-100 rounded-xl p-6 text-center flex flex-col items-center gap-3 transition hover:bg-white hover:border-emerald-500 hover:shadow-sm">
+                <span className="text-3xl">📅</span>
+                <h3 className="text-lg font-bold text-gray-900">Attendance Ledger</h3>
+                <p className="text-sm text-gray-500 leading-relaxed mb-3">Aggregated attendance statistics and absence counts.</p>
                 <button
                   onClick={() => triggerExport('Attendance Audit')}
-                  className="btn-primary"
-                  style={styles.actionBtn}
+                  className="w-full py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-medium rounded-lg transition-colors duration-150 disabled:opacity-50 text-sm shadow-sm"
                   disabled={downloading}
                 >
                   {downloading && reportType === 'Attendance Audit' ? 'Generating...' : 'Download CSV'}
@@ -287,224 +273,3 @@ export default function Reports() {
     </div>
   );
 }
-
-const styles = {
-  container: {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '30px',
-  },
-  header: {
-    marginBottom: '10px',
-  },
-  sub: {
-    color: 'var(--text-secondary)',
-  },
-  tabsContainer: {
-    display: 'flex',
-    gap: '12px',
-    borderBottom: '1px solid var(--glass-border)',
-    paddingBottom: '2px',
-    flexWrap: 'wrap',
-  },
-  tabBtn: {
-    background: 'transparent',
-    color: 'var(--text-secondary)',
-    border: 'none',
-    borderBottom: '2px solid transparent',
-    padding: '10px 20px',
-    fontSize: '0.95rem',
-    fontWeight: '600',
-    cursor: 'pointer',
-    transition: 'var(--transition-fast)',
-  },
-  activeTabBtn: {
-    color: 'var(--text-primary)',
-    borderBottomColor: 'var(--primary)',
-  },
-  pane: {
-    background: 'var(--bg-card)',
-    border: '1px solid var(--glass-border)',
-    borderRadius: 'var(--radius-md)',
-    padding: '30px',
-    boxShadow: '0 8px 32px rgba(0, 0, 0, 0.2)',
-  },
-  tabContent: {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '20px',
-  },
-  sectionHeader: {
-    marginBottom: '10px',
-    borderBottom: '1px solid var(--glass-border)',
-    paddingBottom: '16px',
-  },
-  sectionDesc: {
-    fontSize: '0.85rem',
-    color: 'var(--text-secondary)',
-  },
-  chartContainer: {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '16px',
-    background: 'var(--glass-bg)',
-    padding: '20px',
-    borderRadius: 'var(--radius-sm)',
-    border: '1px solid var(--glass-border)',
-  },
-  chartBarRow: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '16px',
-  },
-  barLabel: {
-    width: '100px',
-    fontSize: '0.85rem',
-    fontWeight: '600',
-    color: 'var(--text-secondary)',
-  },
-  barWrapper: {
-    flex: 1,
-    height: '24px',
-    background: 'var(--glass-border)',
-    borderRadius: '12px',
-    overflow: 'hidden',
-  },
-  barFill: {
-    height: '100%',
-    borderRadius: '12px',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'flex-end',
-    paddingRight: '12px',
-    transition: 'width 0.8s ease-in-out',
-  },
-  barPercent: {
-    fontSize: '0.75rem',
-    fontWeight: '700',
-    color: '#fff',
-  },
-  emptyText: {
-    fontSize: '0.85rem',
-    color: 'var(--text-muted)',
-    fontStyle: 'italic',
-  },
-  financeSplit: {
-    display: 'flex',
-    gap: '30px',
-    flexWrap: 'wrap',
-  },
-  financeCard: {
-    flex: 1,
-    background: 'var(--glass-bg)',
-    border: '1px solid var(--glass-border)',
-    borderRadius: 'var(--radius-sm)',
-    padding: '20px',
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '12px',
-    minWidth: '280px',
-  },
-  finRow: {
-    display: 'flex',
-    justifyContent: 'space-between',
-    fontSize: '0.9rem',
-  },
-  progressBarBg: {
-    width: '100%',
-    height: '8px',
-    background: 'var(--glass-border)',
-    borderRadius: '4px',
-    overflow: 'hidden',
-    marginTop: '6px',
-  },
-  progressBarFill: {
-    height: '100%',
-    background: 'linear-gradient(90deg, var(--success), #34d399)',
-    borderRadius: '4px',
-  },
-  exportGrid: {
-    display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))',
-    gap: '20px',
-  },
-  exportCard: {
-    background: 'var(--glass-bg)',
-    border: '1px solid var(--glass-border)',
-    borderRadius: 'var(--radius-sm)',
-    padding: '24px',
-    textAlign: 'center',
-    display: 'flex',
-    flexDirection: 'column',
-    alignItems: 'center',
-    gap: '12px',
-    transition: 'var(--transition-fast)',
-    '&:hover': {
-      background: 'var(--glass-border)',
-      borderColor: 'var(--primary)',
-    },
-  },
-  exportIcon: {
-    fontSize: '2rem',
-  },
-  exportDesc: {
-    fontSize: '0.85rem',
-    color: 'var(--text-secondary)',
-    lineHeight: '1.4',
-    marginBottom: '10px',
-  },
-  actionBtn: {
-    width: '100%',
-    padding: '10px',
-    fontSize: '0.85rem',
-  },
-  tableContainer: {
-    overflowX: 'auto',
-  },
-  table: {
-    width: '100%',
-    borderCollapse: 'collapse',
-    textAlign: 'left',
-  },
-  thRow: {
-    borderBottom: '2px solid var(--glass-border)',
-  },
-  th: {
-    color: 'var(--text-secondary)',
-    padding: '10px 12px',
-    fontWeight: '600',
-    fontSize: '0.8rem',
-  },
-  td: {
-    padding: '12px',
-    color: 'var(--text-secondary)',
-    borderBottom: '1px solid var(--glass-border)',
-    fontSize: '0.8rem',
-  },
-  tr: {
-    transition: 'var(--transition-fast)',
-    '&:hover': {
-      background: 'var(--bg-card-hover)',
-    },
-  },
-  badge: {
-    padding: '3px 8px',
-    borderRadius: '4px',
-    fontSize: '0.7rem',
-    fontWeight: '700',
-  },
-  toast: {
-    position: 'fixed',
-    top: '20px',
-    right: '20px',
-    background: 'var(--sidebar-bg)',
-    border: '1px solid var(--primary)',
-    boxShadow: 'var(--shadow-glow)',
-    borderRadius: 'var(--radius-sm)',
-    padding: '12px 20px',
-    color: 'var(--text-primary)',
-    zIndex: 999,
-    fontSize: '0.9rem',
-    animation: 'fadeIn 0.3s ease',
-  },
-};

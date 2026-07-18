@@ -2,6 +2,7 @@ import React, { useContext } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import AuthProvider, { AuthContext } from './context/AuthContext';
 import ThemeProvider from './context/ThemeContext';
+import ToastProvider from './context/ToastContext';
 import Login from './pages/Login';
 import Landing from './pages/Landing';
 import RegisterSchool from './pages/RegisterSchool';
@@ -10,6 +11,7 @@ import DashboardLayout from './components/DashboardLayout';
 // Principal Pages
 import PrincipalDashboard from './pages/principal/PrincipalDashboard';
 import Students from './pages/principal/Students';
+import StudentDetails from './pages/principal/StudentDetails';
 import Teachers from './pages/principal/Teachers';
 import AttendanceOverview from './pages/principal/AttendanceOverview';
 import FeesOverview from './pages/principal/FeesOverview';
@@ -86,8 +88,9 @@ export default function App() {
   return (
     <ThemeProvider>
       <AuthProvider>
-        <Router>
-        <Routes>
+        <ToastProvider>
+          <Router>
+          <Routes>
           <Route path="/" element={<Landing />} />
           <Route path="/register" element={<RegisterSchool />} />
           <Route path="/login" element={<LoginRoute />} />
@@ -103,6 +106,7 @@ export default function App() {
           >
             <Route path="dashboard" element={<PrincipalDashboard />} />
             <Route path="students" element={<Students />} />
+            <Route path="students/:id" element={<StudentDetails />} />
             <Route path="teachers" element={<Teachers />} />
             <Route path="attendance" element={<AttendanceOverview />} />
             <Route path="fees" element={<FeesOverview />} />
@@ -191,6 +195,7 @@ export default function App() {
           <Route path="*" element={<Navigate to="/404" replace />} />
         </Routes>
       </Router>
+      </ToastProvider>
     </AuthProvider>
     </ThemeProvider>
   );

@@ -193,6 +193,8 @@ model Notice {
   audience      NoticeAudience
   courseId      Int?
   attachmentUrl String?
+  status        String         @default("PUBLISHED")
+  scheduledAt   DateTime?
   course        Course?        @relation(fields: [courseId], references: [id], onDelete: Cascade)
   school        School         @relation(fields: [schoolId], references: [id], onDelete: Cascade)
 

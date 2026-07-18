@@ -1,22 +1,27 @@
 import React, { useState, useEffect, useContext } from 'react';
 import { AuthContext } from '../../context/AuthContext';
+import { ToastContext } from '../../context/ToastContext';
 import { getNotices, createNotice, deleteNotice } from '../../api/noticeApi';
 import api from '../../api/axios';
 import Loader from '../../components/Loader';
+import { FileText, Trash2 } from 'lucide-react';
 
 export default function PrincipalNotices() {
   const { user } = useContext(AuthContext);
+  const { showToast } = useContext(ToastContext);
   const [notices, setNotices] = useState([]);
   const [courses, setCourses] = useState([]);
   const [loading, setLoading] = useState(true);
 
   // Form State
   const [showForm, setShowForm] = useState(false);
+  const [publishMode, setPublishMode] = useState('now');
   const [formData, setFormData] = useState({
     title: '',
     content: '',
     audience: 'SCHOOL',
     courseId: '',
+    scheduledAt: '',
   });
   const [file, setFile] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -62,19 +67,24 @@ export default function PrincipalNotices() {
       if (formData.audience === 'COURSE' && formData.courseId) {
         data.append('courseId', formData.courseId);
       }
+      if (publishMode === 'later' && formData.scheduledAt) {
+        data.append('scheduledAt', formData.scheduledAt);
+      }
       if (file) {
         data.append('attachment', file);
       }
 
       await createNotice(data);
       
-      setFormData({ title: '', content: '', audience: 'SCHOOL', courseId: '' });
+      setFormData({ title: '', content: '', audience: 'SCHOOL', courseId: '', scheduledAt: '' });
+      setPublishMode('now');
       setFile(null);
       setShowForm(false);
       loadData();
+      showToast('Notice published successfully!', 'success');
     } catch (err) {
       console.error('Failed to create notice', err);
-      alert('Failed to create notice');
+      showToast('Failed to create notice', 'error');
     } finally {
       setIsSubmitting(false);
     }
@@ -85,23 +95,24 @@ export default function PrincipalNotices() {
     try {
       await deleteNotice(id);
       loadData();
+      showToast('Notice deleted', 'success');
     } catch (err) {
       console.error(err);
-      alert('Failed to delete notice');
+      showToast('Failed to delete notice', 'error');
     }
   };
 
   if (loading) return <Loader message="Loading notices..." />;
 
   return (
-    <div style={styles.container} className="animate-fade-in">
-      <div style={styles.header}>
+    <div className="flex flex-col gap-6 animate-fade-in text-gray-800">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
-          <h2>Notice Board Management</h2>
-          <p style={styles.sub}>Publish circulars, announcements, and important updates.</p>
+          <h2 className="text-3xl font-bold text-gray-900 tracking-tight">Notice Board Management</h2>
+          <p className="text-gray-500 mt-1">Publish circulars, announcements, and important updates.</p>
         </div>
         <button 
-          style={styles.primaryBtn}
+          className="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg shadow-sm font-medium transition"
           onClick={() => setShowForm(!showForm)}
         >
           {showForm ? 'Cancel' : '+ New Notice'}
@@ -109,13 +120,13 @@ export default function PrincipalNotices() {
       </div>
 
       {showForm && (
-        <form onSubmit={handleSubmit} style={styles.formCard}>
-          <h3 style={{ marginBottom: '16px', color: 'var(--text-primary)' }}>Create Notice</h3>
+        <form onSubmit={handleSubmit} className="bg-white border border-gray-200 shadow-sm rounded-xl p-6">
+          <h3 className="text-lg font-bold text-gray-900 mb-5">Create Notice</h3>
           
-          <div style={styles.formGroup}>
-            <label style={styles.label}>Notice Title</label>
+          <div className="flex flex-col gap-1.5 mb-4">
+            <label className="block text-sm font-medium text-gray-700">Notice Title</label>
             <input 
-              style={styles.input}
+              className="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 outline-none"
               type="text"
               name="title"
               required
@@ -125,10 +136,10 @@ export default function PrincipalNotices() {
             />
           </div>
 
-          <div style={styles.formGroup}>
-            <label style={styles.label}>Audience</label>
+          <div className="flex flex-col gap-1.5 mb-4">
+            <label className="block text-sm font-medium text-gray-700">Audience</label>
             <select 
-              style={styles.input}
+              className="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 outline-none"
               name="audience"
               value={formData.audience}
               onChange={handleInputChange}
@@ -141,10 +152,10 @@ export default function PrincipalNotices() {
           </div>
 
           {formData.audience === 'COURSE' && (
-            <div style={styles.formGroup}>
-              <label style={styles.label}>Select Course</label>
+            <div className="flex flex-col gap-1.5 mb-4">
+              <label className="block text-sm font-medium text-gray-700">Select Course</label>
               <select 
-                style={styles.input}
+                className="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 outline-none"
                 name="courseId"
                 required
                 value={formData.courseId}
@@ -158,10 +169,50 @@ export default function PrincipalNotices() {
             </div>
           )}
 
-          <div style={styles.formGroup}>
-            <label style={styles.label}>Details (Optional)</label>
+          <div className="flex flex-col gap-1.5 mb-4">
+            <label className="block text-sm font-medium text-gray-700">Publishing Schedule</label>
+            <div className="flex gap-6 items-center">
+              <label className="flex items-center gap-2 text-sm text-gray-700 cursor-pointer">
+                <input 
+                  type="radio" 
+                  name="publishMode" 
+                  value="now" 
+                  checked={publishMode === 'now'} 
+                  onChange={(e) => setPublishMode(e.target.value)} 
+                  className="text-emerald-600 focus:ring-emerald-500"
+                /> Publish Now
+              </label>
+              <label className="flex items-center gap-2 text-sm text-gray-700 cursor-pointer">
+                <input 
+                  type="radio" 
+                  name="publishMode" 
+                  value="later" 
+                  checked={publishMode === 'later'} 
+                  onChange={(e) => setPublishMode(e.target.value)} 
+                  className="text-emerald-600 focus:ring-emerald-500"
+                /> Schedule for Later
+              </label>
+            </div>
+          </div>
+
+          {publishMode === 'later' && (
+            <div className="flex flex-col gap-1.5 mb-4">
+              <label className="block text-sm font-medium text-gray-700">Select Date & Time</label>
+              <input 
+                className="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 outline-none"
+                type="datetime-local"
+                name="scheduledAt"
+                required={publishMode === 'later'}
+                value={formData.scheduledAt}
+                onChange={handleInputChange}
+              />
+            </div>
+          )}
+
+          <div className="flex flex-col gap-1.5 mb-4">
+            <label className="block text-sm font-medium text-gray-700">Details (Optional)</label>
             <textarea 
-              style={{ ...styles.input, height: '80px', resize: 'vertical' }}
+              className="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 outline-none h-24 resize-y"
               name="content"
               value={formData.content}
               onChange={handleInputChange}
@@ -169,49 +220,60 @@ export default function PrincipalNotices() {
             />
           </div>
 
-          <div style={styles.formGroup}>
-            <label style={styles.label}>Attach PDF Document (Optional)</label>
+          <div className="flex flex-col gap-1.5 mb-4">
+            <label className="block text-sm font-medium text-gray-700">Attach PDF Document (Optional)</label>
             <input 
               type="file"
               accept=".pdf"
               onChange={handleFileChange}
-              style={styles.fileInput}
+              className="w-full p-2 bg-gray-50 border border-dashed border-gray-300 rounded-lg text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-emerald-50 file:text-emerald-700 hover:file:bg-emerald-100"
             />
           </div>
 
-          <button type="submit" style={styles.submitBtn} disabled={isSubmitting}>
+          <button type="submit" disabled={isSubmitting} className="w-full py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-medium rounded-lg transition-colors duration-150 shadow-sm mt-2 disabled:opacity-50">
             {isSubmitting ? 'Publishing...' : 'Publish Notice'}
           </button>
         </form>
       )}
 
-      <div style={styles.list}>
+      <div className="flex flex-col gap-4">
         {notices.length === 0 ? (
-          <p style={{ color: 'var(--text-muted)' }}>No notices have been published.</p>
+          <div className="text-gray-500 bg-white p-6 rounded-xl border border-gray-200 text-center">No notices have been published.</div>
         ) : (
           notices.map((note) => (
-            <div key={note.id} style={styles.card}>
-              <div style={styles.cardHeader}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                  <h3 style={styles.title}>{note.title}</h3>
-                  <span style={styles.badge(note.audience)}>
+            <div key={note.id} className="bg-white border border-gray-200 shadow-sm rounded-xl p-6 hover:shadow-md transition">
+              <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b border-gray-100 pb-4 mb-4">
+                <div className="flex flex-wrap items-center gap-3">
+                  <h3 className="text-lg font-bold text-gray-900">{note.title}</h3>
+                  <span className="px-2.5 py-0.5 rounded-full text-xs font-bold uppercase bg-gray-100 text-gray-600 border border-gray-200">
                     {note.audience === 'COURSE' 
                       ? `Course: ${note.course?.className || 'N/A'}` 
                       : note.audience}
                   </span>
+                  {note.status === 'SCHEDULED' ? (
+                    <span className="px-2.5 py-0.5 rounded-full text-xs font-bold uppercase bg-amber-50 text-amber-700 border border-amber-200">
+                      SCHEDULED FOR: {new Date(note.scheduledAt).toLocaleString()}
+                    </span>
+                  ) : (
+                    <span className="px-2.5 py-0.5 rounded-full text-xs font-bold uppercase bg-emerald-50 text-emerald-700 border border-emerald-200">
+                      PUBLISHED
+                    </span>
+                  )}
                 </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
-                  <span style={styles.date}>{new Date(note.date).toLocaleDateString()}</span>
-                  <button onClick={() => handleDelete(note.id)} style={styles.deleteBtn}>Delete</button>
+                <div className="flex items-center gap-4">
+                  <span className="text-xs text-gray-500 font-medium">{new Date(note.date).toLocaleDateString()}</span>
+                  <button onClick={() => handleDelete(note.id)} className="flex items-center gap-1 text-red-500 hover:text-red-700 transition-colors duration-150 px-2 py-1 bg-red-50 hover:bg-red-100 rounded text-xs font-medium border border-red-100">
+                    <Trash2 size={14} /> Delete
+                  </button>
                 </div>
               </div>
               
-              {note.content && <p style={styles.desc}>{note.content}</p>}
+              {note.content && <p className="text-sm text-gray-700 leading-relaxed whitespace-pre-wrap">{note.content}</p>}
               
               {note.attachmentUrl && (
-                <div style={{ marginTop: '16px' }}>
-                  <a href={`http://localhost:5000${note.attachmentUrl}`} target="_blank" rel="noreferrer" style={styles.downloadLink}>
-                    📄 View Attached PDF
+                <div className="mt-4">
+                  <a href={`http://localhost:5000${note.attachmentUrl}`} target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 px-4 py-2 bg-emerald-50 text-emerald-700 rounded-lg text-sm font-medium hover:bg-emerald-100 transition border border-emerald-100">
+                    <FileText size={16} /> View Attached PDF
                   </a>
                 </div>
               )}
@@ -222,140 +284,3 @@ export default function PrincipalNotices() {
     </div>
   );
 }
-
-const styles = {
-  container: {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '30px',
-    maxWidth: '900px',
-  },
-  header: {
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: '10px',
-  },
-  sub: {
-    color: 'var(--text-secondary)',
-  },
-  primaryBtn: {
-    padding: '10px 20px',
-    background: 'var(--primary)',
-    color: '#fff',
-    border: 'none',
-    borderRadius: 'var(--radius-md)',
-    fontWeight: '600',
-    cursor: 'pointer',
-    transition: 'var(--transition-fast)',
-  },
-  formCard: {
-    background: 'var(--bg-card)',
-    border: '1px solid var(--glass-border)',
-    borderRadius: 'var(--radius-lg)',
-    padding: '24px 30px',
-    boxShadow: '0 8px 32px rgba(0, 0, 0, 0.2)',
-  },
-  formGroup: {
-    marginBottom: '16px',
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '6px',
-  },
-  label: {
-    fontSize: '0.9rem',
-    fontWeight: '600',
-    color: 'var(--text-secondary)',
-  },
-  input: {
-    padding: '10px 14px',
-    background: 'rgba(255, 255, 255, 0.03)',
-    border: '1px solid var(--glass-border)',
-    borderRadius: 'var(--radius-md)',
-    color: 'var(--text-primary)',
-    fontSize: '0.95rem',
-  },
-  fileInput: {
-    padding: '8px',
-    background: 'rgba(255, 255, 255, 0.03)',
-    border: '1px dashed var(--glass-border)',
-    borderRadius: 'var(--radius-md)',
-    color: 'var(--text-secondary)',
-  },
-  submitBtn: {
-    padding: '12px',
-    width: '100%',
-    background: 'var(--primary)',
-    color: '#fff',
-    border: 'none',
-    borderRadius: 'var(--radius-md)',
-    fontWeight: '600',
-    cursor: 'pointer',
-    marginTop: '10px',
-  },
-  list: {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '20px',
-  },
-  card: {
-    background: 'var(--bg-card)',
-    border: '1px solid var(--glass-border)',
-    borderRadius: 'var(--radius-md)',
-    padding: '20px 24px',
-  },
-  cardHeader: {
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'baseline',
-    marginBottom: '12px',
-    borderBottom: '1px solid var(--glass-border)',
-    paddingBottom: '8px',
-  },
-  title: {
-    fontSize: '1.05rem',
-    fontWeight: '700',
-    color: 'var(--text-primary)',
-  },
-  date: {
-    fontSize: '0.8rem',
-    color: 'var(--text-muted)',
-    fontWeight: '500',
-  },
-  desc: {
-    fontSize: '0.9rem',
-    color: 'var(--text-secondary)',
-    lineHeight: '1.5',
-    whiteSpace: 'pre-wrap',
-  },
-  badge: (audience) => ({
-    padding: '4px 8px',
-    borderRadius: '4px',
-    fontSize: '0.7rem',
-    fontWeight: '700',
-    textTransform: 'uppercase',
-    background: audience === 'SCHOOL' ? 'rgba(139, 92, 246, 0.1)' : 'rgba(16, 185, 129, 0.1)',
-    color: audience === 'SCHOOL' ? 'var(--primary)' : 'var(--success)',
-  }),
-  deleteBtn: {
-    background: 'transparent',
-    border: '1px solid rgba(239, 68, 68, 0.3)',
-    color: '#ef4444',
-    padding: '4px 10px',
-    borderRadius: '4px',
-    fontSize: '0.75rem',
-    cursor: 'pointer',
-  },
-  downloadLink: {
-    color: 'var(--primary)',
-    textDecoration: 'none',
-    fontSize: '0.9rem',
-    fontWeight: '600',
-    display: 'inline-flex',
-    alignItems: 'center',
-    gap: '6px',
-    padding: '6px 12px',
-    background: 'rgba(139, 92, 246, 0.1)',
-    borderRadius: 'var(--radius-sm)',
-  }
-};
