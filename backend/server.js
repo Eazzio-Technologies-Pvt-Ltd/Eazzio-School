@@ -7,6 +7,7 @@ import principalRoutes from './routes/principal.js';
 import teacherRoutes from './routes/teacher.js';
 import studentRoutes from './routes/student.js';
 import noticeRoutes from './routes/notice.js';
+import accountantRoutes from './routes/accountant.js';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { dirname } from 'path';
@@ -37,6 +38,7 @@ app.use('/api/principal', principalRoutes);
 app.use('/api/teacher', teacherRoutes);
 app.use('/api/student', studentRoutes);
 app.use('/api/notices', noticeRoutes);
+app.use('/api/accountant', accountantRoutes);
 
 // Simple health check endpoint
 app.get('/health', (req, res) => {

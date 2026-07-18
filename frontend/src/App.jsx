@@ -18,6 +18,7 @@ import Settings from './pages/principal/Settings';
 import Classes from './pages/principal/Classes';
 import Timetable from './pages/principal/Timetable';
 import PrincipalNotices from './pages/principal/Notices';
+import Accountants from './pages/principal/Accountants';
 
 // Admin Pages
 import AdminDashboard from './pages/admin/AdminDashboard';
@@ -48,6 +49,9 @@ import MyFees from './pages/student/MyFees';
 import Notices from './pages/student/Notices';
 import MyProfile from './pages/student/MyProfile';
 
+// Accountant Pages
+import AccountantDashboard from './pages/accountant/AccountantDashboard';
+
 import Unauthorized from './pages/Unauthorized';
 import NotFound from './pages/NotFound';
 
@@ -66,6 +70,8 @@ function DashboardRedirect() {
     return <Navigate to="/teacher/dashboard" replace />;
   } else if (user.role === 'STUDENT') {
     return <Navigate to="/student/dashboard" replace />;
+  } else if (user.role === 'ACCOUNTANT') {
+    return <Navigate to="/accountant/dashboard" replace />;
   }
 
   return <Navigate to="/login" replace />;
@@ -99,6 +105,7 @@ export default function App() {
             <Route path="dashboard" element={<PrincipalDashboard />} />
             <Route path="students" element={<Students />} />
             <Route path="teachers" element={<Teachers />} />
+            <Route path="accountants" element={<Accountants />} />
             <Route path="attendance" element={<AttendanceOverview />} />
             <Route path="fees" element={<FeesOverview />} />
             <Route path="reports" element={<Reports />} />
@@ -162,6 +169,20 @@ export default function App() {
             <Route path="fees" element={<MyFees />} />
             <Route path="notices" element={<Notices />} />
             <Route path="profile" element={<MyProfile />} />
+          </Route>
+
+          {/* Accountant Workspace Routes */}
+          <Route
+            path="/accountant"
+            element={
+              <ProtectedRoute allowedRoles={['ACCOUNTANT']}>
+                <DashboardLayout />
+              </ProtectedRoute>
+            }
+          >
+            <Route path="dashboard" element={<AccountantDashboard />} />
+            <Route path="students" element={<Students />} />
+            <Route path="fees" element={<FeesOverview />} />
           </Route>
 
           {/* Fallback routes */}
