@@ -44,7 +44,6 @@ export default function DashboardLayout() {
       { path: '/principal/classes', label: 'Classes', icon: '🏫' },
       { path: '/principal/students', label: 'Students', icon: '🎒' },
       { path: '/principal/teachers', label: 'Teachers', icon: '👩‍🏫' },
-      { path: '/principal/accountants', label: 'Accountants', icon: '💼' },
       { path: '/principal/attendance', label: 'Attendance', icon: '📅' },
       { path: '/principal/fees', label: 'Fees Overview', icon: '💳' },
       { path: '/principal/notices', label: 'Notices Board', icon: '📢' },

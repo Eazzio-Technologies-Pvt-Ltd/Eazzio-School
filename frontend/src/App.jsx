@@ -18,8 +18,6 @@ import Settings from './pages/principal/Settings';
 import Classes from './pages/principal/Classes';
 import Timetable from './pages/principal/Timetable';
 import PrincipalNotices from './pages/principal/Notices';
-import Accountants from './pages/principal/Accountants';
-
 // Admin Pages
 import AdminDashboard from './pages/admin/AdminDashboard';
 import AdminStudents from './pages/admin/Students';
@@ -105,7 +103,6 @@ export default function App() {
             <Route path="dashboard" element={<PrincipalDashboard />} />
             <Route path="students" element={<Students />} />
             <Route path="teachers" element={<Teachers />} />
-            <Route path="accountants" element={<Accountants />} />
             <Route path="attendance" element={<AttendanceOverview />} />
             <Route path="fees" element={<FeesOverview />} />
             <Route path="reports" element={<Reports />} />
