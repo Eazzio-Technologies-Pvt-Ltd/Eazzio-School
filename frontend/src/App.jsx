@@ -15,7 +15,8 @@ import AttendanceOverview from './pages/principal/AttendanceOverview';
 import FeesOverview from './pages/principal/FeesOverview';
 import Reports from './pages/principal/Reports';
 import Settings from './pages/principal/Settings';
-import Classes from './pages/principal/Classes';
+import Courses from './pages/principal/Courses';
+import CourseDetails from './pages/principal/CourseDetails';
 import Timetable from './pages/principal/Timetable';
 import PrincipalNotices from './pages/principal/Notices';
 // Admin Pages
@@ -26,18 +27,18 @@ import AdminAttendanceOverview from './pages/admin/AttendanceOverview';
 import AdminFeesOverview from './pages/admin/FeesOverview';
 import AdminReports from './pages/admin/Reports';
 import AdminSettings from './pages/admin/Settings';
-import AdminClasses from './pages/admin/Classes';
+import AdminCourses from './pages/admin/Courses';
 import AdminTimetable from './pages/admin/Timetable';
 import AdminNotices from './pages/admin/Notices';
 
 // Teacher Pages
 import TeacherDashboard from './pages/teacher/TeacherDashboard';
-import MyClasses from './pages/teacher/MyClasses';
+import MyCourses from './pages/teacher/MyCourses';
 import TakeAttendance from './pages/teacher/TakeAttendance';
 import AttendanceHistory from './pages/teacher/AttendanceHistory';
 import TeacherProfile from './pages/teacher/TeacherProfile';
 import TeacherRoutine from './pages/teacher/TeacherRoutine';
-import ClassFees from './pages/teacher/ClassFees';
+import CourseFees from './pages/teacher/CourseFees';
 import TeacherNotices from './pages/teacher/Notices';
 
 // Student Pages
@@ -107,7 +108,8 @@ export default function App() {
             <Route path="fees" element={<FeesOverview />} />
             <Route path="reports" element={<Reports />} />
             <Route path="settings" element={<Settings />} />
-            <Route path="classes" element={<Classes />} />
+            <Route path="courses" element={<Courses />} />
+            <Route path="courses/:id" element={<CourseDetails />} />
             <Route path="timetable" element={<Timetable />} />
             <Route path="notices" element={<PrincipalNotices />} />
           </Route>
@@ -128,7 +130,7 @@ export default function App() {
             <Route path="fees" element={<AdminFeesOverview />} />
             <Route path="reports" element={<AdminReports />} />
             <Route path="settings" element={<AdminSettings />} />
-            <Route path="classes" element={<AdminClasses />} />
+            <Route path="courses" element={<AdminCourses />} />
             <Route path="timetable" element={<AdminTimetable />} />
             <Route path="notices" element={<AdminNotices />} />
           </Route>
@@ -143,10 +145,10 @@ export default function App() {
             }
           >
             <Route path="dashboard" element={<TeacherDashboard />} />
-            <Route path="classes" element={<MyClasses />} />
+            <Route path="courses" element={<MyCourses />} />
             <Route path="take-attendance" element={<TakeAttendance />} />
             <Route path="history" element={<AttendanceHistory />} />
-            <Route path="fees" element={<ClassFees />} />
+            <Route path="fees" element={<CourseFees />} />
             <Route path="profile" element={<TeacherProfile />} />
             <Route path="routine" element={<TeacherRoutine />} />
             <Route path="notices" element={<TeacherNotices />} />

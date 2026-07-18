@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { getStudents, registerStudent, getClasses, deleteStudent } from '../../api/adminApi';
+import { getStudents, registerStudent, getCourses, deleteStudent } from '../../api/adminApi';
 import Loader from '../../components/Loader';
 
 export default function Students() {
@@ -8,7 +8,7 @@ export default function Students() {
   // Form Fields
   const [name, setName] = useState('');
   const [rollNumber, setRollNumber] = useState('');
-  const [classId, setClassId] = useState('');
+  const [courseId, setCourseId] = useState('');
   const [fatherName, setFatherName] = useState('');
   const [motherName, setMotherName] = useState('');
   const [phone, setPhone] = useState('');
@@ -17,7 +17,7 @@ export default function Students() {
 
   // Data List & Modal State
   const [studentsList, setStudentsList] = useState([]);
-  const [classesList, setClassesList] = useState([]);
+  const [coursesList, setCoursesList] = useState([]);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
@@ -27,14 +27,14 @@ export default function Students() {
 
   // Filters State
   const [searchQuery, setSearchQuery] = useState('');
-  const [classFilter, setClassFilter] = useState('');
+  const [courseFilter, setCourseFilter] = useState('');
 
   const loadData = async () => {
     try {
       setLoading(true);
-      const [students, clsData] = await Promise.all([getStudents(), getClasses()]);
+      const [students, clsData] = await Promise.all([getStudents(), getCourses()]);
       setStudentsList(students);
-      setClassesList(clsData);
+      setCoursesList(clsData);
     } catch (err) {
       console.error(err);
       setError('Failed to load student records.');
@@ -62,8 +62,8 @@ export default function Students() {
     e.preventDefault();
     setError('');
 
-    if (!rollNumber || !classId || !name) {
-      setError('Name, Roll number, and Class are required');
+    if (!rollNumber || !courseId || !name) {
+      setError('Name, Roll number, and Course are required');
       return;
     }
 
@@ -72,7 +72,7 @@ export default function Students() {
       const response = await registerStudent({
         name,
         rollNumber,
-        classId,
+        courseId,
         fatherName,
         motherName,
         phone,
@@ -91,7 +91,7 @@ export default function Students() {
       // Clear form
       setName('');
       setRollNumber('');
-      setClassId('');
+      setCourseId('');
       setFatherName('');
       setMotherName('');
       setPhone('');
@@ -114,10 +114,10 @@ export default function Students() {
       (student.rollNumber || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
       (student.studentId || '').toLowerCase().includes(searchQuery.toLowerCase());
 
-    // Class filter matching
-    const matchesClass = !classFilter || student.classId?.toString() === classFilter;
+    // Course filter matching
+    const matchesCourse = !courseFilter || student.courseId?.toString() === courseFilter;
 
-    return matchesSearch && matchesClass;
+    return matchesSearch && matchesCourse;
   });
 
   return (
@@ -145,10 +145,10 @@ export default function Students() {
                 <input type="text" placeholder="e.g. 101" value={rollNumber} onChange={(e) => setRollNumber(e.target.value)} required />
               </div>
               <div style={styles.inputGroup}>
-                <label>Assign Class</label>
-                <select value={classId} onChange={(e) => setClassId(e.target.value)} required style={styles.select}>
-                  <option value="">Select Class</option>
-                  {classesList.map(cls => (
+                <label>Assign Course</label>
+                <select value={courseId} onChange={(e) => setCourseId(e.target.value)} required style={styles.select}>
+                  <option value="">Select Course</option>
+                  {coursesList.map(cls => (
                     <option key={cls.id} value={cls.id}>{cls.className} - {cls.section}</option>
                   ))}
                 </select>
@@ -198,9 +198,9 @@ export default function Students() {
           {/* Filtering Controls */}
           <div style={styles.filterGrid}>
             <input type="text" placeholder="🔍 Search name, roll, ID..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} style={styles.searchBar} />
-            <select value={classFilter} onChange={(e) => setClassFilter(e.target.value)} style={styles.filterDropdown}>
-              <option value="">All Classes</option>
-              {classesList.map(cls => (
+            <select value={courseFilter} onChange={(e) => setCourseFilter(e.target.value)} style={styles.filterDropdown}>
+              <option value="">All Courses</option>
+              {coursesList.map(cls => (
                 <option key={cls.id} value={cls.id}>{cls.className} - {cls.section}</option>
               ))}
             </select>
@@ -217,7 +217,7 @@ export default function Students() {
                     <th style={styles.th}>Student ID</th>
                     <th style={styles.th}>Name</th>
                     <th style={styles.th}>Roll</th>
-                    <th style={styles.th}>Class</th>
+                    <th style={styles.th}>Course</th>
                     <th style={styles.th}>Phone</th>
                     <th style={styles.th}>Admission Date</th>
                     <th style={{ ...styles.th, textAlign: 'right' }}>Actions</th>
@@ -238,7 +238,7 @@ export default function Students() {
                         </td>
                         <td style={styles.td}>{student.rollNumber}</td>
                         <td style={{ ...styles.td, color: 'var(--primary)', fontWeight: 'bold' }}>
-                          {student.class ? `${student.class.className}-${student.class.section}` : 'N/A'}
+                          {student.course ? `${student.course.className}-${student.course.section}` : 'N/A'}
                         </td>
                         <td style={styles.td}>{student.phone || '-'}</td>
                         <td style={styles.td}>{student.admissionDate ? new Date(student.admissionDate).toLocaleDateString() : '-'}</td>

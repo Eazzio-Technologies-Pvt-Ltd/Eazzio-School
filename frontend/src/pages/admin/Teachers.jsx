@@ -15,7 +15,7 @@ export default function Teachers() {
 
   // Filters State
   const [searchQuery, setSearchQuery] = useState('');
-  const [classFilter, setClassFilter] = useState('');
+  const [courseFilter, setCourseFilter] = useState('');
   const [subjectFilter, setSubjectFilter] = useState('');
 
   // Data List & Toast State
@@ -88,8 +88,8 @@ export default function Teachers() {
   // Mock subjects list for prototype filter
   const subjectsList = ['Mathematics', 'Science', 'English Literature', 'History', 'Computer Science'];
   
-  // Extract classes list for Filter dropdown
-  const classesList = [...new Set(teachersList.map(t => t.teacher?.assignedClass).filter(Boolean))];
+  // Extract courses list for Filter dropdown
+  const coursesList = [...new Set(teachersList.map(t => t.teacher?.assignedCourse).filter(Boolean))];
 
   // Dynamic search/filters on client
   const filteredTeachers = teachersList.filter(user => {
@@ -98,21 +98,21 @@ export default function Teachers() {
       user.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       user.email.toLowerCase().includes(searchQuery.toLowerCase());
 
-    const teacherClass = user.assignedClass ? `${user.assignedClass.className}-${user.assignedClass.section}` : '';
-    const matchesClass = !classFilter || teacherClass === classFilter;
+    const teacherCourse = user.assignedCourse ? `${user.assignedCourse.className}-${user.assignedCourse.section}` : '';
+    const matchesCourse = !courseFilter || teacherCourse === courseFilter;
 
     // Subject matching (mocked logic - associates teacher ID to mock index)
     const mockSubject = subjectsList[user.id % subjectsList.length];
     const matchesSubject = !subjectFilter || mockSubject === subjectFilter;
 
-    return matchesSearch && matchesClass && matchesSubject;
+    return matchesSearch && matchesCourse && matchesSubject;
   });
 
   return (
     <div style={styles.container} className="animate-fade-in">
       <div style={styles.header}>
         <h2>Faculty & Teacher Registry</h2>
-        <p style={styles.sub}>Register and manage faculty members and classroom assignments.</p>
+        <p style={styles.sub}>Register and manage faculty members and courseroom assignments.</p>
       </div>
 
       {toast.visible && (
@@ -213,12 +213,12 @@ export default function Teachers() {
             />
 
             <select
-              value={classFilter}
-              onChange={(e) => setClassFilter(e.target.value)}
+              value={courseFilter}
+              onChange={(e) => setCourseFilter(e.target.value)}
               style={styles.filterDropdown}
             >
-              <option value="">All Classes</option>
-              {classesList.map(c => (
+              <option value="">All Courses</option>
+              {coursesList.map(c => (
                 <option key={c} value={c}>{c}</option>
               ))}
             </select>
@@ -246,7 +246,7 @@ export default function Teachers() {
                     <th style={styles.th}>Name</th>
                     <th style={styles.th}>Employee ID</th>
                     <th style={styles.th}>Subject</th>
-                    <th style={styles.th}>Assigned Classroom</th>
+                    <th style={styles.th}>Assigned Courseroom</th>
                     <th style={styles.th}>Phone</th>
                     <th style={styles.th}>Status</th>
                     <th style={{ ...styles.th, textAlign: 'right' }}>Actions</th>
@@ -275,7 +275,7 @@ export default function Teachers() {
                           </td>
                           <td style={styles.td}>{mockSubject}</td>
                           <td style={{ ...styles.td, fontWeight: '700', color: 'var(--primary)' }}>
-                            {user.assignedClass ? `${user.assignedClass.className}-${user.assignedClass.section}` : 'Unassigned'}
+                            {user.assignedCourse ? `${user.assignedCourse.className}-${user.assignedCourse.section}` : 'Unassigned'}
                           </td>
                           <td style={styles.td}>{user.phone || 'N/A'}</td>
                           <td style={styles.td}>

@@ -28,7 +28,7 @@ export default function MyProfile() {
     <div style={styles.container} className="animate-fade-in">
       <div style={styles.header}>
         <h2>Student Profile Specifications</h2>
-        <p style={styles.sub}>Personal credentials, enrollment details, and class registrations.</p>
+        <p style={styles.sub}>Personal credentials, enrollment details, and course registrations.</p>
       </div>
 
       <div style={styles.pane}>
@@ -85,9 +85,9 @@ export default function MyProfile() {
           </div>
 
           <div style={styles.infoItem}>
-            <span style={styles.label}>Assigned Class / Grade</span>
+            <span style={styles.label}>Assigned Course / Grade</span>
             <span style={{ ...styles.value, color: 'var(--primary)', fontWeight: '700' }}>
-              {profile?.class ? `${profile.class.className}-${profile.class.section}` : 'N/A'}
+              {profile?.course ? `${profile.course.className}-${profile.course.section}` : 'N/A'}
             </span>
           </div>
         </div>

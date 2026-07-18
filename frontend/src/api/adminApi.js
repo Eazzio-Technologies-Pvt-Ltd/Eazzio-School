@@ -21,19 +21,19 @@ export const registerTeacher = async (payload) => {
   return response.data;
 };
 
-// --- Classes ---
-export const getClasses = async () => {
-  const response = await api.get('/admin/classes');
+// --- Courses ---
+export const getCourses = async () => {
+  const response = await api.get('/admin/courses');
   return response.data;
 };
 
-export const createClass = async (payload) => {
-  const response = await api.post('/admin/classes', payload);
+export const createCourse = async (payload) => {
+  const response = await api.post('/admin/courses', payload);
   return response.data;
 };
 
-export const assignClassTeacher = async (classId, teacherId) => {
-  const response = await api.put(`/principal/classes/${classId}/assign-teacher`, { teacherId });
+export const assignCourseTeacher = async (courseId, teacherId) => {
+  const response = await api.put(`/principal/courses/${courseId}/assign-teacher`, { teacherId });
   return response.data;
 };
 

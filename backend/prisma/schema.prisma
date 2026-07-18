@@ -22,7 +22,7 @@ model School {
   schoolCode         String         @unique
   Admin              Admin[]
   attendance         Attendance[]
-  classes            Class[]
+  courses            Course[]
   feeInvoices        FeeInvoice[]
   payments           FeePayment[]
   feeStructures      FeeStructure[]
@@ -34,10 +34,10 @@ model School {
   accountants        Accountant[]
 }
 
-model Class {
+model Course {
   id            Int            @id @default(autoincrement())
   schoolId      Int
-  className     String
+  courseName    String
   section       String
   academicYear  String
   teacherId     Int?           @unique
@@ -50,7 +50,7 @@ model Class {
   students      Student[]
   timetables    Timetable[]
 
-  @@unique([schoolId, className, section, academicYear])
+  @@unique([schoolId, courseName, section, academicYear])
   @@index([schoolId])
 }
 
@@ -67,18 +67,18 @@ model Principal {
 }
 
 model Teacher {
-  id            Int          @id @default(autoincrement())
-  schoolId      Int
-  name          String
-  email         String       @unique
-  password      String
-  phone         String?
-  employeeId    String       @unique
-  createdAt     DateTime     @default(now())
-  attendance    Attendance[]
-  assignedClass Class?
-  school        School       @relation(fields: [schoolId], references: [id], onDelete: Cascade)
-  timetables    Timetable[]
+  id             Int          @id @default(autoincrement())
+  schoolId       Int
+  name           String
+  email          String       @unique
+  password       String
+  phone          String?
+  employeeId     String       @unique
+  createdAt      DateTime     @default(now())
+  attendance     Attendance[]
+  assignedCourse Course?
+  school         School       @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  timetables     Timetable[]
 
   @@index([schoolId])
 }
@@ -93,14 +93,14 @@ model Student {
   motherName    String?
   phone         String?
   address       String?
-  classId       Int?
+  courseId      Int?
   rollNumber    String?
   admissionDate DateTime?
   createdAt     DateTime     @default(now())
   attendance    Attendance[]
   feeInvoices   FeeInvoice[]
   payments      FeePayment[]
-  class         Class?       @relation(fields: [classId], references: [id])
+  course        Course?      @relation(fields: [courseId], references: [id])
   school        School       @relation(fields: [schoolId], references: [id], onDelete: Cascade)
 
   @@index([schoolId])
@@ -111,10 +111,10 @@ model Attendance {
   schoolId  Int
   studentId Int
   teacherId Int?
-  classId   Int?
+  courseId  Int?
   date      DateTime
   status    AttendanceStatus
-  class     Class?           @relation(fields: [classId], references: [id])
+  course    Course?          @relation(fields: [courseId], references: [id])
   school    School           @relation(fields: [schoolId], references: [id], onDelete: Cascade)
   student   Student          @relation(fields: [studentId], references: [id], onDelete: Cascade)
   teacher   Teacher?         @relation(fields: [teacherId], references: [id])
@@ -127,11 +127,11 @@ model Timetable {
   id        Int     @id @default(autoincrement())
   schoolId  Int
   teacherId Int
-  classId   Int
+  courseId  Int
   dayOfWeek String
   period    String
   subject   String
-  class     Class   @relation(fields: [classId], references: [id], onDelete: Cascade)
+  course    Course  @relation(fields: [courseId], references: [id], onDelete: Cascade)
   school    School  @relation(fields: [schoolId], references: [id], onDelete: Cascade)
   teacher   Teacher @relation(fields: [teacherId], references: [id], onDelete: Cascade)
 
@@ -142,11 +142,11 @@ model Timetable {
 model FeeStructure {
   id       Int       @id @default(autoincrement())
   schoolId Int
-  classId  Int?
+  courseId Int?
   feeType  String
   amount   Int
   dueDate  DateTime?
-  class    Class?    @relation(fields: [classId], references: [id], onDelete: Cascade)
+  course   Course?   @relation(fields: [courseId], references: [id], onDelete: Cascade)
   school   School    @relation(fields: [schoolId], references: [id], onDelete: Cascade)
 
   @@index([schoolId])
@@ -191,9 +191,9 @@ model Notice {
   content       String
   date          DateTime       @default(now())
   audience      NoticeAudience
-  classId       Int?
+  courseId      Int?
   attachmentUrl String?
-  class         Class?         @relation(fields: [classId], references: [id], onDelete: Cascade)
+  course        Course?        @relation(fields: [courseId], references: [id], onDelete: Cascade)
   school        School         @relation(fields: [schoolId], references: [id], onDelete: Cascade)
 
   @@index([schoolId])
@@ -219,7 +219,7 @@ enum FeeStatus {
 
 enum NoticeAudience {
   SCHOOL
-  CLASS
+  COURSE
   TEACHERS
   STUDENTS
 }

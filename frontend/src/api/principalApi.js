@@ -21,19 +21,34 @@ export const registerTeacher = async (payload) => {
   return response.data;
 };
 
-// --- Classes ---
-export const getClasses = async () => {
-  const response = await api.get('/principal/classes');
+// --- Courses ---
+export const getCourses = async () => {
+  const response = await api.get('/principal/courses');
   return response.data;
 };
 
-export const createClass = async (payload) => {
-  const response = await api.post('/principal/classes', payload);
+export const createCourse = async (payload) => {
+  const response = await api.post('/principal/courses', payload);
   return response.data;
 };
 
-export const assignClassTeacher = async (classId, teacherId) => {
-  const response = await api.put(`/principal/classes/${classId}/assign-teacher`, { teacherId });
+export const updateCourse = async (id, payload) => {
+  const response = await api.put(`/principal/courses/${id}`, payload);
+  return response.data;
+};
+
+export const deleteCourse = async (id) => {
+  const response = await api.delete(`/principal/courses/${id}`);
+  return response.data;
+};
+
+export const getCourseDetails = async (id) => {
+  const response = await api.get(`/principal/courses/${id}`);
+  return response.data;
+};
+
+export const assignCourseTeacher = async (courseId, teacherId) => {
+  const response = await api.put(`/principal/courses/${courseId}/assign-teacher`, { teacherId });
   return response.data;
 };
 
@@ -45,6 +60,21 @@ export const getStudents = async () => {
 
 export const registerStudent = async (payload) => {
   const response = await api.post('/principal/students', payload);
+  return response.data;
+};
+
+export const updateStudent = async (id, payload) => {
+  const response = await api.put(`/principal/students/${id}`, payload);
+  return response.data;
+};
+
+export const getStudentDetails = async (id) => {
+  const response = await api.get(`/principal/students/${id}`);
+  return response.data;
+};
+
+export const bulkImportUpdateStudents = async (payload) => {
+  const response = await api.post('/principal/students/bulk-import-update', payload);
   return response.data;
 };
 

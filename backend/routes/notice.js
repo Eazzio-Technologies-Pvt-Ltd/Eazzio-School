@@ -43,7 +43,7 @@ const upload = multer({
 // Create Notice (Principal Only)
 router.post('/', upload.single('attachment'), validate(noticeSchema), async (req, res) => {
   try {
-    const { schoolId, title, content, audience, classId } = req.body;
+    const { schoolId, title, content, audience, courseId } = req.body;
     
     const noticeData = {
       schoolId: parseInt(schoolId),
@@ -52,8 +52,8 @@ router.post('/', upload.single('attachment'), validate(noticeSchema), async (req
       audience
     };
 
-    if (classId && audience === 'CLASS') {
-      noticeData.classId = parseInt(classId);
+    if (courseId && audience === 'COURSE') {
+      noticeData.courseId = parseInt(courseId);
     }
 
     if (req.file) {
@@ -75,7 +75,7 @@ router.post('/', upload.single('attachment'), validate(noticeSchema), async (req
 router.put('/:id', upload.single('attachment'), validate(noticeSchema), async (req, res) => {
   try {
     const { id } = req.params;
-    const { title, content, audience, classId } = req.body;
+    const { title, content, audience, courseId } = req.body;
     
     // Check if notice exists
     const existingNotice = await prisma.notice.findUnique({
@@ -92,10 +92,10 @@ router.put('/:id', upload.single('attachment'), validate(noticeSchema), async (r
       audience
     };
 
-    if (audience === 'CLASS' && classId) {
-      updateData.classId = parseInt(classId);
+    if (audience === 'COURSE' && courseId) {
+      updateData.courseId = parseInt(courseId);
     } else {
-      updateData.classId = null;
+      updateData.courseId = null;
     }
 
     if (req.file) {
@@ -157,7 +157,7 @@ router.delete('/:id', async (req, res) => {
 // Get Notices (Role Based)
 router.get('/', async (req, res) => {
   try {
-    const { schoolId, role, classId } = req.query;
+    const { schoolId, role, courseId } = req.query;
     
     let audienceFilter = ['SCHOOL'];
 
@@ -180,10 +180,10 @@ router.get('/', async (req, res) => {
         { audience: { in: audienceFilter } }
       ];
       
-      if (classId) {
+      if (courseId) {
         whereClause.OR.push({
-          audience: 'CLASS',
-          classId: parseInt(classId)
+          audience: 'COURSE',
+          courseId: parseInt(courseId)
         });
       }
     }
@@ -192,7 +192,7 @@ router.get('/', async (req, res) => {
       where: whereClause,
       orderBy: { date: 'desc' },
       include: {
-        class: true
+        course: true
       }
     });
 

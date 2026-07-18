@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { getClasses, createClass, assignClassTeacher, getTeachers } from '../../api/principalApi';
+import { getCourses, createCourse, assignCourseTeacher, getTeachers } from '../../api/adminApi';
 
-export default function Classes() {
-  const [classes, setClasses] = useState([]);
+export default function Courses() {
+  const [courses, setCourses] = useState([]);
   const [teachers, setTeachers] = useState([]);
   const [loading, setLoading] = useState(true);
   
-  // Create Class Form
+  // Create Course Form
   const [className, setClassName] = useState('');
   const [section, setSection] = useState('');
   const [academicYear, setAcademicYear] = useState('2026-2027');
@@ -15,7 +15,7 @@ export default function Classes() {
 
   // Assign Teacher Modal
   const [assignModalOpen, setAssignModalOpen] = useState(false);
-  const [selectedClass, setSelectedClass] = useState(null);
+  const [selectedCourse, setSelectedCourse] = useState(null);
   const [selectedTeacherId, setSelectedTeacherId] = useState('');
   const [assigning, setAssigning] = useState(false);
 
@@ -26,8 +26,8 @@ export default function Classes() {
   const fetchData = async () => {
     try {
       setLoading(true);
-      const [clsData, tchData] = await Promise.all([getClasses(), getTeachers()]);
-      setClasses(clsData);
+      const [clsData, tchData] = await Promise.all([getCourses(), getTeachers()]);
+      setCourses(clsData);
       setTeachers(tchData);
     } catch (err) {
       console.error('Failed to load data', err);
@@ -36,24 +36,24 @@ export default function Classes() {
     }
   };
 
-  const handleCreateClass = async (e) => {
+  const handleCreateCourse = async (e) => {
     e.preventDefault();
     setError('');
     setCreating(true);
     try {
-      await createClass({ className, section, academicYear });
+      await createCourse({ className, section, academicYear });
       setClassName('');
       setSection('');
       await fetchData();
     } catch (err) {
-      setError(err.response?.data?.error || 'Failed to create class');
+      setError(err.response?.data?.error || 'Failed to create course');
     } finally {
       setCreating(false);
     }
   };
 
   const openAssignModal = (cls) => {
-    setSelectedClass(cls);
+    setSelectedCourse(cls);
     setSelectedTeacherId(cls.teacherId || '');
     setAssignModalOpen(true);
   };
@@ -62,7 +62,7 @@ export default function Classes() {
     if (!selectedTeacherId) return;
     setAssigning(true);
     try {
-      await assignClassTeacher(selectedClass.id, parseInt(selectedTeacherId));
+      await assignCourseTeacher(selectedCourse.id, parseInt(selectedTeacherId));
       setAssignModalOpen(false);
       await fetchData();
     } catch (err) {
@@ -74,16 +74,16 @@ export default function Classes() {
 
   return (
     <div className="animate-fade-in">
-      <h2 style={{ fontSize: '1.5rem', fontWeight: 'bold', marginBottom: '20px' }}>Manage Classes</h2>
+      <h2 style={{ fontSize: '1.5rem', fontWeight: 'bold', marginBottom: '20px' }}>Manage Courses</h2>
 
       <div style={styles.grid}>
-        {/* Create Class Form */}
+        {/* Create Course Form */}
         <div style={styles.card}>
-          <h3 style={styles.cardTitle}>Create New Class</h3>
+          <h3 style={styles.cardTitle}>Create New Course</h3>
           {error && <div style={styles.errorAlert}>{error}</div>}
-          <form onSubmit={handleCreateClass} style={styles.form}>
+          <form onSubmit={handleCreateCourse} style={styles.form}>
             <div style={styles.inputGroup}>
-              <label>Class Name (e.g. 10)</label>
+              <label>Course Name (e.g. 10)</label>
               <input type="text" value={className} onChange={e => setClassName(e.target.value)} required />
             </div>
             <div style={styles.inputGroup}>
@@ -95,32 +95,32 @@ export default function Classes() {
               <input type="text" value={academicYear} onChange={e => setAcademicYear(e.target.value)} required />
             </div>
             <button type="submit" className="btn-primary" disabled={creating} style={{ marginTop: '10px' }}>
-              {creating ? 'Creating...' : 'Create Class'}
+              {creating ? 'Creating...' : 'Create Course'}
             </button>
           </form>
         </div>
 
-        {/* Classes List */}
+        {/* Courses List */}
         <div style={{ ...styles.card, gridColumn: 'span 2' }}>
-          <h3 style={styles.cardTitle}>Class List</h3>
+          <h3 style={styles.cardTitle}>Course List</h3>
           {loading ? (
-            <p>Loading classes...</p>
-          ) : classes.length === 0 ? (
-            <p>No classes found.</p>
+            <p>Loading courses...</p>
+          ) : courses.length === 0 ? (
+            <p>No courses found.</p>
           ) : (
             <div style={styles.tableContainer}>
               <table style={styles.table}>
                 <thead>
                   <tr>
-                    <th>Class</th>
+                    <th>Course</th>
                     <th>Academic Year</th>
-                    <th>Class Teacher</th>
+                    <th>Course Teacher</th>
                     <th>Students</th>
                     <th>Actions</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {classes.map(cls => (
+                  {courses.map(cls => (
                     <tr key={cls.id}>
                       <td>{cls.className} - {cls.section}</td>
                       <td>{cls.academicYear}</td>
@@ -144,7 +144,7 @@ export default function Classes() {
       {assignModalOpen && (
         <div style={styles.modalOverlay}>
           <div style={styles.modalCard}>
-            <h3>Assign Teacher for {selectedClass?.className}-{selectedClass?.section}</h3>
+            <h3>Assign Teacher for {selectedCourse?.className}-{selectedCourse?.section}</h3>
             <div style={styles.inputGroup}>
               <label>Select Teacher</label>
               <select 

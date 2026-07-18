@@ -1,19 +1,19 @@
 import React, { useContext, useState, useEffect } from 'react';
 import { AuthContext } from '../../context/AuthContext';
-import { getClassDetails } from '../../api/teacherApi';
+import { getCourseDetails } from '../../api/teacherApi';
 import Loader from '../../components/Loader';
 
 export default function TeacherProfile() {
   const { user } = useContext(AuthContext);
-  const [assignedClass, setAssignedClass] = useState('');
+  const [assignedCourse, setAssignedCourse] = useState('');
   const [studentCount, setStudentCount] = useState(0);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const loadProfile = async () => {
       try {
-        const data = await getClassDetails();
-        setAssignedClass(data.assignedClass);
+        const data = await getCourseDetails();
+        setAssignedCourse(data.assignedCourse);
         setStudentCount(data.students.length);
       } catch (err) {
         console.error(err);
@@ -30,7 +30,7 @@ export default function TeacherProfile() {
     <div style={styles.container} className="animate-fade-in">
       <div style={styles.header}>
         <h2>Faculty Profile Details</h2>
-        <p style={styles.sub}>Personal credentials and academic classroom mapping details.</p>
+        <p style={styles.sub}>Personal credentials and academic courseroom mapping details.</p>
       </div>
 
       <div style={styles.pane}>
@@ -50,12 +50,12 @@ export default function TeacherProfile() {
           </div>
 
           <div style={styles.infoItem}>
-            <span style={styles.label}>Assigned Class / Grade</span>
-            <span style={{ ...styles.value, color: 'var(--primary)', fontWeight: '700' }}>{assignedClass}</span>
+            <span style={styles.label}>Assigned Course / Grade</span>
+            <span style={{ ...styles.value, color: 'var(--primary)', fontWeight: '700' }}>{assignedCourse}</span>
           </div>
 
           <div style={styles.infoItem}>
-            <span style={styles.label}>Students Enrolled In Class</span>
+            <span style={styles.label}>Students Enrolled In Course</span>
             <span style={styles.value}>{studentCount} Students</span>
           </div>
         </div>

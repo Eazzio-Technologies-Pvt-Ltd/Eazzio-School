@@ -12,7 +12,7 @@ router.use(requireStudent);
 const getBaseStudent = async (req) => {
   return prisma.student.findUnique({
     where: { id: req.user.userId },
-    include: { class: true }
+    include: { course: true }
   });
 };
 
@@ -25,7 +25,7 @@ router.get('/dashboard-summary', async (req, res) => {
       where: { id: req.user.userId },
       include: {
         attendance: true,
-        class: true,
+        course: true,
         payments: {
           where: { status: 'SUCCESS' }
         }
@@ -81,7 +81,7 @@ router.get('/dashboard-summary', async (req, res) => {
         schoolId,
         OR: [
           { audience: 'SCHOOL' },
-          { audience: 'CLASS', classId: student.classId }
+          { audience: 'COURSE', courseId: student.courseId }
         ]
       },
       orderBy: { date: 'desc' },
@@ -93,11 +93,11 @@ router.get('/dashboard-summary', async (req, res) => {
     const today = days[new Date().getDay()];
     
     let todayRoutine = [];
-    if (student.classId) {
+    if (student.courseId) {
       todayRoutine = await prisma.timetable.findMany({
         where: {
           schoolId,
-          classId: student.classId,
+          courseId: student.courseId,
           dayOfWeek: today
         },
         orderBy: { period: 'asc' },
@@ -112,7 +112,7 @@ router.get('/dashboard-summary', async (req, res) => {
           name: student.name,
           studentId: student.studentId,
           rollNumber: student.rollNumber,
-          className: student.class ? `${student.class.className}-${student.class.section}` : 'Unassigned',
+          courseName: student.course ? `${student.course.courseName}-${student.course.section}` : 'Unassigned',
         },
         attendance: {
           percentage: attendancePercentage,
@@ -143,7 +143,7 @@ router.get('/profile', async (req, res) => {
   try {
     const student = await prisma.student.findUnique({
       where: { id: req.user.userId },
-      include: { class: true }
+      include: { course: true }
     });
     
     // Omit sensitive data like password
@@ -268,11 +268,11 @@ router.get('/notices', async (req, res) => {
         schoolId: req.user.schoolId,
         OR: [
           { audience: 'SCHOOL' },
-          { audience: 'CLASS', classId: student.classId }
+          { audience: 'COURSE', courseId: student.courseId }
         ]
       },
       orderBy: { date: 'desc' },
-      include: { class: true }
+      include: { course: true }
     });
     
     return res.json({ success: true, data: notices });
@@ -285,14 +285,14 @@ router.get('/notices', async (req, res) => {
 router.get('/routine', async (req, res) => {
   try {
     const student = await getBaseStudent(req);
-    if (!student.classId) {
+    if (!student.courseId) {
       return res.json({ success: true, data: {} });
     }
 
     const routineRecords = await prisma.timetable.findMany({
       where: {
         schoolId: req.user.schoolId,
-        classId: student.classId
+        courseId: student.courseId
       },
       orderBy: { period: 'asc' },
       include: { teacher: true }

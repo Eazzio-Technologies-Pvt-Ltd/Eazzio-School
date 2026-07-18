@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { getClasses, getTeachers, getTimetables, createTimetable, deleteTimetable } from '../../api/adminApi';
+import { getCourses, getTeachers, getTimetables, createTimetable, deleteTimetable } from '../../api/adminApi';
 import Loader from '../../components/Loader';
 
 export default function Timetable() {
-  const [classes, setClasses] = useState([]);
+  const [courses, setCourses] = useState([]);
   const [teachers, setTeachers] = useState([]);
   const [timetables, setTimetables] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -12,13 +12,13 @@ export default function Timetable() {
 
   // Form states
   const [teacherId, setTeacherId] = useState('');
-  const [classId, setClassId] = useState('');
+  const [courseId, setCourseId] = useState('');
   const [dayOfWeek, setDayOfWeek] = useState('Monday');
   const [period, setPeriod] = useState('Period 1');
   const [subject, setSubject] = useState('');
 
   // Filter state
-  const [filterClass, setFilterClass] = useState('');
+  const [filterCourse, setFilterCourse] = useState('');
 
   const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
   const periods = ['Period 1', 'Period 2', 'Period 3', 'Period 4', 'Period 5', 'Period 6'];
@@ -27,11 +27,11 @@ export default function Timetable() {
     try {
       setLoading(true);
       const [clsData, tchData, ttData] = await Promise.all([
-        getClasses(),
+        getCourses(),
         getTeachers(),
         getTimetables()
       ]);
-      setClasses(clsData);
+      setCourses(clsData);
       setTeachers(tchData);
       setTimetables(ttData);
     } catch (err) {
@@ -50,14 +50,14 @@ export default function Timetable() {
     e.preventDefault();
     setError('');
     
-    if (!teacherId || !classId || !subject) {
+    if (!teacherId || !courseId || !subject) {
       setError('All fields are required');
       return;
     }
 
     try {
       setSubmitting(true);
-      await createTimetable({ teacherId, classId, dayOfWeek, period, subject });
+      await createTimetable({ teacherId, courseId, dayOfWeek, period, subject });
       
       // Reset some fields
       setSubject('');
@@ -81,8 +81,8 @@ export default function Timetable() {
     }
   };
 
-  const filteredTimetables = filterClass 
-    ? timetables.filter(t => t.classId === parseInt(filterClass)) 
+  const filteredTimetables = filterCourse 
+    ? timetables.filter(t => t.courseId === parseInt(filterCourse)) 
     : timetables;
 
   // Group by day for the view
@@ -98,7 +98,7 @@ export default function Timetable() {
     <div style={styles.container} className="animate-fade-in">
       <div style={styles.header}>
         <h2>Master Timetable</h2>
-        <p style={styles.sub}>Assign weekly routines for teachers and classes.</p>
+        <p style={styles.sub}>Assign weekly routines for teachers and courses.</p>
       </div>
 
       <div style={styles.mainGrid}>
@@ -117,10 +117,10 @@ export default function Timetable() {
             </div>
             
             <div style={styles.inputGroup}>
-              <label>Class</label>
-              <select value={classId} onChange={e => setClassId(e.target.value)} required>
-                <option value="">Select Class</option>
-                {classes.map(c => <option key={c.id} value={c.id}>{c.className}-{c.section}</option>)}
+              <label>Course</label>
+              <select value={courseId} onChange={e => setCourseId(e.target.value)} required>
+                <option value="">Select Course</option>
+                {courses.map(c => <option key={c.id} value={c.id}>{c.className}-{c.section}</option>)}
               </select>
             </div>
 
@@ -153,9 +153,9 @@ export default function Timetable() {
         <div style={styles.viewPane}>
           <div style={styles.viewHeader}>
             <h3 style={styles.paneTitle}>Routine Viewer</h3>
-            <select style={styles.filterSelect} value={filterClass} onChange={e => setFilterClass(e.target.value)}>
-              <option value="">All Classes</option>
-              {classes.map(c => <option key={c.id} value={c.id}>{c.className}-{c.section}</option>)}
+            <select style={styles.filterSelect} value={filterCourse} onChange={e => setFilterCourse(e.target.value)}>
+              <option value="">All Courses</option>
+              {courses.map(c => <option key={c.id} value={c.id}>{c.className}-{c.section}</option>)}
             </select>
           </div>
 
@@ -174,7 +174,7 @@ export default function Timetable() {
                           <button onClick={() => handleDelete(t.id)} style={styles.deleteBtn}>✕</button>
                         </div>
                         <div style={styles.subjectText}>{t.subject}</div>
-                        <div style={styles.metaText}>Class: {t.class.className}-{t.class.section}</div>
+                        <div style={styles.metaText}>Course: {t.course.className}-{t.course.section}</div>
                         <div style={styles.metaText}>Teacher: {t.teacher.name}</div>
                       </div>
                     ))}

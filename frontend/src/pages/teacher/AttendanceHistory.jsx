@@ -67,7 +67,7 @@ export default function AttendanceHistory() {
     <div style={styles.container} className="animate-fade-in">
       <div style={styles.header}>
         <h2>Attendance History</h2>
-        <p style={styles.sub}>Review past attendance records for your assigned class.</p>
+        <p style={styles.sub}>Review past attendance records for your assigned course.</p>
       </div>
 
       {error && <div style={styles.errorAlert}>{error}</div>}

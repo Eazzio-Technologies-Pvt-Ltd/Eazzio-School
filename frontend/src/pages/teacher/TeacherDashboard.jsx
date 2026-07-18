@@ -20,7 +20,7 @@ export default function TeacherDashboard() {
       setSummary(data);
     } catch (err) {
       console.error(err);
-      setError('Failed to fetch class summary details.');
+      setError('Failed to fetch course summary details.');
     } finally {
       setLoading(false);
     }
@@ -30,29 +30,29 @@ export default function TeacherDashboard() {
     loadDashboard();
   }, []);
 
-  if (loading) return <Loader message="Loading classroom dashboard..." />;
+  if (loading) return <Loader message="Loading courseroom dashboard..." />;
   if (error) return <div className="error-feedback">{error}</div>;
 
   return (
     <div style={styles.container} className="animate-fade-in">
       <div style={styles.metricsGrid}>
         <StatCard
-          label="Class Size"
+          label="Course Size"
           value={summary?.studentCount || 0}
           icon="🎒"
           trend="Registered in grade"
           trendColor="var(--text-secondary)"
         />
         <StatCard
-          label="Classroom Name"
-          value={summary?.assignedClass || 'N/A'}
+          label="Courseroom Name"
+          value={summary?.assignedCourse || 'N/A'}
           icon="🏫"
           trend="Assigned Grade level"
           trendColor="var(--primary)"
         />
         <StatCard
-          label="Monthly Class Attendance"
-          value={`${summary?.classAttendanceRate || 100}%`}
+          label="Monthly Course Attendance"
+          value={`${summary?.courseAttendanceRate || 100}%`}
           icon="📊"
           trend="Based on active logs"
           trendColor="var(--success)"
@@ -67,7 +67,7 @@ export default function TeacherDashboard() {
             <EmptyState
               icon="✅"
               title="Perfect Attendance!"
-              description="No absences logged in your class over the last 3 days."
+              description="No absences logged in your course over the last 3 days."
             />
           ) : (
             <div style={styles.listContainer}>
@@ -90,12 +90,12 @@ export default function TeacherDashboard() {
 
         {/* Quick Action Navigation panel */}
         <div style={styles.panel}>
-          <h3 style={styles.panelTitle}>Classroom Actions</h3>
+          <h3 style={styles.panelTitle}>Courseroom Actions</h3>
           <div style={styles.actionsGrid}>
             <button onClick={() => navigate('/teacher/take-attendance')} className="btn-primary" style={styles.actionBtn}>
               📝 Take Attendance Now
             </button>
-            <button onClick={() => navigate('/teacher/classes')} className="btn-secondary" style={styles.actionBtn}>
+            <button onClick={() => navigate('/teacher/courses')} className="btn-secondary" style={styles.actionBtn}>
               🏫 View Roster Directory
             </button>
             <button onClick={() => navigate('/teacher/history')} className="btn-secondary" style={styles.actionBtn}>
@@ -118,7 +118,7 @@ export default function TeacherDashboard() {
                 <div key={idx} style={styles.routineCard}>
                   <div style={styles.periodBadge}>{r.period}</div>
                   <div style={styles.subjectText}>{r.subject}</div>
-                  <div style={styles.classText}>{r.class.className}-{r.class.section}</div>
+                  <div style={styles.courseText}>{r.course.className}-{r.course.section}</div>
                 </div>
               ))}
             </div>
@@ -237,7 +237,7 @@ const styles = {
     color: 'var(--text-primary)',
     fontSize: '1.1rem'
   },
-  classText: {
+  courseText: {
     color: 'var(--text-secondary)',
     fontSize: '0.85rem'
   }

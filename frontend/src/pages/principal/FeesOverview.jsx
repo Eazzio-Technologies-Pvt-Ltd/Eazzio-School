@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { getFeeCollection, getFeeStructures, createFeeStructure, generateInvoices, getInvoices, payInvoice, getClasses } from '../../api/principalApi';
+import { getFeeCollection, getFeeStructures, createFeeStructure, generateInvoices, getInvoices, payInvoice, getCourses } from '../../api/principalApi';
 import Loader from '../../components/Loader';
 import StatCard from '../../components/StatCard';
 
@@ -10,7 +10,7 @@ export default function FeesOverview() {
   const [collectionData, setCollectionData] = useState(null);
   const [structures, setStructures] = useState([]);
   const [invoices, setInvoices] = useState([]);
-  const [classesList, setClassesList] = useState([]);
+  const [coursesList, setCoursesList] = useState([]);
   
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -21,8 +21,8 @@ export default function FeesOverview() {
   const [showPayModal, setShowPayModal] = useState(false);
   const [selectedInvoice, setSelectedInvoice] = useState(null);
   
-  const [structureForm, setStructureForm] = useState({ feeType: '', amount: '', classId: '', dueDate: '' });
-  const [invoiceForm, setInvoiceForm] = useState({ structureId: '', classId: '' });
+  const [structureForm, setStructureForm] = useState({ feeType: '', amount: '', courseId: '', dueDate: '' });
+  const [invoiceForm, setInvoiceForm] = useState({ structureId: '', courseId: '' });
   const [payForm, setPayForm] = useState({ amount: '', paymentMethod: 'CASH' });
 
   useEffect(() => {
@@ -36,12 +36,12 @@ export default function FeesOverview() {
         getFeeCollection(),
         getFeeStructures(),
         getInvoices(),
-        getClasses()
+        getCourses()
       ]);
       setCollectionData(colRes);
       setStructures(strRes);
       setInvoices(invRes);
-      setClassesList(clsRes);
+      setCoursesList(clsRes);
     } catch (err) {
       console.error(err);
       setError('Failed to load fee management data.');
@@ -55,7 +55,7 @@ export default function FeesOverview() {
     try {
       await createFeeStructure(structureForm);
       setShowStructureModal(false);
-      setStructureForm({ feeType: '', amount: '', classId: '', dueDate: '' });
+      setStructureForm({ feeType: '', amount: '', courseId: '', dueDate: '' });
       loadAllData();
     } catch (err) {
       alert(err.response?.data?.error || 'Failed to create structure');
@@ -67,7 +67,7 @@ export default function FeesOverview() {
     try {
       await generateInvoices(invoiceForm);
       setShowInvoiceModal(false);
-      setInvoiceForm({ structureId: '', classId: '' });
+      setInvoiceForm({ structureId: '', courseId: '' });
       loadAllData();
     } catch (err) {
       alert(err.response?.data?.error || 'Failed to generate invoices');
@@ -129,7 +129,7 @@ export default function FeesOverview() {
                 <tr>
                   <th style={styles.th}>Name</th>
                   <th style={styles.th}>Roll No</th>
-                  <th style={styles.th}>Class</th>
+                  <th style={styles.th}>Course</th>
                   <th style={styles.th}>Total Billed</th>
                   <th style={styles.th}>Paid</th>
                   <th style={styles.th}>Pending</th>
@@ -173,7 +173,7 @@ export default function FeesOverview() {
               <tr>
                 <th style={styles.th}>Fee Type</th>
                 <th style={styles.th}>Amount</th>
-                <th style={styles.th}>Applicable Class</th>
+                <th style={styles.th}>Applicable Course</th>
                 <th style={styles.th}>Default Due Date</th>
               </tr>
             </thead>
@@ -185,7 +185,7 @@ export default function FeesOverview() {
                   <tr key={st.id} style={styles.tr}>
                     <td style={styles.td}>{st.feeType}</td>
                     <td style={styles.td}>${st.amount}</td>
-                    <td style={styles.td}>{st.classId ? `${st.class.className}-${st.class.section}` : 'All Classes'}</td>
+                    <td style={styles.td}>{st.courseId ? `${st.course.className}-${st.course.section}` : 'All Courses'}</td>
                     <td style={styles.td}>{st.dueDate ? new Date(st.dueDate).toLocaleDateString() : 'N/A'}</td>
                   </tr>
                 ))
@@ -205,7 +205,7 @@ export default function FeesOverview() {
             <thead>
               <tr>
                 <th style={styles.th}>Student Name</th>
-                <th style={styles.th}>Class</th>
+                <th style={styles.th}>Course</th>
                 <th style={styles.th}>Fee Type</th>
                 <th style={styles.th}>Amount</th>
                 <th style={styles.th}>Due Date</th>
@@ -223,7 +223,7 @@ export default function FeesOverview() {
                   return (
                     <tr key={inv.id} style={styles.tr}>
                       <td style={styles.td}>{inv.student.name}</td>
-                      <td style={styles.td}>{inv.student.class ? `${inv.student.class.className}-${inv.student.class.section}` : 'N/A'}</td>
+                      <td style={styles.td}>{inv.student.course ? `${inv.student.course.className}-${inv.student.course.section}` : 'N/A'}</td>
                       <td style={styles.td}>{inv.feeType}</td>
                       <td style={styles.td}>${inv.amount}</td>
                       <td style={styles.td}>{new Date(inv.dueDate).toLocaleDateString()}</td>
@@ -272,10 +272,10 @@ export default function FeesOverview() {
                 <input type="number" required min="1" value={structureForm.amount} onChange={e => setStructureForm({...structureForm, amount: e.target.value})} style={styles.input} />
               </div>
               <div style={styles.formGroup}>
-                <label>Target Class (Optional)</label>
-                <select value={structureForm.classId} onChange={e => setStructureForm({...structureForm, classId: e.target.value})} style={styles.input}>
-                  <option value="">All Classes (School-wide)</option>
-                  {classesList.map(c => <option key={c.id} value={c.id}>{c.className} - {c.section}</option>)}
+                <label>Target Course (Optional)</label>
+                <select value={structureForm.courseId} onChange={e => setStructureForm({...structureForm, courseId: e.target.value})} style={styles.input}>
+                  <option value="">All Courses (School-wide)</option>
+                  {coursesList.map(c => <option key={c.id} value={c.id}>{c.className} - {c.section}</option>)}
                 </select>
               </div>
               <div style={styles.formGroup}>
@@ -304,10 +304,10 @@ export default function FeesOverview() {
                 </select>
               </div>
               <div style={styles.formGroup}>
-                <label>Target Class (Optional - overrides structure default)</label>
-                <select value={invoiceForm.classId} onChange={e => setInvoiceForm({...invoiceForm, classId: e.target.value})} style={styles.input}>
+                <label>Target Course (Optional - overrides structure default)</label>
+                <select value={invoiceForm.courseId} onChange={e => setInvoiceForm({...invoiceForm, courseId: e.target.value})} style={styles.input}>
                   <option value="">-- Use Structure Default --</option>
-                  {classesList.map(c => <option key={c.id} value={c.id}>{c.className} - {c.section}</option>)}
+                  {coursesList.map(c => <option key={c.id} value={c.id}>{c.className} - {c.section}</option>)}
                 </select>
               </div>
               <div style={styles.modalActions}>

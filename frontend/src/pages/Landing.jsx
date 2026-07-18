@@ -610,7 +610,7 @@ export default function Landing() {
               </div>
               <h3 className="text-xl font-bold text-slate-900 mb-2">Academic Management</h3>
               <p className="text-slate-655 text-sm leading-relaxed">
-                Effortlessly build student/teacher schedules, draft lesson planners, track class progress diaries, and maintain school curriculum structures.
+                Effortlessly build student/teacher schedules, draft lesson planners, track course progress diaries, and maintain school curriculum structures.
               </p>
             </div>
 
@@ -665,7 +665,7 @@ export default function Landing() {
               </div>
               <h3 className="text-xl font-bold text-slate-900 mb-2">Report Cards & Grading</h3>
               <p className="text-slate-655 text-sm leading-relaxed">
-                Design custom report templates, enter grading scores, calculate class ranks automatically, and release digital PDF cards securely to the parent portal.
+                Design custom report templates, enter grading scores, calculate course ranks automatically, and release digital PDF cards securely to the parent portal.
               </p>
             </div>
           </div>
@@ -820,7 +820,7 @@ export default function Landing() {
                       <div className="space-y-2">
                         <div className="p-2.5 hover:bg-slate-50 rounded-lg border border-slate-100 flex justify-between items-center text-xs">
                           <div>
-                            <span className="font-semibold text-slate-800 block">Class 12-B Lab Equipment Invoice</span>
+                            <span className="font-semibold text-slate-800 block">Course 12-B Lab Equipment Invoice</span>
                             <span className="text-[10px] text-slate-400">Submitted by: HOD Physics • ₹24,500</span>
                           </div>
                           <div className="flex gap-2">
@@ -846,7 +846,7 @@ export default function Landing() {
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                       <div>
                         <h3 className="text-xl font-extrabold text-slate-900">Academic Instructor Dashboard</h3>
-                        <p className="text-xs text-slate-500">Grade uploads, class diaries, and parent correspondence.</p>
+                        <p className="text-xs text-slate-500">Grade uploads, course diaries, and parent correspondence.</p>
                       </div>
                       <span className="px-3 py-1 bg-amber-50 border border-amber-100 text-amber-800 text-xs font-bold rounded-lg self-start sm:self-center">
                         Subject: Grade 10 Math
@@ -860,7 +860,7 @@ export default function Landing() {
                           <Calendar className="w-5 h-5 text-amber-600" />
                         </div>
                         <div>
-                          <span className="text-[10px] text-slate-450 block font-bold uppercase tracking-wider">Today's Classes</span>
+                          <span className="text-[10px] text-slate-450 block font-bold uppercase tracking-wider">Today's Courses</span>
                           <span className="text-lg font-bold text-slate-800">4 Sessions</span>
                         </div>
                       </div>
@@ -886,10 +886,10 @@ export default function Landing() {
                       </div>
                     </div>
 
-                    {/* Class Roster & Attendance Check */}
+                    {/* Course Roster & Attendance Check */}
                     <div className="bg-white rounded-xl border border-slate-200/70 p-4 shadow-sm">
                       <div className="flex items-center justify-between mb-3">
-                        <h4 className="text-xs font-bold text-slate-700 uppercase tracking-widest">Class 10-A Attendance Roster</h4>
+                        <h4 className="text-xs font-bold text-slate-700 uppercase tracking-widest">Course 10-A Attendance Roster</h4>
                         <span className="text-[10px] text-emerald-650 font-bold bg-emerald-50 px-2 py-0.5 rounded border border-emerald-100 flex items-center gap-1">
                           <CheckCheck className="w-3.5 h-3.5 animate-pulse" /> Auto WhatsApp Absentees Enabled
                         </span>

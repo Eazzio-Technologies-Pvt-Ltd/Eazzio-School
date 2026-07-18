@@ -5,8 +5,8 @@ export const getSummary = async () => {
   return response.data;
 };
 
-export const getClassDetails = async () => {
-  const response = await api.get('/teacher/class-details');
+export const getCourseDetails = async () => {
+  const response = await api.get('/teacher/course-details');
   return response.data;
 };
 
@@ -31,7 +31,7 @@ export const getAttendanceHistory = async (date) => {
   return response.data;
 };
 
-export const getClassFees = async () => {
-  const response = await api.get('/teacher/class-fees');
+export const getCourseFees = async () => {
+  const response = await api.get('/teacher/course-fees');
   return response.data;
 };

@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { getClassDetails, registerStudent } from '../../api/teacherApi';
+import { getCourseDetails, registerStudent } from '../../api/teacherApi';
 import Loader from '../../components/Loader';
 
-export default function MyClasses() {
+export default function MyCourses() {
   const nameInputRef = useRef(null);
 
   // Form Fields
@@ -16,7 +16,7 @@ export default function MyClasses() {
 
   // Data List & Modal State
   const [students, setStudents] = useState([]);
-  const [assignedClass, setAssignedClass] = useState('');
+  const [assignedCourse, setAssignedCourse] = useState('');
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
@@ -30,12 +30,12 @@ export default function MyClasses() {
   const loadData = async () => {
     try {
       setLoading(true);
-      const data = await getClassDetails();
-      setAssignedClass(data.assignedClass);
+      const data = await getCourseDetails();
+      setAssignedCourse(data.assignedCourse);
       setStudents(data.students);
     } catch (err) {
       console.error(err);
-      setError('Failed to load class roster.');
+      setError('Failed to load course roster.');
     } finally {
       setLoading(false);
     }
@@ -102,15 +102,15 @@ export default function MyClasses() {
     return matchesSearch;
   });
 
-  if (loading) return <Loader message="Loading class roster..." />;
+  if (loading) return <Loader message="Loading course roster..." />;
 
   return (
     <div style={styles.container} className="animate-fade-in">
       <div style={styles.header}>
-        <h2>My Classroom Roster</h2>
-        {assignedClass && (
+        <h2>My Courseroom Roster</h2>
+        {assignedCourse && (
           <p style={styles.sub}>
-            Managing students for <span style={{ color: 'var(--primary)', fontWeight: '600' }}>{assignedClass}</span>.
+            Managing students for <span style={{ color: 'var(--primary)', fontWeight: '600' }}>{assignedCourse}</span>.
           </p>
         )}
       </div>
@@ -118,7 +118,7 @@ export default function MyClasses() {
       <div style={styles.mainLayoutGrid}>
         {/* Left Form: Register */}
         <div style={styles.pane}>
-          <h3 style={styles.paneTitle}>Add New Student to {assignedClass}</h3>
+          <h3 style={styles.paneTitle}>Add New Student to {assignedCourse}</h3>
           {error && <div style={styles.errorAlert}>{error}</div>}
 
           <form onSubmit={handleRegister} style={styles.form}>
@@ -192,7 +192,7 @@ export default function MyClasses() {
               <tbody>
                 {filteredStudents.length === 0 ? (
                   <tr>
-                    <td colSpan="5" style={styles.noRecords}>No students found in your class.</td>
+                    <td colSpan="5" style={styles.noRecords}>No students found in your course.</td>
                   </tr>
                 ) : (
                   filteredStudents.map((student) => (

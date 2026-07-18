@@ -160,7 +160,7 @@ router.get('/teachers', async (req, res) => {
   try {
     const teachers = await prisma.teacher.findMany({
       where: { schoolId },
-      include: { assignedClass: true },
+      include: { assignedCourse: true },
       orderBy: { name: 'asc' }
     });
     return res.json({ success: true, data: teachers });
@@ -171,18 +171,18 @@ router.get('/teachers', async (req, res) => {
 });
 
 // 2. Create New Class
-router.post('/classes', validate(createClassSchema), async (req, res) => {
-  const { className, section, academicYear } = req.body;
+router.post('/courses', validate(createClassSchema), async (req, res) => {
+  const { courseName, section, academicYear } = req.body;
   const schoolId = req.user.schoolId;
 
   try {
-    const existingClass = await prisma.class.findUnique({
-      where: { schoolId_className_section_academicYear: { schoolId, className, section, academicYear } }
+    const existingClass = await prisma.course.findUnique({
+      where: { schoolId_courseName_section_academicYear: { schoolId, courseName, section, academicYear } }
     });
     if (existingClass) return res.status(400).json({ success: false, error: 'Class already exists' });
 
-    const newClass = await prisma.class.create({
-      data: { schoolId, className, section, academicYear }
+    const newClass = await prisma.course.create({
+      data: { schoolId, courseName, section, academicYear }
     });
 
     return res.status(201).json({ success: true, message: 'Class created successfully', data: newClass });
@@ -192,17 +192,17 @@ router.post('/classes', validate(createClassSchema), async (req, res) => {
   }
 });
 
-// GET /classes
-router.get('/classes', async (req, res) => {
+// GET /courses
+router.get('/courses', async (req, res) => {
   const schoolId = req.user.schoolId;
   try {
-    const classes = await prisma.class.findMany({
+    const classes = await prisma.course.findMany({
       where: { schoolId },
       include: {
         teacher: { select: { id: true, name: true } },
         _count: { select: { students: true } }
       },
-      orderBy: [{ academicYear: 'desc' }, { className: 'asc' }, { section: 'asc' }]
+      orderBy: [{ academicYear: 'desc' }, { courseName: 'asc' }, { section: 'asc' }]
     });
     return res.json({ success: true, data: classes });
   } catch (err) {
@@ -212,8 +212,8 @@ router.get('/classes', async (req, res) => {
 });
 
 // 3. Assign Class Teacher
-router.put('/classes/:id/assign-teacher', async (req, res) => {
-  const classId = parseInt(req.params.id);
+router.put('/courses/:id/assign-teacher', async (req, res) => {
+  const courseId = parseInt(req.params.id);
   const { teacherId } = req.body;
   const schoolId = req.user.schoolId;
 
@@ -223,7 +223,7 @@ router.put('/classes/:id/assign-teacher', async (req, res) => {
 
   try {
     // Check if class belongs to this school
-    const cls = await prisma.class.findFirst({ where: { id: classId, schoolId } });
+    const cls = await prisma.course.findFirst({ where: { id: courseId, schoolId } });
     if (!cls) return res.status(404).json({ success: false, error: 'Class not found' });
 
     // Ensure teacher belongs to this school
@@ -231,13 +231,13 @@ router.put('/classes/:id/assign-teacher', async (req, res) => {
     if (!teacher) return res.status(404).json({ success: false, error: 'Teacher not found' });
 
     // Ensure teacher isn't assigned to another class
-    const existingAssignment = await prisma.class.findFirst({ where: { teacherId } });
-    if (existingAssignment && existingAssignment.id !== classId) {
+    const existingAssignment = await prisma.course.findFirst({ where: { teacherId } });
+    if (existingAssignment && existingAssignment.id !== courseId) {
       return res.status(400).json({ success: false, error: 'Teacher is already assigned to another class' });
     }
 
-    const updatedClass = await prisma.class.update({
-      where: { id: classId },
+    const updatedClass = await prisma.course.update({
+      where: { id: courseId },
       data: { teacherId }
     });
 
@@ -254,7 +254,7 @@ function generatePassword() {
 }
 
 router.post('/students', validate(createStudentSchema), async (req, res) => {
-  const { name, rollNumber, classId, fatherName, motherName, phone, address, admissionDate } = req.body;
+  const { name, rollNumber, courseId, fatherName, motherName, phone, address, admissionDate } = req.body;
   const schoolId = req.user.schoolId;
 
   try {
@@ -275,7 +275,7 @@ router.post('/students', validate(createStudentSchema), async (req, res) => {
         password: passwordHash,
         name,
         rollNumber,
-        classId: parseInt(classId),
+        courseId: parseInt(courseId),
         fatherName,
         motherName,
         phone,
@@ -306,7 +306,7 @@ router.get('/students', async (req, res) => {
   try {
     const students = await prisma.student.findMany({
       where: { schoolId },
-      include: { class: true },
+      include: { course: true },
       orderBy: { name: 'asc' }
     });
     return res.json({ success: true, data: students });
@@ -340,7 +340,7 @@ router.get('/attendance-summary', async (req, res) => {
   const schoolId = req.user.schoolId;
 
   try {
-    const classes = await prisma.class.findMany({
+    const classes = await prisma.course.findMany({
       where: { schoolId },
       include: {
         teacher: { select: { name: true } },
@@ -367,8 +367,8 @@ router.get('/attendance-summary', async (req, res) => {
       const percentage = totalLogs > 0 ? Math.round((presentLogs / totalLogs) * 100) : 0;
 
       return {
-        classId: cls.id,
-        className: `${cls.className}-${cls.section}`,
+        courseId: cls.id,
+        courseName: `${cls.courseName}-${cls.section}`,
         teacherName: cls.teacher ? cls.teacher.name : 'Unassigned',
         totalStudents,
         present: presentLogs,
@@ -393,7 +393,7 @@ router.get('/fee-collection', async (req, res) => {
       where: { schoolId },
       include: {
         student: {
-          include: { class: true }
+          include: { course: true }
         },
         payments: {
           where: { status: 'SUCCESS' }
@@ -415,7 +415,7 @@ router.get('/fee-collection', async (req, res) => {
           id: s.id,
           name: s.name,
           rollNumber: s.rollNumber,
-          className: s.class ? `${s.class.className}-${s.class.section}` : 'N/A',
+          courseName: s.course ? `${s.course.courseName}-${s.course.section}` : 'N/A',
           totalFees: 0,
           paid: 0,
           pending: 0,
@@ -452,10 +452,10 @@ router.get('/fee-collection', async (req, res) => {
 
 // 7. Manage Timetables
 router.post('/timetables', async (req, res) => {
-  const { teacherId, classId, dayOfWeek, period, subject } = req.body;
+  const { teacherId, courseId, dayOfWeek, period, subject } = req.body;
   const schoolId = req.user.schoolId;
 
-  if (!teacherId || !classId || !dayOfWeek || !period || !subject) {
+  if (!teacherId || !courseId || !dayOfWeek || !period || !subject) {
     return res.status(400).json({ error: 'All fields are required' });
   }
 
@@ -471,14 +471,14 @@ router.post('/timetables', async (req, res) => {
       data: {
         schoolId,
         teacherId: parseInt(teacherId),
-        classId: parseInt(classId),
+        courseId: parseInt(courseId),
         dayOfWeek,
         period,
         subject
       },
       include: {
         teacher: { select: { name: true } },
-        class: { select: { className: true, section: true } }
+        course: { select: { courseName: true, section: true } }
       }
     });
 
@@ -491,18 +491,18 @@ router.post('/timetables', async (req, res) => {
 
 router.get('/timetables', async (req, res) => {
   const schoolId = req.user.schoolId;
-  const { classId, teacherId } = req.query;
+  const { courseId, teacherId } = req.query;
 
   try {
     const whereClause = { schoolId };
-    if (classId) whereClause.classId = parseInt(classId);
+    if (courseId) whereClause.courseId = parseInt(courseId);
     if (teacherId) whereClause.teacherId = parseInt(teacherId);
 
     const timetables = await prisma.timetable.findMany({
       where: whereClause,
       include: {
         teacher: { select: { name: true } },
-        class: { select: { className: true, section: true } }
+        course: { select: { courseName: true, section: true } }
       },
       orderBy: [
         { dayOfWeek: 'asc' },
@@ -536,14 +536,14 @@ router.delete('/timetables/:id', async (req, res) => {
 
 // 8. Manage Notices
 router.post('/notices', async (req, res) => {
-  const { title, content, audience, classId } = req.body;
+  const { title, content, audience, courseId } = req.body;
   const schoolId = req.user.schoolId;
 
   if (!title || !content || !audience) {
     return res.status(400).json({ error: 'Title, content, and audience are required' });
   }
 
-  if (audience === 'CLASS' && !classId) {
+  if (audience === 'COURSE' && !courseId) {
     return res.status(400).json({ error: 'Class ID is required for CLASS audience' });
   }
 
@@ -554,7 +554,7 @@ router.post('/notices', async (req, res) => {
         title,
         content,
         audience,
-        classId: classId ? parseInt(classId) : null
+        courseId: courseId ? parseInt(courseId) : null
       }
     });
 
@@ -567,7 +567,7 @@ router.post('/notices', async (req, res) => {
 
 // 9. Manage Fee Structures & Invoices
 router.post('/fees/structure', async (req, res) => {
-  const { feeType, amount, classId, dueDate } = req.body;
+  const { feeType, amount, courseId, dueDate } = req.body;
   const schoolId = req.user.schoolId;
 
   if (!feeType || !amount) {
@@ -580,7 +580,7 @@ router.post('/fees/structure', async (req, res) => {
         schoolId,
         feeType,
         amount: parseInt(amount),
-        classId: classId ? parseInt(classId) : null,
+        courseId: courseId ? parseInt(courseId) : null,
         dueDate: dueDate ? new Date(dueDate) : null
       }
     });
@@ -595,7 +595,7 @@ router.get('/fees/structure', async (req, res) => {
   try {
     const structures = await prisma.feeStructure.findMany({
       where: { schoolId: req.user.schoolId },
-      include: { class: true }
+      include: { course: true }
     });
     return res.json(structures);
   } catch (err) {
@@ -604,7 +604,7 @@ router.get('/fees/structure', async (req, res) => {
 });
 
 router.post('/fees/generate-invoices', async (req, res) => {
-  const { structureId, classId } = req.body;
+  const { structureId, courseId } = req.body;
   const schoolId = req.user.schoolId;
 
   if (!structureId) return res.status(400).json({ error: 'Structure ID is required' });
@@ -613,9 +613,9 @@ router.post('/fees/generate-invoices', async (req, res) => {
     const structure = await prisma.feeStructure.findUnique({ where: { id: parseInt(structureId) } });
     if (!structure || structure.schoolId !== schoolId) return res.status(404).json({ error: 'Structure not found' });
 
-    const targetClassId = classId ? parseInt(classId) : structure.classId;
+    const targetClassId = courseId ? parseInt(courseId) : structure.courseId;
     const studentsQuery = targetClassId 
-      ? { schoolId, classId: targetClassId } 
+      ? { schoolId, courseId: targetClassId } 
       : { schoolId };
 
     const students = await prisma.student.findMany({ where: studentsQuery });
@@ -654,7 +654,7 @@ router.get('/fees/invoices', async (req, res) => {
     const invoices = await prisma.feeInvoice.findMany({
       where: { schoolId: req.user.schoolId },
       include: {
-        student: { select: { name: true, rollNumber: true, class: true } },
+        student: { select: { name: true, rollNumber: true, course: true } },
         payments: true
       },
       orderBy: { dueDate: 'asc' }

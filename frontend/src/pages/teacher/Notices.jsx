@@ -41,8 +41,8 @@ export default function TeacherNotices() {
                 <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                   <h3 style={styles.title}>{note.title}</h3>
                   <span style={styles.badge(note.audience)}>
-                    {note.audience === 'CLASS' 
-                      ? `Class: ${note.class?.className || 'N/A'}` 
+                    {note.audience === 'COURSE' 
+                      ? `Course: ${note.course?.className || 'N/A'}` 
                       : note.audience}
                   </span>
                 </div>

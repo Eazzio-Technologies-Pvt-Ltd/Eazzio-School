@@ -16,23 +16,23 @@ router.get('/class-details', async (req, res) => {
   try {
     const teacherProfile = await prisma.teacher.findUnique({
       where: { id: req.user.userId },
-      include: { assignedClass: true }
+      include: { assignedCourse: true }
     });
 
     if (!teacherProfile) {
       return res.status(404).json({ success: false, error: 'Teacher profile not found' });
     }
 
-    const { assignedClass } = teacherProfile;
+    const { assignedCourse } = teacherProfile;
     const schoolId = req.user.schoolId;
 
-    if (!assignedClass) {
-      return res.json({ success: true, data: { assignedClass: 'Unassigned', students: [] } });
+    if (!assignedCourse) {
+      return res.json({ success: true, data: { assignedCourse: 'Unassigned', students: [] } });
     }
 
     // Fetch students assigned to this class
     const students = await prisma.student.findMany({
-      where: { schoolId, classId: assignedClass.id },
+      where: { schoolId, courseId: assignedCourse.id },
       include: {
         attendance: {
           select: { date: true, status: true }
@@ -44,7 +44,7 @@ router.get('/class-details', async (req, res) => {
     return res.json({
       success: true,
       data: {
-        assignedClass: `${assignedClass.className}-${assignedClass.section}`,
+        assignedCourse: `${assignedCourse.courseName}-${assignedCourse.section}`,
         students,
       }
     });
@@ -67,12 +67,12 @@ router.post('/attendance', async (req, res) => {
   try {
     const teacherProfile = await prisma.teacher.findUnique({ 
       where: { id: teacherId },
-      include: { assignedClass: true }
+      include: { assignedCourse: true }
     });
-    if (!teacherProfile?.assignedClass) {
+    if (!teacherProfile?.assignedCourse) {
       return res.status(403).json({ success: false, error: 'You are not assigned to a class' });
     }
-    const classId = teacherProfile.assignedClass.id;
+    const courseId = teacherProfile.assignedCourse.id;
 
     // Normalize date to start of UTC day (midnight) to fit unique constraint
     const parsedDate = new Date(date);
@@ -95,7 +95,7 @@ router.post('/attendance', async (req, res) => {
           update: { 
             status: record.status,
             teacherId,
-            classId
+            courseId
           },
           create: {
             schoolId,
@@ -103,7 +103,7 @@ router.post('/attendance', async (req, res) => {
             date: targetDate,
             status: record.status,
             teacherId,
-            classId
+            courseId
           },
         });
       })
@@ -121,23 +121,23 @@ router.get('/dashboard-summary', async (req, res) => {
   try {
     const teacherProfile = await prisma.teacher.findUnique({
       where: { id: req.user.userId },
-      include: { assignedClass: true }
+      include: { assignedCourse: true }
     });
 
     if (!teacherProfile) {
       return res.status(404).json({ success: false, error: 'Teacher profile not found' });
     }
 
-    const { assignedClass } = teacherProfile;
+    const { assignedCourse } = teacherProfile;
     const schoolId = req.user.schoolId;
 
-    if (!assignedClass) {
+    if (!assignedCourse) {
       return res.json({
         success: true,
         data: {
-          assignedClass: 'Unassigned',
+          assignedCourse: 'Unassigned',
           studentCount: 0,
-          classAttendanceRate: 100,
+          courseAttendanceRate: 100,
           recentAbsentees: [],
           routine: []
         }
@@ -146,12 +146,12 @@ router.get('/dashboard-summary', async (req, res) => {
 
     // Get count of students in their assigned class
     const studentCount = await prisma.student.count({
-      where: { schoolId, classId: assignedClass.id }
+      where: { schoolId, courseId: assignedCourse.id }
     });
 
     // Get attendance rate for students in their assigned class
     const studentsInClass = await prisma.student.findMany({
-      where: { schoolId, classId: assignedClass.id },
+      where: { schoolId, courseId: assignedCourse.id },
       select: { id: true }
     });
     const studentIds = studentsInClass.map(s => s.id);
@@ -169,7 +169,7 @@ router.get('/dashboard-summary', async (req, res) => {
       where: { schoolId, studentId: { in: studentIds }, status: 'LATE' }
     });
 
-    const classAttendanceRate = totalLogsCount > 0
+    const courseAttendanceRate = totalLogsCount > 0
       ? Math.round(((presentLogsCount + lateLogsCount) / totalLogsCount) * 100)
       : 100;
 
@@ -208,9 +208,9 @@ router.get('/dashboard-summary', async (req, res) => {
     return res.json({
       success: true,
       data: {
-        assignedClass: `${assignedClass.className}-${assignedClass.section}`,
+        assignedCourse: `${assignedCourse.courseName}-${assignedCourse.section}`,
         studentCount,
-        classAttendanceRate,
+        courseAttendanceRate,
         recentAbsentees,
         routine
       }
@@ -232,7 +232,7 @@ function generatePassword() {
   return Math.random().toString(36).slice(-8);
 }
 
-// NOTE: Since the route doesn't accept classId in the body and instead uses assignedClassId,
+// NOTE: Since the route doesn't accept courseId in the body and instead uses assignedCourseId,
 // we cannot strictly use the generic createStudentSchema unless we modify it or just validate the rest manually.
 // For simplicity, we keep the manual validation for this specialized route or use a tailored schema.
 router.post('/students', async (req, res) => {
@@ -247,12 +247,12 @@ router.post('/students', async (req, res) => {
   try {
     const teacherProfile = await prisma.teacher.findUnique({ 
       where: { id: teacherId },
-      include: { assignedClass: true }
+      include: { assignedCourse: true }
     });
-    if (!teacherProfile?.assignedClass) {
+    if (!teacherProfile?.assignedCourse) {
       return res.status(403).json({ success: false, error: 'You are not assigned to a class' });
     }
-    const classId = teacherProfile.assignedClass.id;
+    const courseId = teacherProfile.assignedCourse.id;
 
     // Fetch school to get schoolCode
     const school = await prisma.school.findUnique({ where: { id: schoolId } });
@@ -270,7 +270,7 @@ router.post('/students', async (req, res) => {
         password: passwordHash,
         name,
         rollNumber,
-        classId,
+        courseId,
         fatherName,
         motherName,
         phone,
@@ -304,17 +304,17 @@ router.get('/attendance-history', async (req, res) => {
   try {
     const teacherProfile = await prisma.teacher.findUnique({ 
       where: { id: teacherId },
-      include: { assignedClass: true }
+      include: { assignedCourse: true }
     });
-    if (!teacherProfile?.assignedClass) {
+    if (!teacherProfile?.assignedCourse) {
       return res.status(403).json({ success: false, error: 'You are not assigned to a class' });
     }
-    const classId = teacherProfile.assignedClass.id;
+    const courseId = teacherProfile.assignedCourse.id;
 
     if (!dateStr) {
       // return all historical dates that have attendance for this class
       const distinctDates = await prisma.attendance.findMany({
-        where: { schoolId, classId },
+        where: { schoolId, courseId },
         select: { date: true },
         distinct: ['date'],
         orderBy: { date: 'desc' }
@@ -327,7 +327,7 @@ router.get('/attendance-history', async (req, res) => {
     const targetDate = new Date(Date.UTC(parsedDate.getUTCFullYear(), parsedDate.getUTCMonth(), parsedDate.getUTCDate()));
 
     const records = await prisma.attendance.findMany({
-      where: { schoolId, classId, date: targetDate },
+      where: { schoolId, courseId, date: targetDate },
       include: {
         student: { select: { name: true, rollNumber: true, studentId: true } }
       }
@@ -349,7 +349,7 @@ router.get('/routine', async (req, res) => {
     const routine = await prisma.timetable.findMany({
       where: { schoolId, teacherId },
       include: {
-        class: { select: { className: true, section: true } }
+        course: { select: { courseName: true, section: true } }
       },
       orderBy: [
         { dayOfWeek: 'asc' },
@@ -382,18 +382,18 @@ router.get('/class-fees', async (req, res) => {
   try {
     const teacherProfile = await prisma.teacher.findUnique({
       where: { id: req.user.userId },
-      include: { assignedClass: true }
+      include: { assignedCourse: true }
     });
 
-    if (!teacherProfile || !teacherProfile.assignedClass) {
+    if (!teacherProfile || !teacherProfile.assignedCourse) {
       return res.status(403).json({ success: false, error: 'No assigned class found' });
     }
 
-    const classId = teacherProfile.assignedClass.id;
+    const courseId = teacherProfile.assignedCourse.id;
     const schoolId = req.user.schoolId;
 
     const invoices = await prisma.feeInvoice.findMany({
-      where: { schoolId, student: { classId } },
+      where: { schoolId, student: { courseId } },
       include: {
         student: { select: { id: true, name: true, rollNumber: true } },
         payments: { where: { status: 'SUCCESS' } }

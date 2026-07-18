@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { getClassDetails, saveAttendance } from '../../api/teacherApi';
+import { getCourseDetails, saveAttendance } from '../../api/teacherApi';
 import Loader from '../../components/Loader';
 
 export default function TakeAttendance() {
-  const [assignedClass, setAssignedClass] = useState('');
+  const [assignedCourse, setAssignedCourse] = useState('');
   const [students, setStudents] = useState([]);
   const [attendanceDate, setAttendanceDate] = useState(() => {
     const local = new Date();
@@ -32,8 +32,8 @@ export default function TakeAttendance() {
     try {
       setLoading(true);
       setFeedback({ type: '', message: '' });
-      const data = await getClassDetails();
-      setAssignedClass(data.assignedClass);
+      const data = await getCourseDetails();
+      setAssignedCourse(data.assignedCourse);
       setStudents(data.students);
       initializeAttendance(data.students, attendanceDate);
     } catch (err) {
@@ -104,7 +104,7 @@ export default function TakeAttendance() {
       triggerToast('Attendance records saved successfully!');
       
       // Refresh local logs
-      const data = await getClassDetails();
+      const data = await getCourseDetails();
       setStudents(data.students);
     } catch (err) {
       setFeedback({ type: 'error', message: err.response?.data?.error || 'Failed to save attendance' });
@@ -113,14 +113,14 @@ export default function TakeAttendance() {
     }
   };
 
-  if (loading) return <Loader message="Loading class roster..." />;
+  if (loading) return <Loader message="Loading course roster..." />;
 
-  if (!assignedClass || assignedClass === 'Unassigned') {
+  if (!assignedCourse || assignedCourse === 'Unassigned') {
     return (
       <div style={styles.container} className="animate-fade-in">
         <div style={styles.header}>
           <h2>Mark Student Attendance</h2>
-          <p style={styles.sub}>You are not currently assigned to any class.</p>
+          <p style={styles.sub}>You are not currently assigned to any course.</p>
         </div>
       </div>
     );
@@ -129,7 +129,7 @@ export default function TakeAttendance() {
   return (
     <div style={styles.container} className="animate-fade-in">
       <div style={styles.header}>
-        <h2>Mark Attendance - {assignedClass}</h2>
+        <h2>Mark Attendance - {assignedCourse}</h2>
         <p style={styles.sub}>Log daily student attendance, including Late arrivals.</p>
       </div>
 
@@ -145,7 +145,7 @@ export default function TakeAttendance() {
           <div style={styles.modal}>
             <h3>Confirm Submission</h3>
             <p style={{ margin: '14px 0', fontSize: '0.9rem', color: 'var(--text-secondary)' }}>
-              Are you sure you want to submit the roll call sheet for {assignedClass} on {new Date(attendanceDate).toLocaleDateString()}?
+              Are you sure you want to submit the roll call sheet for {assignedCourse} on {new Date(attendanceDate).toLocaleDateString()}?
             </p>
             <div style={styles.modalActions}>
               <button onClick={() => setShowConfirm(false)} className="btn-secondary" style={styles.modalBtn}>
@@ -222,7 +222,7 @@ export default function TakeAttendance() {
               {students.length === 0 ? (
                 <tr>
                   <td colSpan="3" style={{ ...styles.td, textAlign: 'center', color: 'var(--text-muted)' }}>
-                    No student profiles found for this class.
+                    No student profiles found for this course.
                   </td>
                 </tr>
               ) : (

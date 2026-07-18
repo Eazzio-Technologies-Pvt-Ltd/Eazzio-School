@@ -78,7 +78,7 @@ router.get('/dashboard-summary', async (req, res) => {
     const students = await prisma.student.findMany({
       where: { schoolId },
       include: {
-        class: true,
+        course: true,
         feeInvoices: {
           include: { payments: { where: { status: 'SUCCESS' } } }
         }
@@ -103,9 +103,9 @@ router.get('/dashboard-summary', async (req, res) => {
         studentId: student.studentId,
         name: student.name,
         rollNumber: student.rollNumber || 'N/A',
-        className: student.class ? `${student.class.className}-${student.class.section}` : 'N/A',
-        classId: student.classId,
-        academicYear: student.class ? student.class.academicYear : 'N/A',
+        courseName: student.course ? `${student.course.courseName}-${student.course.section}` : 'N/A',
+        courseId: student.courseId,
+        academicYear: student.course ? student.course.academicYear : 'N/A',
         fatherName: student.fatherName || 'N/A',
         motherName: student.motherName || 'N/A',
         phone: student.phone || 'N/A',
@@ -135,12 +135,12 @@ router.get('/dashboard-summary', async (req, res) => {
   }
 });
 
-// GET /api/accountant/classes - Fetch classes list for student registration dropdown
-router.get('/classes', async (req, res) => {
+// GET /api/accountant/courses - Fetch classes list for student registration dropdown
+router.get('/courses', async (req, res) => {
   try {
-    const classes = await prisma.class.findMany({
+    const classes = await prisma.course.findMany({
       where: { schoolId: req.user.schoolId },
-      orderBy: { className: 'asc' }
+      orderBy: { courseName: 'asc' }
     });
     return res.json({ success: true, data: classes });
   } catch (error) {
@@ -151,7 +151,7 @@ router.get('/classes', async (req, res) => {
 
 // POST /api/accountant/students - Add student from accountant workspace
 router.post('/students', async (req, res) => {
-  const { name, rollNumber, classId, fatherName, motherName, phone, address, admissionDate } = req.body;
+  const { name, rollNumber, courseId, fatherName, motherName, phone, address, admissionDate } = req.body;
   const schoolId = req.user.schoolId;
 
   if (!name) {
@@ -173,7 +173,7 @@ router.post('/students', async (req, res) => {
         password: passwordHash,
         name,
         rollNumber: rollNumber || null,
-        classId: classId ? parseInt(classId) : null,
+        courseId: courseId ? parseInt(courseId) : null,
         fatherName: fatherName || null,
         motherName: motherName || null,
         phone: phone || null,
@@ -197,7 +197,7 @@ router.post('/students', async (req, res) => {
 router.put('/students/:id', async (req, res) => {
   const studentId = parseInt(req.params.id);
   const schoolId = req.user.schoolId;
-  const { name, rollNumber, classId, fatherName, motherName, phone, address, admissionDate } = req.body;
+  const { name, rollNumber, courseId, fatherName, motherName, phone, address, admissionDate } = req.body;
 
   if (!name) {
     return res.status(400).json({ success: false, error: 'Name is required' });
@@ -218,7 +218,7 @@ router.put('/students/:id', async (req, res) => {
       data: {
         name,
         rollNumber: rollNumber || null,
-        classId: classId ? parseInt(classId) : null,
+        courseId: courseId ? parseInt(courseId) : null,
         fatherName: fatherName || null,
         motherName: motherName || null,
         phone: phone || null,
@@ -253,7 +253,7 @@ router.post('/students/bulk', async (req, res) => {
       return res.status(404).json({ success: false, error: 'School not found' });
     }
 
-    const classes = await prisma.class.findMany({ where: { schoolId } });
+    const classes = await prisma.course.findMany({ where: { schoolId } });
     let maxStudentNum = await getNextStudentNumber(schoolId, school.schoolCode);
 
     // Hashed default password
@@ -279,22 +279,22 @@ router.post('/students/bulk', async (req, res) => {
       }
 
       // Resolve class
-      let classId = null;
+      let courseId = null;
       
-      // 1. Try matching by direct classId if provided in CSV
+      // 1. Try matching by direct courseId if provided in CSV
       let rawClassId = normalizedRow['classid'] || normalizedRow['idclass'];
       if (rawClassId) {
         const parsedClassId = parseInt(rawClassId, 10);
         if (!isNaN(parsedClassId)) {
           const exists = classes.some(c => c.id === parsedClassId);
           if (exists) {
-            classId = parsedClassId;
+            courseId = parsedClassId;
           }
         }
       }
 
-      // 2. Try matching by className, section, and session/academic year
-      if (!classId) {
+      // 2. Try matching by courseName, section, and session/academic year
+      if (!courseId) {
         let rawClassName = normalizedRow['class'] || normalizedRow['classname'] || normalizedRow['grade'] || normalizedRow['standard'] || normalizedRow['level'];
         let rawSection = normalizedRow['section'] || normalizedRow['sec'];
         let rawSession = normalizedRow['session'] || normalizedRow['academicyear'] || normalizedRow['year'] || normalizedRow['academic'];
@@ -318,13 +318,13 @@ router.post('/students/bulk', async (req, res) => {
 
           // Match in classes list
           const matchedClass = classes.find(c => {
-            const dbClassName = c.className.toLowerCase().trim();
+            const dbClassName = c.courseName.toLowerCase().trim();
             const dbSection = c.section.toLowerCase().trim();
             const dbAcademicYear = c.academicYear.toLowerCase().trim();
 
             // Match class name
-            const classNameMatches = dbClassName === cleanClassName;
-            if (!classNameMatches) return false;
+            const courseNameMatches = dbClassName === cleanClassName;
+            if (!courseNameMatches) return false;
 
             // Match section (if present in CSV)
             if (rawSection) {
@@ -345,7 +345,7 @@ router.post('/students/bulk', async (req, res) => {
           });
 
           if (matchedClass) {
-            classId = matchedClass.id;
+            courseId = matchedClass.id;
           }
         }
       }
@@ -383,7 +383,7 @@ router.post('/students/bulk', async (req, res) => {
             password: passwordHash,
             name: name.toString().trim(),
             rollNumber: rollNumber || null,
-            classId,
+            courseId,
             fatherName: fatherName || null,
             motherName: motherName || null,
             phone: phone || null,

@@ -11,7 +11,7 @@ export default function Notices() {
   useEffect(() => {
     const loadNotices = async () => {
       try {
-        const data = await getNotices({ schoolId: user.schoolId, role: 'STUDENT', classId: user.classId });
+        const data = await getNotices({ schoolId: user.schoolId, role: 'STUDENT', courseId: user.courseId });
         setNotices(data || []);
       } catch (err) {
         console.error(err);
@@ -41,8 +41,8 @@ export default function Notices() {
                 <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                   <h3 style={styles.title}>{note.title}</h3>
                   <span style={styles.badge(note.audience)}>
-                    {note.audience === 'CLASS' 
-                      ? `Class: ${note.class?.className || 'N/A'}` 
+                    {note.audience === 'COURSE' 
+                      ? `Course: ${note.course?.className || 'N/A'}` 
                       : note.audience}
                   </span>
                 </div>

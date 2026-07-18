@@ -48,6 +48,12 @@ router.post('/login', validate(loginSchema), async (req, res) => {
           user = await prisma.accountant.findUnique({ where: { email: loginId } });
           if (user) {
             role = 'ACCOUNTANT';
+          } else {
+            // 5. Try Admin (by email)
+            user = await prisma.admin.findUnique({ where: { email: loginId } });
+            if (user) {
+              role = 'ADMIN';
+            }
           }
         }
       }

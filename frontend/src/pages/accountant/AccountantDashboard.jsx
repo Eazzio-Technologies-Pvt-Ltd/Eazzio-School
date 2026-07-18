@@ -18,8 +18,8 @@ export default function AccountantDashboard() {
     studentsFeesList: []
   });
 
-  const [classes, setClasses] = useState([]);
-  const [selectedClassId, setSelectedClassId] = useState('');
+  const [courses, setCourses] = useState([]);
+  const [selectedCourseId, setSelectedCourseId] = useState('');
   const [selectedSession, setSelectedSession] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
 
@@ -29,7 +29,7 @@ export default function AccountantDashboard() {
   const [formData, setFormData] = useState({
     name: '',
     rollNumber: '',
-    classId: '',
+    courseId: '',
     fatherName: '',
     motherName: '',
     phone: '',
@@ -39,7 +39,7 @@ export default function AccountantDashboard() {
   const [editFormData, setEditFormData] = useState({
     name: '',
     rollNumber: '',
-    classId: '',
+    courseId: '',
     fatherName: '',
     motherName: '',
     phone: '',
@@ -52,7 +52,7 @@ export default function AccountantDashboard() {
     setEditFormData({
       name: student.name || '',
       rollNumber: student.rollNumber === 'N/A' ? '' : (student.rollNumber || ''),
-      classId: student.classId || '',
+      courseId: student.courseId || '',
       fatherName: student.fatherName === 'N/A' ? '' : (student.fatherName || ''),
       motherName: student.motherName === 'N/A' ? '' : (student.motherName || ''),
       phone: student.phone === 'N/A' ? '' : (student.phone || ''),
@@ -71,7 +71,7 @@ export default function AccountantDashboard() {
         setData(prev => {
           const newList = prev.studentsFeesList.map(s => {
             if (s.id === updatedStudent.id) {
-              const matchedClass = classes.find(c => c.id === updatedStudent.classId);
+              const matchedCourse = courses.find(c => c.id === updatedStudent.courseId);
               return {
                 ...s,
                 name: updatedStudent.name,
@@ -81,9 +81,9 @@ export default function AccountantDashboard() {
                 phone: updatedStudent.phone || 'N/A',
                 address: updatedStudent.address || 'N/A',
                 admissionDate: updatedStudent.admissionDate || null,
-                classId: updatedStudent.classId,
-                className: matchedClass ? `${matchedClass.className}-${matchedClass.section}` : 'N/A',
-                academicYear: matchedClass ? matchedClass.academicYear : 'N/A'
+                courseId: updatedStudent.courseId,
+                className: matchedCourse ? `${matchedCourse.className}-${matchedCourse.section}` : 'N/A',
+                academicYear: matchedCourse ? matchedCourse.academicYear : 'N/A'
               };
             }
             return s;
@@ -303,14 +303,14 @@ export default function AccountantDashboard() {
     }
   };
 
-  const loadClasses = async () => {
+  const loadCourses = async () => {
     try {
-      const response = await api.get('/accountant/classes');
+      const response = await api.get('/accountant/courses');
       if (response.data) {
-        setClasses(response.data);
+        setCourses(response.data);
       }
     } catch (err) {
-      console.error('Error fetching classes:', err);
+      console.error('Error fetching courses:', err);
     }
   };
 
@@ -322,15 +322,15 @@ export default function AccountantDashboard() {
       if (response.data) {
         const newStudent = response.data;
         setData(prev => {
-          const matchedClass = classes.find(c => c.id === newStudent.classId);
+          const matchedCourse = courses.find(c => c.id === newStudent.courseId);
           const studentWithFees = {
             id: newStudent.id,
             studentId: newStudent.studentId,
             name: newStudent.name,
             rollNumber: newStudent.rollNumber || 'N/A',
-            className: matchedClass ? `${matchedClass.className}-${matchedClass.section}` : 'N/A',
-            classId: newStudent.classId,
-            academicYear: matchedClass ? matchedClass.academicYear : 'N/A',
+            className: matchedCourse ? `${matchedCourse.className}-${matchedCourse.section}` : 'N/A',
+            courseId: newStudent.courseId,
+            academicYear: matchedCourse ? matchedCourse.academicYear : 'N/A',
             fatherName: newStudent.fatherName || 'N/A',
             motherName: newStudent.motherName || 'N/A',
             phone: newStudent.phone || 'N/A',
@@ -351,7 +351,7 @@ export default function AccountantDashboard() {
         setFormData({
           name: '',
           rollNumber: '',
-          classId: '',
+          courseId: '',
           fatherName: '',
           motherName: '',
           phone: '',
@@ -368,7 +368,7 @@ export default function AccountantDashboard() {
 
   useEffect(() => {
     loadData();
-    loadClasses();
+    loadCourses();
   }, []);
 
   useEffect(() => {
@@ -399,17 +399,17 @@ export default function AccountantDashboard() {
     );
   }
 
-  // Get unique sessions from classes
-  const sessionsList = [...new Set(classes.map(c => c.academicYear))].filter(Boolean);
+  // Get unique sessions from courses
+  const sessionsList = [...new Set(courses.map(c => c.academicYear))].filter(Boolean);
 
-  // Filter students based on Class, Session, and Search Query
+  // Filter students based on Course, Session, and Search Query
   const filteredStudentsList = data.studentsFeesList.filter((student) => {
-    const matchesClass = selectedClassId === '' || Number(student.classId) === Number(selectedClassId);
+    const matchesCourse = selectedCourseId === '' || Number(student.courseId) === Number(selectedCourseId);
     const matchesSession = selectedSession === '' || student.academicYear === selectedSession;
     const matchesSearch = searchQuery === '' || 
       student.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       student.studentId.toLowerCase().includes(searchQuery.toLowerCase());
-    return matchesClass && matchesSession && matchesSearch;
+    return matchesCourse && matchesSession && matchesSearch;
   });
 
   // Sort by roll number numerically. If roll number is N/A or empty, put it at the end.
@@ -620,14 +620,14 @@ export default function AccountantDashboard() {
       <div style={styles.filterSection}>
         <div style={styles.filterGrid}>
           <div style={styles.filterGroup}>
-            <label style={styles.filterLabel}>Class Filter</label>
+            <label style={styles.filterLabel}>Course Filter</label>
             <select
               style={styles.selectInput}
-              value={selectedClassId}
-              onChange={(e) => setSelectedClassId(e.target.value)}
+              value={selectedCourseId}
+              onChange={(e) => setSelectedCourseId(e.target.value)}
             >
-              <option value="">All Classes</option>
-              {classes.map((cls) => (
+              <option value="">All Courses</option>
+              {courses.map((cls) => (
                 <option key={cls.id} value={cls.id}>
                   {cls.className} - {cls.section}
                 </option>
@@ -739,7 +739,7 @@ export default function AccountantDashboard() {
                 <tr style={styles.thRow}>
                   <th style={styles.th}>Student Name</th>
                   <th style={styles.th}>Roll No</th>
-                  <th style={styles.th}>Class</th>
+                  <th style={styles.th}>Course</th>
                   <th style={styles.th}>Session</th>
                   <th style={styles.th}>Total Fees</th>
                   <th style={{ ...styles.th, textAlign: 'center' }}>Actions</th>
@@ -851,15 +851,15 @@ export default function AccountantDashboard() {
 
               <div style={styles.formRow}>
                 <div style={styles.formGroup}>
-                  <label style={styles.label}>Class *</label>
+                  <label style={styles.label}>Course *</label>
                   <select
                     required
                     style={styles.input}
-                    value={formData.classId}
-                    onChange={(e) => setFormData({ ...formData, classId: e.target.value })}
+                    value={formData.courseId}
+                    onChange={(e) => setFormData({ ...formData, courseId: e.target.value })}
                   >
-                    <option value="">Select a Class</option>
-                    {classes.map((cls) => (
+                    <option value="">Select a Course</option>
+                    {courses.map((cls) => (
                       <option key={cls.id} value={cls.id}>
                         {cls.className} - {cls.section} ({cls.academicYear})
                       </option>
@@ -974,7 +974,7 @@ export default function AccountantDashboard() {
                   <span style={styles.detailsVal}>{viewingStudent.rollNumber}</span>
                 </div>
                 <div style={styles.detailsItem}>
-                  <span style={styles.detailsLabel}>Class</span>
+                  <span style={styles.detailsLabel}>Course</span>
                   <span style={styles.detailsVal}>{viewingStudent.className}</span>
                 </div>
                 <div style={styles.detailsItem}>
@@ -1104,15 +1104,15 @@ export default function AccountantDashboard() {
 
               <div style={styles.formRow}>
                 <div style={styles.formGroup}>
-                  <label style={styles.label}>Class *</label>
+                  <label style={styles.label}>Course *</label>
                   <select
                     required
                     style={styles.input}
-                    value={editFormData.classId}
-                    onChange={(e) => setEditFormData({ ...editFormData, classId: e.target.value })}
+                    value={editFormData.courseId}
+                    onChange={(e) => setEditFormData({ ...editFormData, courseId: e.target.value })}
                   >
-                    <option value="">Select Class</option>
-                    {classes.map((cls) => (
+                    <option value="">Select Course</option>
+                    {courses.map((cls) => (
                       <option key={cls.id} value={cls.id}>
                         {cls.className} - {cls.section} ({cls.academicYear})
                       </option>

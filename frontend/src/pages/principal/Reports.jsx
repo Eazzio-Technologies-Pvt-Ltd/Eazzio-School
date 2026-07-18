@@ -46,8 +46,8 @@ export default function Reports() {
 
   if (loading) return <Loader message="Compiling administrative audit data..." />;
 
-  // Pure-CSS chart items class-wise
-  const classesAttendanceData = [
+  // Pure-CSS chart items course-wise
+  const coursesAttendanceData = [
     { className: 'Grade 10-A', rate: summary?.globalAttendanceRate || 95 },
     { className: 'Grade 10-B', rate: 89 },
     { className: 'Grade 9-A', rate: 92 },
@@ -94,13 +94,13 @@ export default function Reports() {
         {activeTab === 'attendance' && (
           <div style={styles.tabContent}>
             <div style={styles.sectionHeader}>
-              <h3>Class-wise Attendance Audit</h3>
-              <p style={styles.sectionDesc}>Aggregate attendance rates compared by class levels.</p>
+              <h3>Course-wise Attendance Audit</h3>
+              <p style={styles.sectionDesc}>Aggregate attendance rates compared by course levels.</p>
             </div>
 
             {/* CSS Horizontal Bar Chart */}
             <div style={styles.chartContainer}>
-              {classesAttendanceData.map((item, idx) => (
+              {coursesAttendanceData.map((item, idx) => (
                 <div key={idx} style={styles.chartBarRow}>
                   <span style={styles.barLabel}>{item.className}</span>
                   <div style={styles.barWrapper}>
@@ -242,7 +242,7 @@ export default function Reports() {
               <div style={styles.exportCard}>
                 <span style={styles.exportIcon}>🎒</span>
                 <h3>Enrollment Roster</h3>
-                <p style={styles.exportDesc}>Active student profiles, classes, and registration directories.</p>
+                <p style={styles.exportDesc}>Active student profiles, courses, and registration directories.</p>
                 <button
                   onClick={() => triggerExport('Student Enrollment')}
                   className="btn-primary"

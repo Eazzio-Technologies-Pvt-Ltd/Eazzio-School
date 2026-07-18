@@ -41,7 +41,7 @@ export default function DashboardLayout() {
   const menuConfig = {
     PRINCIPAL: [
       { path: '/principal/dashboard', label: 'Dashboard', icon: '📊' },
-      { path: '/principal/classes', label: 'Classes', icon: '🏫' },
+      { path: '/principal/courses', label: 'Courses', icon: '🎓' },
       { path: '/principal/students', label: 'Students', icon: '🎒' },
       { path: '/principal/teachers', label: 'Teachers', icon: '👩‍🏫' },
       { path: '/principal/attendance', label: 'Attendance', icon: '📅' },
@@ -53,7 +53,7 @@ export default function DashboardLayout() {
     ],
     ADMIN: [
       { path: '/admin/dashboard', label: 'Dashboard', icon: '📊' },
-      { path: '/admin/classes', label: 'Classes', icon: '🏫' },
+      { path: '/admin/courses', label: 'Courses', icon: '🏫' },
       { path: '/admin/students', label: 'Students', icon: '🎒' },
       { path: '/admin/teachers', label: 'Teachers', icon: '👩‍🏫' },
       { path: '/admin/attendance', label: 'Attendance', icon: '📅' },
@@ -65,10 +65,10 @@ export default function DashboardLayout() {
     ],
     TEACHER: [
       { path: '/teacher/dashboard', label: 'Dashboard', icon: '📊' },
-      { path: '/teacher/classes', label: 'My Classes', icon: '🏫' },
+      { path: '/teacher/courses', label: 'My Courses', icon: '🏫' },
       { path: '/teacher/take-attendance', label: 'Take Attendance', icon: '📝' },
       { path: '/teacher/history', label: 'Roster History', icon: '🕒' },
-      { path: '/teacher/fees', label: 'Class Fees', icon: '💳' },
+      { path: '/teacher/fees', label: 'Course Fees', icon: '💳' },
       { path: '/teacher/notices', label: 'Notices Board', icon: '📢' },
       { path: '/teacher/routine', label: 'My Routine', icon: '📆' },
       { path: '/teacher/profile', label: 'My Profile', icon: '👤' },

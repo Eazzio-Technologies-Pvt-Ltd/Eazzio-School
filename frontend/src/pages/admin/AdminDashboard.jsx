@@ -195,11 +195,11 @@ export default function AdminDashboard() {
                 <span style={styles.actionLabel}>Add Teacher</span>
               </button>
               <button
-                onClick={() => navigate('/admin/classes')}
+                onClick={() => navigate('/admin/courses')}
                 style={styles.actionCard}
               >
                 <span style={styles.actionIcon}>🏫</span>
-                <span style={styles.actionLabel}>Manage Classes</span>
+                <span style={styles.actionLabel}>Manage Courses</span>
               </button>
               <button
                 onClick={() => navigate('/admin/attendance')}

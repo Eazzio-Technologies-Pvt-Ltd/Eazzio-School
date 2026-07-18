@@ -33,7 +33,7 @@ export default function TeacherRoutine() {
     <div style={styles.container} className="animate-fade-in">
       <div style={styles.header}>
         <h2>My Weekly Routine</h2>
-        <p style={styles.sub}>View your assigned classes and periods for the week.</p>
+        <p style={styles.sub}>View your assigned courses and periods for the week.</p>
       </div>
 
       {error && <div style={styles.errorAlert}>{error}</div>}
@@ -55,7 +55,7 @@ export default function TeacherRoutine() {
                       <div key={idx} style={styles.periodCard}>
                         <div style={styles.periodBadge}>{periodObj.period}</div>
                         <div style={styles.subjectText}>{periodObj.subject}</div>
-                        <div style={styles.classText}>Class: {periodObj.class?.className}-{periodObj.class?.section}</div>
+                        <div style={styles.courseText}>Course: {periodObj.course?.className}-{periodObj.course?.section}</div>
                       </div>
                     ))}
                   </div>
@@ -83,5 +83,5 @@ const styles = {
   periodCard: { background: 'rgba(139, 92, 246, 0.05)', border: '1px solid rgba(139, 92, 246, 0.2)', borderRadius: 'var(--radius-md)', padding: '16px', display: 'flex', flexDirection: 'column', gap: '8px', transition: 'transform 0.2s ease', '&:hover': { transform: 'translateY(-2px)' } },
   periodBadge: { background: 'var(--primary)', color: '#fff', padding: '4px 10px', borderRadius: '12px', fontSize: '0.8rem', fontWeight: 'bold', alignSelf: 'flex-start' },
   subjectText: { fontWeight: 'bold', color: 'var(--text-primary)', fontSize: '1.1rem' },
-  classText: { color: 'var(--text-secondary)', fontSize: '0.9rem' }
+  courseText: { color: 'var(--text-secondary)', fontSize: '0.9rem' }
 };

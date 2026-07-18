@@ -28,7 +28,7 @@ export default function MyAttendance() {
     <div style={styles.container} className="animate-fade-in">
       <div style={styles.header}>
         <h2>My Attendance Ledger</h2>
-        <p style={styles.sub}>Track all daily roll call entries registered by your class instructors.</p>
+        <p style={styles.sub}>Track all daily roll call entries registered by your course instructors.</p>
       </div>
 
       <div style={styles.summaryGrid}>

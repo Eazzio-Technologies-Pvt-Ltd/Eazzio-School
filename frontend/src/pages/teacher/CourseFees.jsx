@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { getClassFees } from '../../api/teacherApi';
+import { getCourseFees } from '../../api/teacherApi';
 import Loader from '../../components/Loader';
 
-export default function ClassFees() {
+export default function CourseFees() {
   const [students, setStudents] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -10,11 +10,11 @@ export default function ClassFees() {
   useEffect(() => {
     const fetchFees = async () => {
       try {
-        const data = await getClassFees();
+        const data = await getCourseFees();
         setStudents(data);
       } catch (err) {
         console.error(err);
-        setError('Failed to load class fees. Ensure you are assigned to a class.');
+        setError('Failed to load course fees. Ensure you are assigned to a course.');
       } finally {
         setLoading(false);
       }
@@ -22,7 +22,7 @@ export default function ClassFees() {
     fetchFees();
   }, []);
 
-  if (loading) return <Loader message="Loading class fees..." />;
+  if (loading) return <Loader message="Loading course fees..." />;
 
   const totalExpected = students.reduce((sum, s) => sum + s.totalFees, 0);
   const totalPaid = students.reduce((sum, s) => sum + s.paid, 0);
@@ -31,7 +31,7 @@ export default function ClassFees() {
   return (
     <div className="animate-fade-in" style={styles.container}>
       <div style={styles.header}>
-        <h2>Class Fee Status</h2>
+        <h2>Course Fee Status</h2>
         <p style={styles.sub}>Track payment progress for your assigned students.</p>
       </div>
 
@@ -41,7 +41,7 @@ export default function ClassFees() {
         <>
           <div style={styles.statsGrid}>
             <div style={styles.statCard}>
-              <span style={styles.statLabel}>Total Class Due</span>
+              <span style={styles.statLabel}>Total Course Due</span>
               <span style={{...styles.statValue, color: 'var(--primary)'}}>${totalExpected.toLocaleString()}</span>
             </div>
             <div style={styles.statCard}>
@@ -72,7 +72,7 @@ export default function ClassFees() {
                 </thead>
                 <tbody>
                   {students.length === 0 ? (
-                    <tr><td colSpan="6" style={styles.noData}>No students found in your class.</td></tr>
+                    <tr><td colSpan="6" style={styles.noData}>No students found in your course.</td></tr>
                   ) : (
                     students.map(s => (
                       <tr key={s.id} style={styles.tr}>

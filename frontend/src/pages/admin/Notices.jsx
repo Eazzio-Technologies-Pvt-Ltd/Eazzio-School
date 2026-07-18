@@ -7,7 +7,7 @@ import Loader from '../../components/Loader';
 export default function PrincipalNotices() {
   const { user } = useContext(AuthContext);
   const [notices, setNotices] = useState([]);
-  const [classes, setClasses] = useState([]);
+  const [courses, setCourses] = useState([]);
   const [loading, setLoading] = useState(true);
 
   // Form State
@@ -16,7 +16,7 @@ export default function PrincipalNotices() {
     title: '',
     content: '',
     audience: 'SCHOOL',
-    classId: '',
+    courseId: '',
   });
   const [file, setFile] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -27,12 +27,12 @@ export default function PrincipalNotices() {
 
   const loadData = async () => {
     try {
-      const [noticesData, classesRes] = await Promise.all([
+      const [noticesData, coursesRes] = await Promise.all([
         getNotices({ schoolId: user.schoolId, role: 'ADMIN' }),
-        api.get('/admin/classes', { params: { schoolId: user.schoolId } })
+        api.get('/admin/courses', { params: { schoolId: user.schoolId } })
       ]);
       setNotices(noticesData || []);
-      setClasses(classesRes.data || []);
+      setCourses(coursesRes.data || []);
     } catch (err) {
       console.error(err);
     } finally {
@@ -59,8 +59,8 @@ export default function PrincipalNotices() {
       data.append('title', formData.title);
       data.append('content', formData.content);
       data.append('audience', formData.audience);
-      if (formData.audience === 'CLASS' && formData.classId) {
-        data.append('classId', formData.classId);
+      if (formData.audience === 'COURSE' && formData.courseId) {
+        data.append('courseId', formData.courseId);
       }
       if (file) {
         data.append('attachment', file);
@@ -68,7 +68,7 @@ export default function PrincipalNotices() {
 
       await createNotice(data);
       
-      setFormData({ title: '', content: '', audience: 'SCHOOL', classId: '' });
+      setFormData({ title: '', content: '', audience: 'SCHOOL', courseId: '' });
       setFile(null);
       setShowForm(false);
       loadData();
@@ -136,22 +136,22 @@ export default function PrincipalNotices() {
               <option value="SCHOOL">Entire School (Everyone)</option>
               <option value="TEACHERS">Teachers Only</option>
               <option value="STUDENTS">Students Only</option>
-              <option value="CLASS">Specific Class</option>
+              <option value="COURSE">Specific Course</option>
             </select>
           </div>
 
-          {formData.audience === 'CLASS' && (
+          {formData.audience === 'COURSE' && (
             <div style={styles.formGroup}>
-              <label style={styles.label}>Select Class</label>
+              <label style={styles.label}>Select Course</label>
               <select 
                 style={styles.input}
-                name="classId"
+                name="courseId"
                 required
-                value={formData.classId}
+                value={formData.courseId}
                 onChange={handleInputChange}
               >
-                <option value="">-- Choose Class --</option>
-                {classes.map(c => (
+                <option value="">-- Choose Course --</option>
+                {courses.map(c => (
                   <option key={c.id} value={c.id}>{c.className} - Sec {c.section}</option>
                 ))}
               </select>
@@ -195,8 +195,8 @@ export default function PrincipalNotices() {
                 <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                   <h3 style={styles.title}>{note.title}</h3>
                   <span style={styles.badge(note.audience)}>
-                    {note.audience === 'CLASS' 
-                      ? `Class: ${note.class?.className || 'N/A'}` 
+                    {note.audience === 'COURSE' 
+                      ? `Course: ${note.course?.className || 'N/A'}` 
                       : note.audience}
                   </span>
                 </div>

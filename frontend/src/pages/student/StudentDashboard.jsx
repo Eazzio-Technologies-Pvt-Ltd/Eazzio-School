@@ -56,14 +56,14 @@ export default function StudentDashboard() {
           label="Present Days"
           value={`${attendance?.presentCount || 0} Days`}
           icon="✅"
-          trend="Attended class rolls"
+          trend="Attended course rolls"
           trendColor="var(--success)"
         />
         <StatCard
           label="Absent / Late"
           value={`${(attendance?.absent || 0) + (attendance?.late || 0)} Days`}
           icon="❌"
-          trend="Missed class rolls"
+          trend="Missed course rolls"
           trendColor="var(--danger)"
         />
         <StatCard
@@ -171,7 +171,7 @@ export default function StudentDashboard() {
             
             <div style={styles.routineList}>
               {!todayRoutine || todayRoutine.length === 0 ? (
-                <p style={styles.noRecords}>No classes scheduled for today.</p>
+                <p style={styles.noRecords}>No courses scheduled for today.</p>
               ) : (
                 todayRoutine.map((r, idx) => (
                   <div key={idx} style={styles.routineCard}>

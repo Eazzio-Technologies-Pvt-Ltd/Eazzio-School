@@ -28,7 +28,7 @@ export default function AttendanceOverview() {
     <div className="animate-fade-in" style={styles.container}>
       <div style={styles.header}>
         <h2>Attendance Overview</h2>
-        <p style={styles.sub}>School-wide daily attendance monitoring by class.</p>
+        <p style={styles.sub}>School-wide daily attendance monitoring by course.</p>
       </div>
 
       {error && <div style={styles.errorAlert}>{error}</div>}
@@ -43,8 +43,8 @@ export default function AttendanceOverview() {
             <table style={styles.table}>
               <thead>
                 <tr>
-                  <th style={styles.th}>Class</th>
-                  <th style={styles.th}>Class Teacher</th>
+                  <th style={styles.th}>Course</th>
+                  <th style={styles.th}>Course Teacher</th>
                   <th style={styles.th}>Total Students</th>
                   <th style={styles.th}>Present (Total Logs)</th>
                   <th style={styles.th}>Absent (Total Logs)</th>
@@ -53,7 +53,7 @@ export default function AttendanceOverview() {
               </thead>
               <tbody>
                 {summary.map(cls => (
-                  <tr key={cls.classId} style={styles.tr}>
+                  <tr key={cls.courseId} style={styles.tr}>
                     <td style={{ ...styles.td, fontWeight: 'bold', color: 'var(--primary)' }}>{cls.className}</td>
                     <td style={styles.td}>{cls.teacherName}</td>
                     <td style={styles.td}>{cls.totalStudents}</td>
