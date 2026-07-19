@@ -1,8 +1,30 @@
 import React from 'react';
 
-export default function StatCard({ label, value, icon, trend, trendColor = 'var(--success)' }) {
+export default function StatCard({ label, value, icon, trend, trendColor = 'var(--success)', onClick }) {
+  const isClickable = !!onClick;
   return (
-    <div style={styles.card} className="animate-fade-in">
+    <div 
+      style={{
+        ...styles.card,
+        cursor: isClickable ? 'pointer' : 'default',
+        transform: isClickable ? 'scale(1)' : 'none',
+        transition: 'transform 0.2s ease, background 0.2s ease'
+      }} 
+      className="animate-fade-in"
+      onClick={onClick}
+      onMouseEnter={(e) => {
+        if (isClickable) {
+          e.currentTarget.style.transform = 'scale(1.02)';
+          e.currentTarget.style.background = 'rgba(255, 255, 255, 0.05)';
+        }
+      }}
+      onMouseLeave={(e) => {
+        if (isClickable) {
+          e.currentTarget.style.transform = 'scale(1)';
+          e.currentTarget.style.background = 'var(--bg-card)';
+        }
+      }}
+    >
       <div style={styles.left}>
         <span style={styles.label}>{label}</span>
         <span style={styles.value}>{value}</span>
