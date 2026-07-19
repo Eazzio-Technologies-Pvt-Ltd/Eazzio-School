@@ -48,10 +48,10 @@ export default function Reports() {
 
   // Pure-CSS chart items course-wise
   const coursesAttendanceData = [
-    { className: 'Grade 10-A', rate: summary?.globalAttendanceRate || 95 },
-    { className: 'Grade 10-B', rate: 89 },
-    { className: 'Grade 9-A', rate: 92 },
-    { className: 'Grade 9-B', rate: 74 },
+    { courseName: 'Grade 10-A', rate: summary?.globalAttendanceRate || 95 },
+    { courseName: 'Grade 10-B', rate: 89 },
+    { courseName: 'Grade 9-A', rate: 92 },
+    { courseName: 'Grade 9-B', rate: 74 },
   ];
 
   return (
@@ -102,7 +102,7 @@ export default function Reports() {
             <div style={styles.chartContainer}>
               {coursesAttendanceData.map((item, idx) => (
                 <div key={idx} style={styles.chartBarRow}>
-                  <span style={styles.barLabel}>{item.className}</span>
+                  <span style={styles.barLabel}>{item.courseName}</span>
                   <div style={styles.barWrapper}>
                     <div
                       style={{
@@ -168,11 +168,11 @@ export default function Reports() {
                 <h4>Collection Summary</h4>
                 <div style={styles.finRow}>
                   <span>Fees Collected:</span>
-                  <span style={{ color: 'var(--success)', fontWeight: '700' }}>${summary?.paidFees?.toLocaleString()}</span>
+                  <span style={{ color: 'var(--success)', fontWeight: '700' }}>₹${summary?.paidFees?.toLocaleString()}</span>
                 </div>
                 <div style={styles.finRow}>
                   <span>Outstanding Balances:</span>
-                  <span style={{ color: 'var(--warning)', fontWeight: '700' }}>${summary?.pendingFees?.toLocaleString()}</span>
+                  <span style={{ color: 'var(--warning)', fontWeight: '700' }}>₹${summary?.pendingFees?.toLocaleString()}</span>
                 </div>
                 <div style={styles.progressBarBg}>
                   <div
@@ -213,7 +213,7 @@ export default function Reports() {
                             <td style={{ ...styles.td, color: 'var(--text-primary)', fontWeight: '600' }}>{student.name}</td>
                             <td style={styles.td}>{student.rollNumber}</td>
                             <td style={{ ...styles.td, color: 'var(--warning)', fontWeight: '700' }}>
-                              ${student.totalFees?.toLocaleString()}
+                              ₹${student.totalFees?.toLocaleString()}
                             </td>
                             <td style={styles.td}>
                               <span style={{ ...styles.badge, color: 'var(--warning)', background: 'var(--warning-glow)' }}>

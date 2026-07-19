@@ -149,7 +149,7 @@ export default function Students() {
                 <select value={courseId} onChange={(e) => setCourseId(e.target.value)} required style={styles.select}>
                   <option value="">Select Course</option>
                   {coursesList.map(cls => (
-                    <option key={cls.id} value={cls.id}>{cls.className} - {cls.section}</option>
+                    <option key={cls.id} value={cls.id}>{cls.courseName} - {cls.section}</option>
                   ))}
                 </select>
               </div>
@@ -201,7 +201,7 @@ export default function Students() {
             <select value={courseFilter} onChange={(e) => setCourseFilter(e.target.value)} style={styles.filterDropdown}>
               <option value="">All Courses</option>
               {coursesList.map(cls => (
-                <option key={cls.id} value={cls.id}>{cls.className} - {cls.section}</option>
+                <option key={cls.id} value={cls.id}>{cls.courseName} - {cls.section}</option>
               ))}
             </select>
           </div>
@@ -238,7 +238,7 @@ export default function Students() {
                         </td>
                         <td style={styles.td}>{student.rollNumber}</td>
                         <td style={{ ...styles.td, color: 'var(--primary)', fontWeight: 'bold' }}>
-                          {student.course ? `${student.course.className}-${student.course.section}` : 'N/A'}
+                          {student.course ? `${student.course.courseName}-${student.course.section}` : 'N/A'}
                         </td>
                         <td style={styles.td}>{student.phone || '-'}</td>
                         <td style={styles.td}>{student.admissionDate ? new Date(student.admissionDate).toLocaleDateString() : '-'}</td>

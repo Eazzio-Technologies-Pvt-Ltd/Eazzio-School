@@ -25,6 +25,7 @@ import PrincipalNotices from './pages/principal/Notices';
 import AdminDashboard from './pages/admin/AdminDashboard';
 import AdminStudents from './pages/admin/Students';
 import AdminTeachers from './pages/admin/Teachers';
+import AdminStaff from './pages/admin/Staff';
 import AdminAttendanceOverview from './pages/admin/AttendanceOverview';
 import AdminFeesOverview from './pages/admin/FeesOverview';
 import AdminReports from './pages/admin/Reports';
@@ -130,6 +131,7 @@ export default function App() {
             <Route path="dashboard" element={<AdminDashboard />} />
             <Route path="students" element={<AdminStudents />} />
             <Route path="teachers" element={<AdminTeachers />} />
+            <Route path="staff" element={<AdminStaff />} />
             <Route path="attendance" element={<AdminAttendanceOverview />} />
             <Route path="fees" element={<AdminFeesOverview />} />
             <Route path="reports" element={<AdminReports />} />

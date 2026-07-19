@@ -42,15 +42,15 @@ export default function CourseFees() {
           <div style={styles.statsGrid}>
             <div style={styles.statCard}>
               <span style={styles.statLabel}>Total Course Due</span>
-              <span style={{...styles.statValue, color: 'var(--primary)'}}>${totalExpected.toLocaleString()}</span>
+              <span style={{...styles.statValue, color: 'var(--primary)'}}>₹${totalExpected.toLocaleString()}</span>
             </div>
             <div style={styles.statCard}>
               <span style={styles.statLabel}>Total Paid</span>
-              <span style={{...styles.statValue, color: 'var(--success)'}}>${totalPaid.toLocaleString()}</span>
+              <span style={{...styles.statValue, color: 'var(--success)'}}>₹${totalPaid.toLocaleString()}</span>
             </div>
             <div style={styles.statCard}>
               <span style={styles.statLabel}>Total Pending</span>
-              <span style={{...styles.statValue, color: 'var(--warning)'}}>${totalPending.toLocaleString()}</span>
+              <span style={{...styles.statValue, color: 'var(--warning)'}}>₹${totalPending.toLocaleString()}</span>
             </div>
           </div>
 
@@ -78,9 +78,9 @@ export default function CourseFees() {
                       <tr key={s.id} style={styles.tr}>
                         <td style={{ ...styles.td, fontWeight: 'bold' }}>{s.name}</td>
                         <td style={styles.td}>{s.rollNumber || '-'}</td>
-                        <td style={styles.td}>${s.totalFees.toLocaleString()}</td>
-                        <td style={{ ...styles.td, color: 'var(--success)' }}>${s.paid.toLocaleString()}</td>
-                        <td style={{ ...styles.td, color: 'var(--warning)' }}>${s.pending.toLocaleString()}</td>
+                        <td style={styles.td}>₹${s.totalFees.toLocaleString()}</td>
+                        <td style={{ ...styles.td, color: 'var(--success)' }}>₹${s.paid.toLocaleString()}</td>
+                        <td style={{ ...styles.td, color: 'var(--warning)' }}>₹${s.pending.toLocaleString()}</td>
                         <td style={styles.td}>
                           <span style={{
                             ...styles.badge,

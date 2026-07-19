@@ -68,7 +68,7 @@ export default function StudentDashboard() {
         />
         <StatCard
           label="Pending Fees"
-          value={`$${fees?.feeStatus === 'PENDING' ? fees?.totalFees?.toLocaleString() : '0'}`}
+          value={`₹${fees?.feeStatus === 'PENDING' ? fees?.totalFees?.toLocaleString() : '0'}`}
           icon="💰"
           trend={`Billing Status: ${fees?.feeStatus || 'PENDING'}`}
           trendColor={fees?.feeStatus === 'PAID' ? 'var(--success)' : 'var(--warning)'}
@@ -207,7 +207,7 @@ export default function StudentDashboard() {
               <div style={styles.feeDetailRow}>
                 <span>Total Amount:</span>
                 <span style={{ color: 'var(--text-primary)', fontWeight: '700' }}>
-                  ${fees?.totalFees?.toLocaleString() || '0'}
+                  ₹${fees?.totalFees?.toLocaleString() || '0'}
                 </span>
               </div>
               <button

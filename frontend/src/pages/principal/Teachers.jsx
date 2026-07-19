@@ -116,12 +116,12 @@ export default function Teachers() {
   const subjectsList = [...new Set(teachersList.flatMap(t => t.timetables?.map(tt => tt.subject) || []))].filter(Boolean);
   
   // Extract courses list for Filter dropdown
-  const coursesList = [...new Set(teachersList.map(t => t.assignedCourse ? `${t.assignedCourse.className}-${t.assignedCourse.section}` : null).filter(Boolean))];
+  const coursesList = [...new Set(teachersList.map(t => t.assignedCourse ? `${t.assignedCourse.courseName}-${t.assignedCourse.section}` : null).filter(Boolean))];
 
   // Dynamic search/filters on client
   const filteredTeachers = teachersList.filter(user => {
     const matchesSearch = user.name.toLowerCase().includes(searchQuery.toLowerCase()) || user.email.toLowerCase().includes(searchQuery.toLowerCase());
-    const teacherCourse = user.assignedCourse ? `${user.assignedCourse.className}-${user.assignedCourse.section}` : '';
+    const teacherCourse = user.assignedCourse ? `${user.assignedCourse.courseName}-${user.assignedCourse.section}` : '';
     const matchesCourse = !courseFilter || teacherCourse === courseFilter;
     
     const userSubjects = user.timetables ? [...new Set(user.timetables.map(tt => tt.subject))] : [];
@@ -315,7 +315,7 @@ export default function Teachers() {
                         const subjectsStr = user.timetables && user.timetables.length > 0 
                           ? [...new Set(user.timetables.map(tt => tt.subject))].join(', ')
                           : 'Unassigned Subjects';
-                        const courseStr = user.assignedCourse ? `${user.assignedCourse.className}-${user.assignedCourse.section}` : 'Unassigned Course';
+                        const courseStr = user.assignedCourse ? `${user.assignedCourse.courseName}-${user.assignedCourse.section}` : 'Unassigned Course';
                         
                         return (
                           <tr key={user.id} className="hover:bg-gray-50/80 transition-colors">

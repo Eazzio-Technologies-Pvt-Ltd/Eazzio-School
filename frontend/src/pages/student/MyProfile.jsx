@@ -87,7 +87,7 @@ export default function MyProfile() {
           <div style={styles.infoItem}>
             <span style={styles.label}>Assigned Course / Grade</span>
             <span style={{ ...styles.value, color: 'var(--primary)', fontWeight: '700' }}>
-              {profile?.course ? `${profile.course.className}-${profile.course.section}` : 'N/A'}
+              {profile?.course ? `${profile.course.courseName}-${profile.course.section}` : 'N/A'}
             </span>
           </div>
         </div>

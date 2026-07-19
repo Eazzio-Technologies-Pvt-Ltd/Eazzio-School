@@ -117,9 +117,9 @@ export default function FeesOverview() {
       {activeTab === 'overview' && (
         <div className="animate-fade-in">
           <div style={styles.statsGrid}>
-            <StatCard title="Total Paid" value={`$${collectionData?.paid?.toLocaleString()}`} icon="💰" color="var(--success)" />
-            <StatCard title="Total Pending (Due)" value={`$${collectionData?.dueAmount?.toLocaleString()}`} icon="⏳" color="var(--warning)" />
-            <StatCard title="Total Expected" value={`$${((collectionData?.paid || 0) + (collectionData?.dueAmount || 0)).toLocaleString()}`} icon="📈" color="var(--primary)" />
+            <StatCard title="Total Paid" value={`₹${collectionData?.paid?.toLocaleString()}`} icon="💰" color="var(--success)" />
+            <StatCard title="Total Pending (Due)" value={`₹${collectionData?.dueAmount?.toLocaleString()}`} icon="⏳" color="var(--warning)" />
+            <StatCard title="Total Expected" value={`₹${((collectionData?.paid || 0) + (collectionData?.dueAmount || 0)).toLocaleString()}`} icon="📈" color="var(--primary)" />
           </div>
 
           <div style={styles.card}>
@@ -141,10 +141,10 @@ export default function FeesOverview() {
                   <tr key={student.id} style={styles.tr}>
                     <td style={{ ...styles.td, fontWeight: 'bold' }}>{student.name}</td>
                     <td style={styles.td}>{student.rollNumber || '-'}</td>
-                    <td style={styles.td}>{student.className}</td>
-                    <td style={styles.td}>${student.totalFees}</td>
-                    <td style={{ ...styles.td, color: 'var(--success)' }}>${student.paid}</td>
-                    <td style={{ ...styles.td, color: 'var(--danger)' }}>${student.pending}</td>
+                    <td style={styles.td}>{student.courseName}</td>
+                    <td style={styles.td}>₹${student.totalFees}</td>
+                    <td style={{ ...styles.td, color: 'var(--success)' }}>₹${student.paid}</td>
+                    <td style={{ ...styles.td, color: 'var(--danger)' }}>₹${student.pending}</td>
                     <td style={styles.td}>
                       <span style={{
                         ...styles.badge,
@@ -184,8 +184,8 @@ export default function FeesOverview() {
                 structures.map(st => (
                   <tr key={st.id} style={styles.tr}>
                     <td style={styles.td}>{st.feeType}</td>
-                    <td style={styles.td}>${st.amount}</td>
-                    <td style={styles.td}>{st.courseId ? `${st.course.className}-${st.course.section}` : 'All Courses'}</td>
+                    <td style={styles.td}>₹${st.amount}</td>
+                    <td style={styles.td}>{st.courseId ? `${st.course.courseName}-${st.course.section}` : 'All Courses'}</td>
                     <td style={styles.td}>{st.dueDate ? new Date(st.dueDate).toLocaleDateString() : 'N/A'}</td>
                   </tr>
                 ))
@@ -223,9 +223,9 @@ export default function FeesOverview() {
                   return (
                     <tr key={inv.id} style={styles.tr}>
                       <td style={styles.td}>{inv.student.name}</td>
-                      <td style={styles.td}>{inv.student.course ? `${inv.student.course.className}-${inv.student.course.section}` : 'N/A'}</td>
+                      <td style={styles.td}>{inv.student.course ? `${inv.student.course.courseName}-${inv.student.course.section}` : 'N/A'}</td>
                       <td style={styles.td}>{inv.feeType}</td>
-                      <td style={styles.td}>${inv.amount}</td>
+                      <td style={styles.td}>₹${inv.amount}</td>
                       <td style={styles.td}>{new Date(inv.dueDate).toLocaleDateString()}</td>
                       <td style={styles.td}>
                         <span style={{
@@ -268,14 +268,14 @@ export default function FeesOverview() {
                 <input type="text" required placeholder="e.g. Tuition Fee" value={structureForm.feeType} onChange={e => setStructureForm({...structureForm, feeType: e.target.value})} style={styles.input} />
               </div>
               <div style={styles.formGroup}>
-                <label>Amount ($)</label>
+                <label>Amount (₹)</label>
                 <input type="number" required min="1" value={structureForm.amount} onChange={e => setStructureForm({...structureForm, amount: e.target.value})} style={styles.input} />
               </div>
               <div style={styles.formGroup}>
                 <label>Target Course (Optional)</label>
                 <select value={structureForm.courseId} onChange={e => setStructureForm({...structureForm, courseId: e.target.value})} style={styles.input}>
                   <option value="">All Courses (School-wide)</option>
-                  {coursesList.map(c => <option key={c.id} value={c.id}>{c.className} - {c.section}</option>)}
+                  {coursesList.map(c => <option key={c.id} value={c.id}>{c.courseName} - {c.section}</option>)}
                 </select>
               </div>
               <div style={styles.formGroup}>
@@ -300,14 +300,14 @@ export default function FeesOverview() {
                 <label>Select Fee Structure</label>
                 <select required value={invoiceForm.structureId} onChange={e => setInvoiceForm({...invoiceForm, structureId: e.target.value})} style={styles.input}>
                   <option value="">-- Select Structure --</option>
-                  {structures.map(s => <option key={s.id} value={s.id}>{s.feeType} (${s.amount})</option>)}
+                  {structures.map(s => <option key={s.id} value={s.id}>{s.feeType} (₹${s.amount})</option>)}
                 </select>
               </div>
               <div style={styles.formGroup}>
                 <label>Target Course (Optional - overrides structure default)</label>
                 <select value={invoiceForm.courseId} onChange={e => setInvoiceForm({...invoiceForm, courseId: e.target.value})} style={styles.input}>
                   <option value="">-- Use Structure Default --</option>
-                  {coursesList.map(c => <option key={c.id} value={c.id}>{c.className} - {c.section}</option>)}
+                  {coursesList.map(c => <option key={c.id} value={c.id}>{c.courseName} - {c.section}</option>)}
                 </select>
               </div>
               <div style={styles.modalActions}>
@@ -328,7 +328,7 @@ export default function FeesOverview() {
             </p>
             <form onSubmit={handleRecordPayment} style={styles.form}>
               <div style={styles.formGroup}>
-                <label>Amount ($)</label>
+                <label>Amount (₹)</label>
                 <input type="number" required min="1" max={selectedInvoice?.pending} value={payForm.amount} onChange={e => setPayForm({...payForm, amount: e.target.value})} style={styles.input} />
               </div>
               <div style={styles.formGroup}>

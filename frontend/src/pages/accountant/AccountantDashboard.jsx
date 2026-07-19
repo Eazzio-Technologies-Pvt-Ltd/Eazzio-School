@@ -82,7 +82,7 @@ export default function AccountantDashboard() {
                 address: updatedStudent.address || 'N/A',
                 admissionDate: updatedStudent.admissionDate || null,
                 courseId: updatedStudent.courseId,
-                className: matchedCourse ? `${matchedCourse.className}-${matchedCourse.section}` : 'N/A',
+                className: matchedCourse ? `${matchedCourse.courseName}-${matchedCourse.section}` : 'N/A',
                 academicYear: matchedCourse ? matchedCourse.academicYear : 'N/A'
               };
             }
@@ -328,7 +328,7 @@ export default function AccountantDashboard() {
             studentId: newStudent.studentId,
             name: newStudent.name,
             rollNumber: newStudent.rollNumber || 'N/A',
-            className: matchedCourse ? `${matchedCourse.className}-${matchedCourse.section}` : 'N/A',
+            className: matchedCourse ? `${matchedCourse.courseName}-${matchedCourse.section}` : 'N/A',
             courseId: newStudent.courseId,
             academicYear: matchedCourse ? matchedCourse.academicYear : 'N/A',
             fatherName: newStudent.fatherName || 'N/A',
@@ -629,7 +629,7 @@ export default function AccountantDashboard() {
               <option value="">All Courses</option>
               {courses.map((cls) => (
                 <option key={cls.id} value={cls.id}>
-                  {cls.className} - {cls.section}
+                  {cls.courseName} - {cls.section}
                 </option>
               ))}
             </select>
@@ -756,7 +756,7 @@ export default function AccountantDashboard() {
                         </span>
                       </td>
                       <td style={styles.td}>{student.rollNumber}</td>
-                      <td style={styles.td}>{student.className}</td>
+                      <td style={styles.td}>{student.courseName}</td>
                       <td style={styles.td}>{student.academicYear || 'N/A'}</td>
                       <td style={styles.td}>₹{student.totalFees.toLocaleString()}</td>
                       <td style={{ ...styles.td }}>
@@ -861,7 +861,7 @@ export default function AccountantDashboard() {
                     <option value="">Select a Course</option>
                     {courses.map((cls) => (
                       <option key={cls.id} value={cls.id}>
-                        {cls.className} - {cls.section} ({cls.academicYear})
+                        {cls.courseName} - {cls.section} ({cls.academicYear})
                       </option>
                     ))}
                   </select>
@@ -1114,7 +1114,7 @@ export default function AccountantDashboard() {
                     <option value="">Select Course</option>
                     {courses.map((cls) => (
                       <option key={cls.id} value={cls.id}>
-                        {cls.className} - {cls.section} ({cls.academicYear})
+                        {cls.courseName} - {cls.section} ({cls.academicYear})
                       </option>
                     ))}
                   </select>

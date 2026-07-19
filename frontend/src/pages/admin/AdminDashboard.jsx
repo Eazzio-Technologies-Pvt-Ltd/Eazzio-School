@@ -76,14 +76,14 @@ export default function AdminDashboard() {
         />
         <StatCard
           label="Pending Fees"
-          value={`$${summary?.pendingFees?.toLocaleString() || '0'}`}
+          value={`₹${summary?.pendingFees?.toLocaleString() || '0'}`}
           icon="💳"
           trend="Outstanding accounts"
           trendColor="var(--warning)"
         />
         <StatCard
           label="Monthly Collection"
-          value={`$${summary?.monthlyFeeCollection?.toLocaleString() || '0'}`}
+          value={`₹${summary?.monthlyFeeCollection?.toLocaleString() || '0'}`}
           icon="💰"
           trend="Fees processed this month"
           trendColor="var(--success)"
@@ -135,7 +135,7 @@ export default function AdminDashboard() {
                     {insights?.pendingFees?.slice(0, 3).map((student, idx) => (
                       <li key={idx} style={styles.alertItem}>
                         <span>{student.name} ({student.rollNumber})</span>
-                        <span style={{ color: 'var(--warning)', fontWeight: '700' }}>${student.totalFees.toLocaleString()} due</span>
+                        <span style={{ color: 'var(--warning)', fontWeight: '700' }}>₹${student.totalFees.toLocaleString()} due</span>
                       </li>
                     ))}
                     {insights?.pendingFees?.length > 3 && (
@@ -250,13 +250,13 @@ export default function AdminDashboard() {
               <div style={styles.breakdownRow}>
                 <span>Collected Fees:</span>
                 <span style={{ color: 'var(--success)', fontWeight: '700' }}>
-                  ${summary?.paidFees?.toLocaleString() || '0'}
+                  ₹${summary?.paidFees?.toLocaleString() || '0'}
                 </span>
               </div>
               <div style={styles.breakdownRow}>
                 <span>Outstanding Dues:</span>
                 <span style={{ color: 'var(--warning)', fontWeight: '700' }}>
-                  ${summary?.pendingFees?.toLocaleString() || '0'}
+                  ₹${summary?.pendingFees?.toLocaleString() || '0'}
                 </span>
               </div>
               <div style={styles.progressBarBg}>
