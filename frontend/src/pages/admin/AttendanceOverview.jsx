@@ -54,7 +54,7 @@ export default function AttendanceOverview() {
               <tbody>
                 {summary.map(cls => (
                   <tr key={cls.courseId} style={styles.tr}>
-                    <td style={{ ...styles.td, fontWeight: 'bold', color: 'var(--primary)' }}>{cls.className}</td>
+                    <td style={{ ...styles.td, fontWeight: 'bold', color: 'var(--primary)' }}>{cls.courseName}</td>
                     <td style={styles.td}>{cls.teacherName}</td>
                     <td style={styles.td}>{cls.totalStudents}</td>
                     <td style={{ ...styles.td, color: 'var(--success)' }}>{cls.present}</td>

@@ -163,7 +163,7 @@ export default function PrincipalNotices() {
               >
                 <option value="">-- Choose Course --</option>
                 {courses.map(c => (
-                  <option key={c.id} value={c.id}>{c.className} - Sec {c.section}</option>
+                  <option key={c.id} value={c.id}>{c.courseName} - Sec {c.section}</option>
                 ))}
               </select>
             </div>
@@ -247,7 +247,7 @@ export default function PrincipalNotices() {
                   <h3 className="text-lg font-bold text-gray-900">{note.title}</h3>
                   <span className="px-2.5 py-0.5 rounded-full text-xs font-bold uppercase bg-gray-100 text-gray-600 border border-gray-200">
                     {note.audience === 'COURSE' 
-                      ? `Course: ${note.course?.className || 'N/A'}` 
+                      ? `Course: ${note.course?.courseName || 'N/A'}` 
                       : note.audience}
                   </span>
                   {note.status === 'SCHEDULED' ? (

@@ -99,7 +99,7 @@ export default function PrincipalDashboard() {
                     data.feeAlerts?.map((fee, idx) => (
                       <tr key={idx} className="border-b border-gray-100 hover:bg-gray-50 transition-colors duration-150 text-sm">
                         <td className="py-3 px-4 font-medium text-gray-800">{fee.name}</td>
-                        <td className="py-3 px-4 text-gray-600">{fee.className}</td>
+                        <td className="py-3 px-4 text-gray-600">{fee.courseName}</td>
                         <td className="py-3 px-4 font-bold text-amber-600">₹{fee.dueAmount.toLocaleString()}</td>
                         <td className="py-3 px-4">
                           <span className={`px-2 py-1 text-xs rounded-full font-medium ${fee.status === 'OVERDUE' ? 'bg-red-100 text-red-700 border border-red-200' : 'bg-amber-100 text-amber-700 border border-amber-200'}`}>

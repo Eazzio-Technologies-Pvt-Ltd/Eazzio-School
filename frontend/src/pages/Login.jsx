@@ -38,8 +38,8 @@ export default function Login() {
 
     setLoading(true);
     try {
-      // NOTE: role is currently not sent to the login endpoint, this will be fixed next in the backend
-      await login(email, password);
+      // Pass the selected role to backend to prevent getting logged into a different account with the same email
+      await login(email, password, role);
       navigate('/dashboard');
     } catch (err) {
       setError(err.message || 'Something went wrong');

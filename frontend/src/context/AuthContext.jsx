@@ -10,9 +10,9 @@ export default function AuthProvider({ children }) {
     return savedUser ? JSON.parse(savedUser) : null;
   });
 
-  const login = async (email, password) => {
+  const login = async (email, password, role) => {
     try {
-      const data = await loginService(email, password);
+      const data = await loginService(email, password, role);
       setToken(data.token);
       setUser(data.user);
       localStorage.setItem('token', data.token);

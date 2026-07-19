@@ -152,7 +152,7 @@ export default function PrincipalNotices() {
               >
                 <option value="">-- Choose Course --</option>
                 {courses.map(c => (
-                  <option key={c.id} value={c.id}>{c.className} - Sec {c.section}</option>
+                  <option key={c.id} value={c.id}>{c.courseName} - Sec {c.section}</option>
                 ))}
               </select>
             </div>
@@ -196,7 +196,7 @@ export default function PrincipalNotices() {
                   <h3 style={styles.title}>{note.title}</h3>
                   <span style={styles.badge(note.audience)}>
                     {note.audience === 'COURSE' 
-                      ? `Course: ${note.course?.className || 'N/A'}` 
+                      ? `Course: ${note.course?.courseName || 'N/A'}` 
                       : note.audience}
                   </span>
                 </div>
