@@ -20,6 +20,7 @@ model School {
   studentCount       Int            @default(0)
   createdAt          DateTime       @default(now())
   schoolCode         String         @unique
+  accountants        Accountant[]
   Admin              Admin[]
   attendance         Attendance[]
   courses            Course[]
@@ -31,7 +32,6 @@ model School {
   students           Student[]
   teachers           Teacher[]
   timetables         Timetable[]
-  accountants        Accountant[]
 }
 
 model Course {
@@ -55,7 +55,7 @@ model Course {
 }
 
 model Principal {
-  id       Int    @id @default(autoincrement())
+  id       Int     @id @default(autoincrement())
   schoolId Int
   name     String
   email    String  @unique
@@ -79,6 +79,7 @@ model Teacher {
   assignedCourse Course?
   school         School       @relation(fields: [schoolId], references: [id], onDelete: Cascade)
   timetables     Timetable[]
+  subjects       String[]     @default([])
 
   @@index([schoolId])
 }
@@ -93,15 +94,16 @@ model Student {
   motherName    String?
   phone         String?
   address       String?
-  courseId      Int?
   rollNumber    String?
   admissionDate DateTime?
   createdAt     DateTime     @default(now())
+  courseId      Int?
   attendance    Attendance[]
   feeInvoices   FeeInvoice[]
   payments      FeePayment[]
   course        Course?      @relation(fields: [courseId], references: [id])
   school        School       @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  mustChangePassword Boolean @default(true)
 
   @@index([schoolId])
 }
@@ -111,9 +113,9 @@ model Attendance {
   schoolId  Int
   studentId Int
   teacherId Int?
-  courseId  Int?
   date      DateTime
   status    AttendanceStatus
+  courseId  Int?
   course    Course?          @relation(fields: [courseId], references: [id])
   school    School           @relation(fields: [schoolId], references: [id], onDelete: Cascade)
   student   Student          @relation(fields: [studentId], references: [id], onDelete: Cascade)
@@ -127,10 +129,10 @@ model Timetable {
   id        Int     @id @default(autoincrement())
   schoolId  Int
   teacherId Int
-  courseId  Int
   dayOfWeek String
   period    String
   subject   String
+  courseId  Int
   course    Course  @relation(fields: [courseId], references: [id], onDelete: Cascade)
   school    School  @relation(fields: [schoolId], references: [id], onDelete: Cascade)
   teacher   Teacher @relation(fields: [teacherId], references: [id], onDelete: Cascade)
@@ -142,10 +144,11 @@ model Timetable {
 model FeeStructure {
   id       Int       @id @default(autoincrement())
   schoolId Int
-  courseId Int?
   feeType  String
   amount   Int
   dueDate  DateTime?
+  courseId Int?
+  planType String    @default("MONTHLY")
   course   Course?   @relation(fields: [courseId], references: [id], onDelete: Cascade)
   school   School    @relation(fields: [schoolId], references: [id], onDelete: Cascade)
 
@@ -191,8 +194,8 @@ model Notice {
   content       String
   date          DateTime       @default(now())
   audience      NoticeAudience
-  courseId      Int?
   attachmentUrl String?
+  courseId      Int?
   status        String         @default("PUBLISHED")
   scheduledAt   DateTime?
   course        Course?        @relation(fields: [courseId], references: [id], onDelete: Cascade)
@@ -213,6 +216,19 @@ model Admin {
   @@index([schoolId])
 }
 
+model Accountant {
+  id        Int      @id @default(autoincrement())
+  schoolId  Int
+  name      String
+  email     String   @unique
+  password  String
+  phone     String?
+  createdAt DateTime @default(now())
+  school    School   @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+
+  @@index([schoolId])
+}
+
 enum FeeStatus {
   PAID
   PENDING
@@ -221,7 +237,7 @@ enum FeeStatus {
 
 enum NoticeAudience {
   SCHOOL
-  COURSE
+  CLASS
   TEACHERS
   STUDENTS
 }
@@ -230,17 +246,4 @@ enum AttendanceStatus {
   PRESENT
   ABSENT
   LATE
-}
-
-model Accountant {
-  id        Int      @id @default(autoincrement())
-  schoolId  Int
-  school    School   @relation(fields: [schoolId], references: [id], onDelete: Cascade)
-  name      String
-  email     String   @unique
-  password  String
-  phone     String?
-  createdAt DateTime @default(now())
-
-  @@index([schoolId])
 }

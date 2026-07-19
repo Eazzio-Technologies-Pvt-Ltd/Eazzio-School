@@ -26,6 +26,21 @@ export const bulkImportUpdateTeachers = async (payload) => {
   return response.data;
 };
 
+export const deleteTeacher = async (id) => {
+  const response = await api.delete(`/principal/teachers/${id}`);
+  return response.data;
+};
+
+export const updateTeacher = async (id, payload) => {
+  const response = await api.put(`/principal/teachers/${id}`, payload);
+  return response.data;
+};
+
+export const getTeacherDetails = async (id) => {
+  const response = await api.get(`/principal/teachers/${id}`);
+  return response.data;
+};
+
 // --- Courses ---
 export const getCourses = async () => {
   const response = await api.get('/principal/courses');
@@ -112,23 +127,8 @@ export const getFeeStructures = async () => {
   return response.data;
 };
 
-export const createFeeStructure = async (payload) => {
-  const response = await api.post('/principal/fees/structure', payload);
-  return response.data;
-};
-
-export const generateInvoices = async (payload) => {
-  const response = await api.post('/principal/fees/generate-invoices', payload);
-  return response.data;
-};
-
 export const getInvoices = async () => {
   const response = await api.get('/principal/fees/invoices');
-  return response.data;
-};
-
-export const payInvoice = async (invoiceId, payload) => {
-  const response = await api.post(`/principal/fees/invoices/${invoiceId}/pay`, payload);
   return response.data;
 };
 
@@ -140,6 +140,11 @@ export const getTimetables = async (params = {}) => {
 
 export const createTimetable = async (payload) => {
   const response = await api.post('/principal/timetables', payload);
+  return response.data;
+};
+
+export const autoGenerateTimetable = async (payload) => {
+  const response = await api.post('/principal/timetables/auto-generate', payload);
   return response.data;
 };
 

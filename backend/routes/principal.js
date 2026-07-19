@@ -229,6 +229,85 @@ router.get('/teachers', async (req, res) => {
   }
 });
 
+// GET /teachers/:id - Fetch single teacher details
+router.get('/teachers/:id', async (req, res) => {
+  const schoolId = req.user.schoolId;
+  const id = parseInt(req.params.id);
+
+  try {
+    const teacher = await prisma.teacher.findUnique({
+      where: { id },
+      include: { 
+        assignedCourse: true,
+        timetables: {
+          include: {
+            course: true
+          },
+          orderBy: { dayOfWeek: 'asc' }
+        }
+      }
+    });
+
+    if (!teacher || teacher.schoolId !== schoolId) {
+      return res.status(404).json({ error: 'Teacher not found' });
+    }
+    
+    return res.json({ success: true, data: teacher });
+  } catch (err) {
+    console.error('Error fetching teacher:', err);
+    return res.status(500).json({ success: false, error: 'Internal server error' });
+  }
+});
+
+
+
+// PUT /teachers/:id - Update teacher
+router.put('/teachers/:id', async (req, res) => {
+  const schoolId = req.user.schoolId;
+  const id = parseInt(req.params.id);
+  const { name, phone, courseId, subjects } = req.body;
+
+  try {
+    const existing = await prisma.teacher.findUnique({ where: { id } });
+    if (!existing || existing.schoolId !== schoolId) {
+      return res.status(404).json({ error: 'Teacher not found' });
+    }
+    
+    const updated = await prisma.teacher.update({
+      where: { id },
+      data: {
+        name,
+        phone,
+        courseId: courseId ? parseInt(courseId) : null,
+        subjects: Array.isArray(subjects) ? subjects : []
+      }
+    });
+    return res.json({ success: true, data: updated });
+  } catch (err) {
+    console.error('Error updating teacher:', err);
+    return res.status(500).json({ success: false, error: 'Internal server error' });
+  }
+});
+
+// DELETE /teachers/:id - Delete teacher
+router.delete('/teachers/:id', async (req, res) => {
+  const schoolId = req.user.schoolId;
+  const id = parseInt(req.params.id);
+
+  try {
+    const existing = await prisma.teacher.findUnique({ where: { id } });
+    if (!existing || existing.schoolId !== schoolId) {
+      return res.status(404).json({ error: 'Teacher not found' });
+    }
+    
+    await prisma.teacher.delete({ where: { id } });
+    return res.json({ success: true, message: 'Teacher deleted successfully' });
+  } catch (err) {
+    console.error('Error deleting teacher:', err);
+    return res.status(500).json({ success: false, error: 'Internal server error' });
+  }
+});
+
 // POST /teachers/bulk-import-update
 router.post('/teachers/bulk-import-update', async (req, res) => {
   const { teachers } = req.body;
@@ -660,7 +739,7 @@ router.get('/students/:id', async (req, res) => {
         OR: [
           { audience: 'SCHOOL' },
           { audience: 'STUDENTS' },
-          ...(student.courseId ? [{ audience: 'COURSE', courseId: student.courseId }] : [])
+          ...(student.courseId ? [{ audience: 'CLASS', courseId: student.courseId }] : [])
         ]
       },
       orderBy: { date: 'desc' },

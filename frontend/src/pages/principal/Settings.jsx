@@ -3,8 +3,9 @@ import { getPrincipalSettings, updatePrincipalProfile, updatePrincipalPassword }
 import Loader from '../../components/Loader';
 import { 
   User, Lock, Bell, BookOpen, Monitor, Building, 
-  CheckCircle2, AlertCircle, Save, ShieldCheck 
+  CheckCircle2, AlertCircle, Save, ShieldCheck, FileText 
 } from 'lucide-react';
+import ReportsTab from './ReportsTab';
 
 export default function Settings() {
   const [activeTab, setActiveTab] = useState('profile');
@@ -62,6 +63,8 @@ export default function Settings() {
         return <AppearanceTab showFeedback={showFeedback} />;
       case 'security':
         return <SecurityTab showFeedback={showFeedback} />;
+      case 'reports':
+        return <ReportsTab />;
       case 'institution':
         return <InstitutionTab school={school} />;
       default:
@@ -76,6 +79,7 @@ export default function Settings() {
     { id: 'notifications', label: 'Notifications', icon: <Bell size={18} /> },
     { id: 'academic', label: 'Academic Defaults', icon: <BookOpen size={18} /> },
     { id: 'appearance', label: 'Appearance', icon: <Monitor size={18} /> },
+    { id: 'reports', label: 'Reports & Audits', icon: <FileText size={18} /> },
     { id: 'institution', label: 'Institution Info', icon: <Building size={18} /> },
   ];
 
@@ -351,41 +355,53 @@ const AcademicTab = ({ showFeedback }) => {
 };
 
 const AppearanceTab = ({ showFeedback }) => {
-  const [theme, setTheme] = useState('system');
+  const [theme, setTheme] = useState(localStorage.getItem('theme') || 'system');
+
+  const handleThemeChange = (newTheme) => {
+    setTheme(newTheme);
+    localStorage.setItem('theme', newTheme);
+    
+    if (newTheme === 'dark' || (newTheme === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+    
+    showFeedback('success', `Theme updated to ${newTheme} mode.`);
+  };
 
   return (
     <div className="p-6">
       <h3 className="text-lg font-semibold text-gray-900 mb-6 border-b border-gray-100 pb-4 flex items-center">
         Appearance
-        <span className="ml-3 bg-gray-100 text-gray-500 text-xs font-bold uppercase px-2.5 py-0.5 rounded-md border border-gray-200">Coming Soon</span>
       </h3>
-      <div className="max-w-md flex flex-col gap-5 opacity-60 pointer-events-none">
+      <div className="max-w-md flex flex-col gap-5">
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-3">UI Theme Preference</label>
           <div className="grid grid-cols-3 gap-3">
             <div 
-              className={`border rounded-lg p-3 text-center ${theme === 'light' ? 'border-gray-400 bg-gray-100 ring-1 ring-gray-400' : 'border-gray-200'}`}
+              onClick={() => handleThemeChange('light')}
+              className={`border rounded-lg p-3 text-center cursor-pointer transition-all ${theme === 'light' ? 'border-emerald-500 bg-emerald-50 ring-1 ring-emerald-500' : 'border-gray-200 hover:border-gray-300'}`}
             >
               <div className="w-full h-12 bg-white border border-gray-200 rounded mb-2 shadow-sm"></div>
-              <span className="text-sm font-medium text-gray-700">Light</span>
+              <span className={`text-sm font-medium ${theme === 'light' ? 'text-emerald-700' : 'text-gray-700'}`}>Light</span>
             </div>
             <div 
-              className={`border rounded-lg p-3 text-center ${theme === 'dark' ? 'border-gray-400 bg-gray-100 ring-1 ring-gray-400' : 'border-gray-200'}`}
+              onClick={() => handleThemeChange('dark')}
+              className={`border rounded-lg p-3 text-center cursor-pointer transition-all ${theme === 'dark' ? 'border-emerald-500 bg-emerald-50 ring-1 ring-emerald-500' : 'border-gray-200 hover:border-gray-300'}`}
             >
-              <div className="w-full h-12 bg-gray-800 rounded mb-2 shadow-sm"></div>
-              <span className="text-sm font-medium text-gray-700">Dark</span>
+              <div className="w-full h-12 bg-gray-800 rounded mb-2 shadow-sm border border-gray-700"></div>
+              <span className={`text-sm font-medium ${theme === 'dark' ? 'text-emerald-700' : 'text-gray-700'}`}>Dark</span>
             </div>
             <div 
-              className={`border rounded-lg p-3 text-center ${theme === 'system' ? 'border-gray-400 bg-gray-100 ring-1 ring-gray-400' : 'border-gray-200'}`}
+              onClick={() => handleThemeChange('system')}
+              className={`border rounded-lg p-3 text-center cursor-pointer transition-all ${theme === 'system' ? 'border-emerald-500 bg-emerald-50 ring-1 ring-emerald-500' : 'border-gray-200 hover:border-gray-300'}`}
             >
               <div className="w-full h-12 bg-gradient-to-r from-white to-gray-800 rounded mb-2 shadow-sm border border-gray-200"></div>
-              <span className="text-sm font-medium text-gray-700">System</span>
+              <span className={`text-sm font-medium ${theme === 'system' ? 'text-emerald-700' : 'text-gray-700'}`}>System</span>
             </div>
           </div>
         </div>
-        <button disabled className="mt-4 bg-gray-300 text-gray-500 font-medium py-2.5 px-6 rounded-lg shadow-sm w-fit flex items-center gap-2 cursor-not-allowed">
-          <Save size={16} /> Save Theme
-        </button>
       </div>
     </div>
   );

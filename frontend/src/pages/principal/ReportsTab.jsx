@@ -2,8 +2,9 @@ import React, { useState, useEffect, useContext } from 'react';
 import { getSummary, getAIInsights, getAttendanceSummary } from '../../api/principalApi';
 import Loader from '../../components/Loader';
 import { ToastContext } from '../../context/ToastContext';
+import { FileText, Download } from 'lucide-react';
 
-export default function Reports() {
+export default function ReportsTab() {
   const [activeTab, setActiveTab] = useState('attendance');
   const [summary, setSummary] = useState(null);
   const [insights, setInsights] = useState(null);
@@ -44,9 +45,24 @@ export default function Reports() {
     }, 1500);
   };
 
-  if (loading) return <Loader message="Compiling administrative audit data..." />;
+  const getPercentageClass = (rate) => {
+    if (rate >= 95) return 'w-[95%]';
+    if (rate >= 90) return 'w-[90%]';
+    if (rate >= 85) return 'w-[85%]';
+    if (rate >= 80) return 'w-[80%]';
+    if (rate >= 75) return 'w-[75%]';
+    if (rate >= 70) return 'w-[70%]';
+    if (rate >= 60) return 'w-[60%]';
+    if (rate >= 50) return 'w-[50%]';
+    if (rate >= 40) return 'w-[40%]';
+    if (rate >= 30) return 'w-[30%]';
+    if (rate >= 20) return 'w-[20%]';
+    if (rate >= 10) return 'w-[10%]';
+    return 'w-[5%]';
+  };
 
-  // Pure-CSS chart items course-wise
+  if (loading) return <div className="p-8"><Loader message="Compiling administrative audit data..." /></div>;
+
   const coursesAttendanceData = attendanceData.map(c => ({
     className: c.courseName,
     rate: c.percentage
@@ -54,11 +70,6 @@ export default function Reports() {
 
   return (
     <div className="flex flex-col gap-6 animate-fade-in text-gray-800">
-      <div className="mb-4">
-        <h2 className="text-3xl font-bold text-gray-900 tracking-tight">Institutional Reports & Audits</h2>
-        <p className="text-gray-500 mt-1">Access detailed summaries, financial records, and operational logs.</p>
-      </div>
-
       {/* Tabs Menu */}
       <div className="flex gap-3 border-b border-gray-200 pb-px flex-wrap">
         <button
@@ -97,8 +108,7 @@ export default function Reports() {
                   <span className="w-24 text-sm font-semibold text-gray-600">{item.className}</span>
                   <div className="flex-1 h-6 bg-gray-200 rounded-full overflow-hidden">
                     <div
-                      className={`h-full rounded-full flex items-center justify-end pr-3 transition-all duration-700 ${item.rate >= 90 ? 'bg-emerald-500' : item.rate >= 75 ? 'bg-amber-500' : 'bg-red-500'}`}
-                      style={{ width: `${item.rate}%` }}
+                      className={`h-full rounded-full flex items-center justify-end pr-3 transition-all duration-700 ${getPercentageClass(item.rate)} ${item.rate >= 90 ? 'bg-emerald-500' : item.rate >= 75 ? 'bg-amber-500' : 'bg-red-500'}`}
                     >
                       <span className="text-xs font-bold text-white">{item.rate}%</span>
                     </div>

@@ -5,7 +5,7 @@ export default function Courses() {
   const [courses, setCourses] = useState([]);
   const [teachers, setTeachers] = useState([]);
   const [loading, setLoading] = useState(true);
-  
+
   // Create Course Form
   const [className, setClassName] = useState('');
   const [section, setSection] = useState('');
@@ -124,7 +124,7 @@ export default function Courses() {
                     <tr key={cls.id}>
                       <td>{cls.className} - {cls.section}</td>
                       <td>{cls.academicYear}</td>
-                      <td>{cls.teacher ? cls.teacher.name : <span style={{color:'var(--text-muted)'}}>Unassigned</span>}</td>
+                      <td>{cls.teacher ? cls.teacher.name : <span style={{ color: 'var(--text-muted)' }}>Unassigned</span>}</td>
                       <td>{cls._count.students}</td>
                       <td>
                         <button className="btn-primary" style={styles.smallBtn} onClick={() => openAssignModal(cls)}>
@@ -147,8 +147,8 @@ export default function Courses() {
             <h3>Assign Teacher for {selectedCourse?.className}-{selectedCourse?.section}</h3>
             <div style={styles.inputGroup}>
               <label>Select Teacher</label>
-              <select 
-                value={selectedTeacherId} 
+              <select
+                value={selectedTeacherId}
                 onChange={(e) => setSelectedTeacherId(e.target.value)}
                 style={styles.select}
               >

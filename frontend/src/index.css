@@ -5,6 +5,35 @@
 @tailwind utilities;
 
 :root {
+
+  /* Tailwind Dynamic Dark Mode Variables */
+  --tw-color-white: 255 255 255;
+  --tw-color-black: 0 0 0;
+  
+  --tw-color-gray-50: 249 250 251;
+  --tw-color-gray-100: 243 244 246;
+  --tw-color-gray-200: 229 231 235;
+  --tw-color-gray-300: 209 213 219;
+  --tw-color-gray-400: 156 163 175;
+  --tw-color-gray-500: 107 114 128;
+  --tw-color-gray-600: 75 85 99;
+  --tw-color-gray-700: 55 65 81;
+  --tw-color-gray-800: 31 41 55;
+  --tw-color-gray-900: 17 24 39;
+
+  --tw-color-slate-50: 248 250 252;
+  --tw-color-slate-100: 241 245 249;
+  --tw-color-slate-200: 226 232 240;
+  --tw-color-slate-300: 203 213 225;
+  --tw-color-slate-400: 148 163 184;
+  --tw-color-slate-450: 100 116 139;
+  --tw-color-slate-500: 100 116 139;
+  --tw-color-slate-600: 71 85 105;
+  --tw-color-slate-650: 51 65 85;
+  --tw-color-slate-700: 51 65 85;
+  --tw-color-slate-800: 30 41 59;
+  --tw-color-slate-900: 15 23 42;
+
   --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
   --font-heading: 'Plus Jakarta Sans', sans-serif;
   
@@ -230,3 +259,44 @@ input:checked + .slider:before {
   transform: translateX(24px);
 }
 
+
+
+.dark {
+  /* Inverted Neutral Palette for Dark Mode */
+  --tw-color-white: 15 23 42;
+  --tw-color-black: 255 255 255;
+  
+  --tw-color-gray-50: 17 24 39;
+  --tw-color-gray-100: 31 41 55;
+  --tw-color-gray-200: 55 65 81;
+  --tw-color-gray-300: 75 85 99;
+  --tw-color-gray-400: 107 114 128;
+  --tw-color-gray-500: 156 163 175;
+  --tw-color-gray-600: 209 213 219;
+  --tw-color-gray-700: 229 231 235;
+  --tw-color-gray-800: 243 244 246;
+  --tw-color-gray-900: 255 255 255;
+
+  --tw-color-slate-50: 15 23 42;
+  --tw-color-slate-100: 30 41 59;
+  --tw-color-slate-200: 51 65 85;
+  --tw-color-slate-300: 71 85 105;
+  --tw-color-slate-400: 100 116 139;
+  --tw-color-slate-450: 148 163 184;
+  --tw-color-slate-500: 148 163 184;
+  --tw-color-slate-600: 203 213 225;
+  --tw-color-slate-650: 226 232 240;
+  --tw-color-slate-700: 226 232 240;
+  --tw-color-slate-800: 241 245 249;
+  --tw-color-slate-900: 255 255 255;
+  
+  /* Invert native theme variables */
+  --bg-main: #0f172a;
+  --bg-card: rgba(30, 41, 59, 0.85);
+  --bg-card-hover: rgba(30, 41, 59, 0.95);
+  --text-primary: #f8fafc;
+  --text-secondary: #cbd5e1;
+  --text-muted: #94a3b8;
+  --glass-bg: rgba(255, 255, 255, 0.03);
+  --glass-border: rgba(255, 255, 255, 0.08);
+}

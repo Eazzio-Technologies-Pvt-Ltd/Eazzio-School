@@ -37,7 +37,7 @@ export const createTeacherSchema = z.object({
 });
 
 export const createClassSchema = z.object({
-  className: z.string().min(1, 'Class name is required'),
+  courseName: z.string().min(1, 'Course name is required'),
   section: z.string().min(1, 'Section is required'),
   academicYear: z.string().min(1, 'Academic year is required'),
 });

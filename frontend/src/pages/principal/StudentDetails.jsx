@@ -1,11 +1,12 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { getStudentDetails } from '../../api/principalApi';
+import { getStudentDetails, updateStudent, getCourses } from '../../api/principalApi';
 import Loader from '../../components/Loader';
 import { 
   ArrowLeft, User, Phone, MapPin, Calendar, CreditCard, 
-  BookOpen, Clock, Bell, AlertTriangle, CheckCircle, TrendingUp
+  BookOpen, Clock, Bell, AlertTriangle, CheckCircle, TrendingUp, Edit2, X
 } from 'lucide-react';
+import { ToastContext } from '../../context/ToastContext';
 
 export default function StudentDetails() {
   const { id } = useParams();
@@ -13,26 +14,87 @@ export default function StudentDetails() {
   const [student, setStudent] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const { showToast } = useContext(ToastContext);
+
+  // Edit Modal State
+  const [editModalOpen, setEditModalOpen] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [coursesList, setCoursesList] = useState([]);
+  const [editFormData, setEditFormData] = useState({
+    name: '',
+    phone: '',
+    address: '',
+    fatherName: '',
+    motherName: '',
+    courseId: '',
+    rollNumber: ''
+  });
+
+  const fetchStudent = async () => {
+    try {
+      setLoading(true);
+      const res = await getStudentDetails(id);
+      if (res && res.id) {
+        setStudent(res);
+      } else {
+        setError('Failed to fetch student details.');
+      }
+    } catch (err) {
+      console.error(err);
+      setError('Error loading student profile.');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    const fetchStudent = async () => {
+    fetchStudent();
+    
+    // Fetch courses for the edit dropdown
+    const fetchCourses = async () => {
       try {
-        setLoading(true);
-        const res = await getStudentDetails(id);
-        if (res && res.id) {
-          setStudent(res);
-        } else {
-          setError('Failed to fetch student details.');
+        const res = await getCourses();
+        if (res && res.success) {
+          setCoursesList(res.data);
         }
       } catch (err) {
-        console.error(err);
-        setError('Error loading student profile.');
-      } finally {
-        setLoading(false);
+        console.error("Failed to fetch courses:", err);
       }
     };
-    fetchStudent();
+    fetchCourses();
   }, [id]);
+
+  const openEditModal = () => {
+    setEditFormData({
+      name: student.name || '',
+      phone: student.phone || '',
+      address: student.address || '',
+      fatherName: student.fatherName || '',
+      motherName: student.motherName || '',
+      courseId: student.courseId || '',
+      rollNumber: student.rollNumber || ''
+    });
+    setEditModalOpen(true);
+  };
+
+  const handleUpdateStudent = async (e) => {
+    e.preventDefault();
+    try {
+      setSubmitting(true);
+      const payload = {
+        ...editFormData,
+        courseId: editFormData.courseId ? parseInt(editFormData.courseId) : null
+      };
+      await updateStudent(id, payload);
+      showToast('Student details updated successfully', 'success');
+      setEditModalOpen(false);
+      fetchStudent(); // Refresh the data
+    } catch (err) {
+      showToast(err.response?.data?.error || 'Failed to update student', 'error');
+    } finally {
+      setSubmitting(false);
+    }
+  };
 
   if (loading) return <div className="p-8"><Loader message="Loading Student Profile..." /></div>;
   if (error) return <div className="p-8 text-red-500 font-medium">{error}</div>;
@@ -68,7 +130,15 @@ export default function StudentDetails() {
                 </span>
               )}
             </h2>
-            <p className="text-gray-500 font-medium">ID: {student.studentId}</p>
+            <div className="flex items-center gap-3 mt-1">
+              <p className="text-gray-500 font-medium">ID: {student.studentId}</p>
+              <button 
+                onClick={openEditModal}
+                className="flex items-center gap-1.5 px-3 py-1 bg-white border border-gray-200 hover:bg-gray-50 text-gray-700 text-xs font-semibold rounded-lg transition-colors duration-150"
+              >
+                <Edit2 size={14} /> Edit Profile
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -295,6 +365,129 @@ export default function StudentDetails() {
         </div>
 
       </div>
+
+      {/* Edit Student Modal */}
+      {editModalOpen && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl shadow-2xl w-full max-w-2xl overflow-hidden animate-fade-in max-h-[90vh] flex flex-col">
+            <div className="p-5 border-b border-gray-100 flex justify-between items-center bg-gray-50/50">
+              <h3 className="font-bold text-lg text-gray-900">Edit Student Details</h3>
+              <button onClick={() => setEditModalOpen(false)} className="text-gray-400 hover:text-gray-600 transition">
+                <X size={20} />
+              </button>
+            </div>
+            <div className="p-5 overflow-y-auto">
+              <form id="editStudentForm" onSubmit={handleUpdateStudent} className="space-y-6">
+                
+                {/* Personal Info */}
+                <div>
+                  <h4 className="text-sm font-bold text-gray-900 mb-3 flex items-center gap-2">
+                    <User size={16} className="text-emerald-500" /> Personal Information
+                  </h4>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Full Name</label>
+                      <input
+                        type="text"
+                        value={editFormData.name}
+                        onChange={(e) => setEditFormData({ ...editFormData, name: e.target.value })}
+                        className="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 outline-none"
+                        required
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Phone Number</label>
+                      <input
+                        type="text"
+                        value={editFormData.phone}
+                        onChange={(e) => setEditFormData({ ...editFormData, phone: e.target.value })}
+                        className="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 outline-none"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Father's Name</label>
+                      <input
+                        type="text"
+                        value={editFormData.fatherName}
+                        onChange={(e) => setEditFormData({ ...editFormData, fatherName: e.target.value })}
+                        className="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 outline-none"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Mother's Name</label>
+                      <input
+                        type="text"
+                        value={editFormData.motherName}
+                        onChange={(e) => setEditFormData({ ...editFormData, motherName: e.target.value })}
+                        className="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 outline-none"
+                      />
+                    </div>
+                    <div className="md:col-span-2">
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Address</label>
+                      <textarea
+                        value={editFormData.address}
+                        onChange={(e) => setEditFormData({ ...editFormData, address: e.target.value })}
+                        className="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 outline-none resize-none"
+                        rows="2"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <hr className="border-gray-100" />
+
+                {/* Academic Info */}
+                <div>
+                  <h4 className="text-sm font-bold text-gray-900 mb-3 flex items-center gap-2">
+                    <BookOpen size={16} className="text-emerald-500" /> Academic Assignment
+                  </h4>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Assign Course & Section</label>
+                      <select
+                        value={editFormData.courseId}
+                        onChange={(e) => setEditFormData({ ...editFormData, courseId: e.target.value })}
+                        className="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 outline-none"
+                      >
+                        <option value="">-- Unassigned --</option>
+                        {coursesList.map(course => (
+                          <option key={course.id} value={course.id}>
+                            {course.courseName} - {course.section} ({course.academicYear})
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Roll Number</label>
+                      <input
+                        type="text"
+                        value={editFormData.rollNumber}
+                        onChange={(e) => setEditFormData({ ...editFormData, rollNumber: e.target.value })}
+                        className="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 outline-none"
+                        placeholder="e.g. 101"
+                      />
+                    </div>
+                  </div>
+                  <div className="mt-3 p-3 bg-blue-50 border border-blue-100 rounded-lg flex gap-2">
+                    <AlertTriangle size={16} className="text-blue-500 shrink-0 mt-0.5" />
+                    <p className="text-xs text-blue-700">
+                      <strong>Note:</strong> Financial records, Student ID, and Passwords cannot be modified from this screen. Changes to course assignment will affect future fee invoice generation.
+                    </p>
+                  </div>
+                </div>
+              </form>
+            </div>
+            <div className="p-5 border-t border-gray-100 bg-gray-50 flex justify-end gap-3">
+              <button type="button" onClick={() => setEditModalOpen(false)} className="px-4 py-2 bg-white border border-gray-200 hover:bg-gray-50 text-gray-700 rounded-lg transition-colors text-sm font-medium">
+                Cancel
+              </button>
+              <button type="submit" form="editStudentForm" disabled={submitting} className="px-5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg transition-colors text-sm font-medium disabled:opacity-50">
+                {submitting ? 'Saving...' : 'Save Changes'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -1,9 +1,9 @@
 import React, { useState, useEffect, useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { getCourses, createCourse, getTeachers } from '../../api/principalApi';
+import { getCourses, createCourse, getTeachers, assignCourseTeacher } from '../../api/principalApi';
 import Loader from '../../components/Loader';
 import { ToastContext } from '../../context/ToastContext';
-import { BookOpen, Plus, Search, Eye, CheckCircle, XCircle } from 'lucide-react';
+import { BookOpen, Plus, Search, Eye, CheckCircle, XCircle, UserCheck } from 'lucide-react';
 
 const getCurrentAcademicYear = () => {
   const now = new Date();
@@ -17,6 +17,7 @@ const getCurrentAcademicYear = () => {
 export default function Courses() {
   const { showToast } = useContext(ToastContext);
   const [courses, setCourses] = useState([]);
+  const [teachers, setTeachers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [search, setSearch] = useState('');
@@ -25,15 +26,21 @@ export default function Courses() {
   const [formData, setFormData] = useState({ courseName: '', section: '', academicYear: getCurrentAcademicYear() });
   const [submitting, setSubmitting] = useState(false);
 
+  const [assignModalOpen, setAssignModalOpen] = useState(false);
+  const [selectedCourse, setSelectedCourse] = useState(null);
+  const [selectedTeacherId, setSelectedTeacherId] = useState('');
+  const [assigning, setAssigning] = useState(false);
+
   const navigate = useNavigate();
 
   const fetchData = async () => {
     try {
       setLoading(true);
-      const res = await getCourses();
-      setCourses(res.data || res || []);
+      const [crsRes, tchRes] = await Promise.all([getCourses(), getTeachers()]);
+      setCourses(crsRes.data || crsRes || []);
+      setTeachers(tchRes.data || tchRes || []);
     } catch (err) {
-      setError('Failed to load courses.');
+      setError('Failed to load data.');
     } finally {
       setLoading(false);
     }
@@ -62,6 +69,26 @@ export default function Courses() {
     (c.courseName || '').toLowerCase().includes(search.toLowerCase()) || 
     (c.section || '').toLowerCase().includes(search.toLowerCase())
   );
+
+  const openAssignModal = (crs) => {
+    setSelectedCourse(crs);
+    setSelectedTeacherId(crs.teacher?.id || '');
+    setAssignModalOpen(true);
+  };
+
+  const handleAssignTeacher = async () => {
+    setAssigning(true);
+    try {
+      await assignCourseTeacher(selectedCourse.id, selectedTeacherId || null);
+      showToast('Teacher assigned successfully', 'success');
+      setAssignModalOpen(false);
+      fetchData();
+    } catch (err) {
+      showToast(err.response?.data?.error || 'Failed to assign teacher', 'error');
+    } finally {
+      setAssigning(false);
+    }
+  };
 
   return (
     <div className="flex flex-col gap-6 animate-fade-in text-gray-800">
@@ -145,7 +172,7 @@ export default function Courses() {
                       <td className="py-4 px-4 font-bold text-emerald-600">{crs.courseName}-{crs.section}</td>
                       <td className="py-4 px-4 text-gray-600">{crs.academicYear}</td>
                       <td className="py-4 px-4 text-center font-semibold text-gray-800">{crs._count?.students || 0}</td>
-                      <td className="py-4 px-4 text-gray-700">{crs.teacher?.name || <span className="text-gray-400 italic">Unassigned</span>}</td>
+                      <td className="py-4 px-4 text-gray-700">{crs.teacher ? `${crs.teacher.name} ${crs.teacher.employeeId ? `(${crs.teacher.employeeId})` : ''}` : <span className="text-gray-400 italic">Unassigned</span>}</td>
                       <td className="py-4 px-4 text-xs text-gray-500 max-w-[150px] truncate" title={subjects}>
                         {subjects || 'No subjects'}
                       </td>
@@ -160,7 +187,10 @@ export default function Courses() {
                           </span>
                         )}
                       </td>
-                      <td className="py-4 px-4">
+                      <td className="py-4 px-4 flex gap-3">
+                        <button onClick={() => openAssignModal(crs)} className="text-blue-600 hover:text-blue-800 flex items-center gap-1 text-sm font-medium transition-colors duration-150">
+                          <UserCheck size={16} /> Assign
+                        </button>
                         <button onClick={() => navigate(`/principal/courses/${crs.id}`)} className="text-emerald-600 hover:text-emerald-800 flex items-center gap-1 text-sm font-medium transition-colors duration-150">
                           <Eye size={16} /> View
                         </button>
@@ -178,6 +208,39 @@ export default function Courses() {
           </div>
         )}
       </div>
+
+      {/* Assign Teacher Modal */}
+      {assignModalOpen && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white p-6 rounded-xl w-full max-w-md mx-4 shadow-2xl animate-fade-in">
+            <h3 className="text-lg font-bold mb-2">Assign Class Teacher</h3>
+            <p className="text-sm text-gray-500 mb-4">
+              Select a teacher for {selectedCourse?.courseName}-{selectedCourse?.section}. A teacher can only be assigned to one class at a time.
+            </p>
+            <div className="mb-6">
+              <label className="block text-sm font-medium text-gray-700 mb-1">Select Teacher</label>
+              <select 
+                value={selectedTeacherId} 
+                onChange={(e) => setSelectedTeacherId(e.target.value)}
+                className="w-full p-2 border border-gray-300 rounded-lg outline-none focus:border-emerald-500 bg-white"
+              >
+                <option value="">-- Unassigned --</option>
+                {teachers.map(t => (
+                  <option key={t.id} value={t.id}>{t.name} {t.employeeId ? `(${t.employeeId})` : ''}</option>
+                ))}
+              </select>
+            </div>
+            <div className="flex justify-end gap-3">
+              <button onClick={() => setAssignModalOpen(false)} className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition-colors font-medium">
+                Cancel
+              </button>
+              <button onClick={handleAssignTeacher} disabled={assigning} className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg transition-colors font-medium disabled:opacity-50">
+                {assigning ? 'Saving...' : 'Save Assignment'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -15,8 +15,12 @@ export default function Login() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [requirePasswordChange, setRequirePasswordChange] = useState(false);
+  const [tempToken, setTempToken] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   
-  const { login } = useContext(AuthContext);
+  const { login, changePassword } = useContext(AuthContext);
   const navigate = useNavigate();
 
   // If role changes via URL, update state
@@ -38,11 +42,40 @@ export default function Login() {
 
     setLoading(true);
     try {
-      // NOTE: role is currently not sent to the login endpoint, this will be fixed next in the backend
-      await login(email, password);
-      navigate('/dashboard');
+      const res = await login(email, password);
+      if (res && res.requirePasswordChange) {
+        setRequirePasswordChange(true);
+        setTempToken(res.tempToken);
+      } else {
+        navigate('/dashboard');
+      }
     } catch (err) {
       setError(err.message || 'Something went wrong');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handlePasswordChange = async (e) => {
+    e.preventDefault();
+    setError('');
+    
+    if (newPassword !== confirmPassword) {
+      setError('Passwords do not match');
+      return;
+    }
+    
+    if (newPassword.length < 6) {
+      setError('Password must be at least 6 characters');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      await changePassword(tempToken, newPassword);
+      navigate('/dashboard');
+    } catch (err) {
+      setError(err.message || 'Failed to change password');
     } finally {
       setLoading(false);
     }
@@ -104,8 +137,8 @@ export default function Login() {
           {/* Right Column: Login Form */}
           <div style={styles.rightColumn}>
             <div style={{ marginBottom: '24px' }}>
-              <h2 style={styles.title}>Welcome Back</h2>
-              <p style={styles.subtitle}>Sign in to your {role} account</p>
+              <h2 style={styles.title}>{requirePasswordChange ? 'Set New Password' : 'Welcome Back'}</h2>
+              <p style={styles.subtitle}>{requirePasswordChange ? 'Please set a private password to secure your account' : `Sign in to your ${role} account`}</p>
             </div>
 
             {error && (
@@ -114,42 +147,79 @@ export default function Login() {
               </div>
             )}
 
-            <form onSubmit={handleLogin} style={styles.form}>
-              <div style={styles.inputGroup}>
-                <label htmlFor="login-email">Email Address / ID</label>
-                <input
-                  id="login-email"
-                  type="text"
-                  placeholder={`Enter your ${role} email or ID`}
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  style={styles.input}
-                  required
-                />
-              </div>
 
-              <div style={styles.inputGroup}>
-                <label htmlFor="login-password">Password</label>
-                <input
-                  id="login-password"
-                  type="password"
-                  placeholder="••••••••"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  style={styles.input}
-                  required
-                />
-              </div>
+            {requirePasswordChange ? (
+              <form onSubmit={handlePasswordChange} style={styles.form}>
+                <div style={styles.inputGroup}>
+                  <label htmlFor="new-password">New Password</label>
+                  <input
+                    id="new-password"
+                    type="password"
+                    placeholder="Enter new private password"
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
+                    style={styles.input}
+                    required
+                  />
+                </div>
+                <div style={styles.inputGroup}>
+                  <label htmlFor="confirm-password">Confirm Password</label>
+                  <input
+                    id="confirm-password"
+                    type="password"
+                    placeholder="Confirm new password"
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    style={styles.input}
+                    required
+                  />
+                </div>
+                <button
+                  type="submit"
+                  disabled={loading}
+                  style={styles.submitBtn}
+                >
+                  {loading ? 'Saving...' : 'Set New Password & Login'}
+                </button>
+              </form>
+            ) : (
+              <form onSubmit={handleLogin} style={styles.form}>
+                <div style={styles.inputGroup}>
+                  <label htmlFor="login-email">Email Address / ID</label>
+                  <input
+                    id="login-email"
+                    type="text"
+                    placeholder={`Enter your ${role} email or ID`}
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    style={styles.input}
+                    required
+                  />
+                </div>
 
-              <button
-                id="login-submit"
-                type="submit"
-                disabled={loading}
-                style={styles.submitBtn}
-              >
-                {loading ? 'Authenticating...' : `Sign In as ${role.charAt(0).toUpperCase() + role.slice(1)}`}
-              </button>
-            </form>
+                <div style={styles.inputGroup}>
+                  <label htmlFor="login-password">Password</label>
+                  <input
+                    id="login-password"
+                    type="password"
+                    placeholder="••••••••"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    style={styles.input}
+                    required
+                  />
+                </div>
+
+                <button
+                  id="login-submit"
+                  type="submit"
+                  disabled={loading}
+                  style={styles.submitBtn}
+                >
+                  {loading ? 'Authenticating...' : `Sign In as ${role.charAt(0).toUpperCase() + role.slice(1)}`}
+                </button>
+              </form>
+            )}
           </div>
         </div>
       </div>

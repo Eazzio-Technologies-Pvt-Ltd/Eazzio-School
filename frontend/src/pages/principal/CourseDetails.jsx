@@ -26,14 +26,15 @@ export default function CourseDetails() {
         getCourseDetails(id),
         getTeachers()
       ]);
-      setCrs(crsRes.data || crsRes);
+      const courseData = crsRes.data || crsRes;
+      setCrs(courseData);
       setTeachers(tchRes.data || tchRes);
       setFormData({
-        courseName: crsRes.data.courseName,
-        section: crsRes.data.section,
-        academicYear: crsRes.data.academicYear
+        courseName: courseData.courseName,
+        section: courseData.section,
+        academicYear: courseData.academicYear
       });
-      setTeacherId(crsRes.data.teacherId || '');
+      setTeacherId(courseData.teacherId || '');
     } catch (err) {
       setError('Failed to load course details.');
     } finally {
@@ -48,8 +49,10 @@ export default function CourseDetails() {
   const handleUpdate = async () => {
     try {
       await updateCourse(id, formData);
-      if (teacherId !== (crs.teacherId || '')) {
-         await assignCourseTeacher(id, parseInt(teacherId));
+      const currentTeacherId = crs.teacherId || null;
+      const newTeacherId = teacherId ? parseInt(teacherId) : null;
+      if (newTeacherId !== currentTeacherId) {
+         await assignCourseTeacher(id, newTeacherId);
       }
       setEditMode(false);
       loadData();
@@ -142,7 +145,7 @@ export default function CourseDetails() {
                     <UserCheck size={18} className="text-gray-400" />
                     <div>
                       <p className="text-xs text-gray-500">Course Teacher</p>
-                      <p className="font-semibold">{crs.teacher?.name || 'Unassigned'}</p>
+                      <p className="font-semibold">{crs.teacher ? `${crs.teacher.name} ${crs.teacher.employeeId ? `(${crs.teacher.employeeId})` : ''}` : 'Unassigned'}</p>
                     </div>
                   </div>
                   <div className="flex items-center gap-2 px-4 py-2 bg-gray-50 rounded-lg border border-gray-100">

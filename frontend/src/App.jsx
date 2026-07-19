@@ -13,9 +13,9 @@ import PrincipalDashboard from './pages/principal/PrincipalDashboard';
 import Students from './pages/principal/Students';
 import StudentDetails from './pages/principal/StudentDetails';
 import Teachers from './pages/principal/Teachers';
+import TeacherDetails from './pages/principal/TeacherDetails';
 import AttendanceOverview from './pages/principal/AttendanceOverview';
 import FeesOverview from './pages/principal/FeesOverview';
-import Reports from './pages/principal/Reports';
 import Settings from './pages/principal/Settings';
 import Courses from './pages/principal/Courses';
 import CourseDetails from './pages/principal/CourseDetails';
@@ -108,9 +108,9 @@ export default function App() {
             <Route path="students" element={<Students />} />
             <Route path="students/:id" element={<StudentDetails />} />
             <Route path="teachers" element={<Teachers />} />
+            <Route path="teachers/:id" element={<TeacherDetails />} />
             <Route path="attendance" element={<AttendanceOverview />} />
             <Route path="fees" element={<FeesOverview />} />
-            <Route path="reports" element={<Reports />} />
             <Route path="settings" element={<Settings />} />
             <Route path="courses" element={<Courses />} />
             <Route path="courses/:id" element={<CourseDetails />} />

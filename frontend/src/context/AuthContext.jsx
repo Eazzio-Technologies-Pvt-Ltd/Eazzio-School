@@ -1,5 +1,5 @@
 import React, { createContext, useState, useEffect } from 'react';
-import { login as loginService } from '../api/authApi';
+import { login as loginService, changePassword as changePasswordService } from '../api/authApi';
 
 export const AuthContext = createContext();
 
@@ -12,7 +12,11 @@ export default function AuthProvider({ children }) {
 
   const login = async (email, password) => {
     try {
-      const data = await loginService(email, password);
+      const response = await loginService(email, password);
+      if (response.requirePasswordChange) {
+        return { requirePasswordChange: true, tempToken: response.tempToken };
+      }
+      const data = response.data;
       setToken(data.token);
       setUser(data.user);
       localStorage.setItem('token', data.token);
@@ -24,6 +28,21 @@ export default function AuthProvider({ children }) {
     }
   };
 
+  const changePassword = async (tempToken, newPassword) => {
+    try {
+      const response = await changePasswordService(tempToken, newPassword);
+      const data = response.data;
+      setToken(data.token);
+      setUser(data.user);
+      localStorage.setItem('token', data.token);
+      localStorage.setItem('user', JSON.stringify(data.user));
+      return data.user;
+    } catch (err) {
+      const data = err.response?.data;
+      throw new Error(data?.error || 'Failed to change password');
+    }
+  };
+
   const logout = () => {
     setToken(null);
     setUser(null);
@@ -32,7 +51,7 @@ export default function AuthProvider({ children }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, token, isAuthenticated: !!token, login, logout }}>
+    <AuthContext.Provider value={{ user, token, isAuthenticated: !!token, login, logout, changePassword }}>
       {children}
     </AuthContext.Provider>
   );

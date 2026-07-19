@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { getStudents, deleteStudent, bulkImportUpdateStudents, registerStudent, getCourses } from '../../api/principalApi';
 import Loader from '../../components/Loader';
 import { ToastContext } from '../../context/ToastContext';
-import { Search, Download, Upload, Plus, Trash2, User, Users, ChevronRight } from 'lucide-react';
+import { Search, Download, Upload, Plus, Trash2, User, Users, ChevronRight, X } from 'lucide-react';
 import { parseExcelFile, exportToExcel, downloadExcelTemplate } from '../../utils/excelUtils';
 
 export default function Students() {
@@ -17,6 +17,10 @@ export default function Students() {
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState('');
+  
+  const [importModalOpen, setImportModalOpen] = useState(false);
+  const [importCourseId, setImportCourseId] = useState('');
+  const [importFile, setImportFile] = useState(null);
   
   // Filters
   const [searchQuery, setSearchQuery] = useState('');
@@ -52,36 +56,61 @@ export default function Students() {
     }
   };
 
-  const handleFileUpload = async (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
+  const handleImportSubmit = async (e) => {
+    e.preventDefault();
+    if (!importFile) {
+      setError('Please select a file');
+      return;
+    }
+    if (!importCourseId) {
+      setError('Please select a Course/Batch');
+      return;
+    }
 
     setUploading(true);
+    setError('');
     try {
-      const data = await parseExcelFile(file);
+      const data = await parseExcelFile(importFile);
+      const errors = [];
+      const mappedData = [];
 
-      // Map data to expected backend format
-      const mappedData = data.map(row => ({
-        studentId: row['Student ID'] || row['studentId'] || '',
-        rollNumber: row['Roll Number'] || row['Roll'] || row['rollNumber'] || '',
-        name: row['Name'] || row['name'] || '',
-        courseName: row['Course Name'] || row['Course'] || row['courseName'] || '',
-        section: row['Section'] || row['section'] || '',
-        academicYear: row['Academic Year'] || row['academicYear'] || '',
-        fatherName: row['Father Name'] || row['fatherName'] || '',
-        motherName: row['Mother Name'] || row['motherName'] || '',
-        phone: row['Phone'] || row['phone'] || '',
-        address: row['Address'] || row['address'] || ''
-      })).filter(row => row.name); // require name
+      data.forEach((row, index) => {
+        const rowNum = index + 2;
+        const name = row['Name*'] || row['Name'] || row['name'] || '';
+        
+        if (!name) {
+          errors.push(`Row ${rowNum}: Missing mandatory field - Name`);
+          return;
+        }
 
-      if (mappedData.length === 0) {
-        setError('No valid data found in file. Ensure the "Name" column exists.');
+        mappedData.push({
+          name,
+          rollNumber: String(row['Roll Number'] || row['Roll'] || row['rollNumber'] || ''),
+          fatherName: row['Father Name'] || row['fatherName'] || '',
+          motherName: row['Mother Name'] || row['motherName'] || '',
+          phone: String(row['Phone'] || row['phone'] || ''),
+          address: row['Address'] || row['address'] || '',
+          admissionDate: row['Admission Date'] || row['admissionDate'] || ''
+        });
+      });
+
+      if (errors.length > 0) {
+        setError(errors.join('\n'));
         setUploading(false);
         return;
       }
 
-      const res = await bulkImportUpdateStudents({ students: mappedData });
+      if (mappedData.length === 0) {
+        setError('No valid data found in file.');
+        setUploading(false);
+        return;
+      }
+
+      const res = await bulkImportUpdateStudents({ courseId: importCourseId, students: mappedData });
       showToast(res.message || 'Import successful!', 'success');
+      setImportModalOpen(false);
+      setImportFile(null);
+      setImportCourseId('');
       loadData();
     } catch (err) {
       console.error(err);
@@ -109,16 +138,13 @@ export default function Students() {
 
   const downloadTemplate = () => {
     const templateData = [{
-      'Student ID': '(Leave blank for new)',
-      'Name': 'John Doe',
+      'Name*': 'John Doe',
       'Roll Number': '101',
-      'Course Name': 'Class 10',
-      'Section': 'A',
-      'Academic Year': '2026-2027',
-      'Father Name': 'Mr. Doe',
-      'Mother Name': 'Mrs. Doe',
+      'Father Name': 'Richard Doe',
+      'Mother Name': 'Jane Doe',
       'Phone': '9876543210',
-      'Address': '123 Main St'
+      'Address': '123 Main St, City',
+      'Admission Date': '2023-04-01'
     }];
     
     downloadExcelTemplate(templateData, "Student_Import_Template.xlsx", "Template");
@@ -151,7 +177,7 @@ export default function Students() {
             accept=".csv, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, application/vnd.ms-excel" 
             className="hidden" 
             ref={fileInputRef} 
-            onChange={handleFileUpload} 
+            onChange={() => {}} 
           />
           
           <div className="group relative">
@@ -179,7 +205,65 @@ export default function Students() {
         </div>
       </div>
 
-      {error && (
+
+      {importModalOpen && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl shadow-2xl w-full max-w-md overflow-hidden animate-fade-in flex flex-col">
+            <div className="p-5 border-b border-gray-100 flex justify-between items-center bg-gray-50/50">
+              <h3 className="font-bold text-lg text-gray-900">Bulk Import Students</h3>
+              <button onClick={() => setImportModalOpen(false)} className="text-gray-400 hover:text-gray-600 transition">
+                <X size={20} />
+              </button>
+            </div>
+            <div className="p-5 overflow-y-auto">
+              <form id="importForm" onSubmit={handleImportSubmit} className="space-y-4">
+                {error && (
+                  <div className="bg-red-50 text-red-600 p-3 rounded-lg border border-red-100 text-sm whitespace-pre-line">
+                    {error}
+                  </div>
+                )}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Target Course/Batch *</label>
+                  <select
+                    value={importCourseId}
+                    onChange={(e) => setImportCourseId(e.target.value)}
+                    className="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 outline-none"
+                    required
+                  >
+                    <option value="">-- Select Course --</option>
+                    {courses.map(course => (
+                      <option key={course.id} value={course.id}>
+                        {course.courseName} - {course.section} ({course.academicYear})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Upload Excel File *</label>
+                  <input
+                    type="file"
+                    accept=".csv, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, application/vnd.ms-excel"
+                    className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm"
+                    onChange={(e) => setImportFile(e.target.files[0])}
+                    required
+                  />
+                  <p className="text-xs text-gray-500 mt-2">Student ID and Password will be automatically generated.</p>
+                </div>
+              </form>
+            </div>
+            <div className="p-5 border-t border-gray-100 bg-gray-50 flex justify-end gap-3">
+              <button type="button" onClick={() => setImportModalOpen(false)} className="px-4 py-2 bg-white border border-gray-200 hover:bg-gray-50 text-gray-700 rounded-lg transition-colors text-sm font-medium">
+                Cancel
+              </button>
+              <button type="submit" form="importForm" disabled={uploading} className="px-5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg transition-colors text-sm font-medium disabled:opacity-50">
+                {uploading ? 'Processing...' : 'Import Students'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {error && !importModalOpen && (
         <div className="bg-red-50 text-red-600 p-4 rounded-xl border border-red-100 text-sm">
           {error}
         </div>

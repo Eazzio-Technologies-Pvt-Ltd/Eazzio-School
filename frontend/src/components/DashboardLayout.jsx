@@ -53,7 +53,6 @@ export default function DashboardLayout() {
       { path: '/principal/fees', label: 'Fees Overview', icon: <CreditCard size={20} /> },
       { path: '/principal/notices', label: 'Notice Board', icon: <Megaphone size={20} /> },
       { path: '/principal/timetable', label: 'Timetables', icon: <Clock size={20} /> },
-      { path: '/principal/reports', label: 'Reports', icon: <FileText size={20} /> },
       { path: '/principal/settings', label: 'Settings', icon: <Settings size={20} /> },
     ],
     ADMIN: [

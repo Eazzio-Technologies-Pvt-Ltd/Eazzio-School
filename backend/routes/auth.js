@@ -114,7 +114,56 @@ router.post('/login', validate(loginSchema), async (req, res) => {
     });
   } catch (err) {
     console.error('Error during login:', err);
-    return res.status(500).json({ success: false, error: 'Internal server error' });
+    return res.status(500).json({ success: false, error: 'Internal server error', details: err.message, stack: err.stack });
+  }
+});
+
+// POST /api/auth/change-password
+router.post('/change-password', async (req, res) => {
+  const { tempToken, newPassword } = req.body;
+  if (!tempToken || !newPassword) {
+    return res.status(400).json({ success: false, error: 'Missing token or new password' });
+  }
+
+  try {
+    const decoded = jwt.verify(tempToken, JWT_SECRET);
+    if (!decoded.temp || decoded.role !== 'STUDENT') {
+      return res.status(401).json({ success: false, error: 'Invalid or unauthorized token' });
+    }
+
+    const passwordHash = await bcrypt.hash(newPassword, 10);
+    const updatedUser = await prisma.student.update({
+      where: { id: decoded.userId },
+      data: { password: passwordHash, mustChangePassword: false }
+    });
+
+    const token = jwt.sign(
+      {
+        userId: updatedUser.id,
+        schoolId: updatedUser.schoolId,
+        role: 'STUDENT',
+      },
+      JWT_SECRET,
+      { expiresIn: '24h' }
+    );
+
+    return res.json({
+      success: true,
+      message: 'Password updated successfully',
+      data: {
+        token,
+        user: {
+          userId: updatedUser.id,
+          name: updatedUser.name,
+          loginId: updatedUser.studentId,
+          role: 'STUDENT',
+          schoolId: updatedUser.schoolId,
+        }
+      }
+    });
+  } catch (err) {
+    console.error('Error changing password:', err);
+    return res.status(401).json({ success: false, error: 'Token expired or invalid' });
   }
 });
 
@@ -144,7 +193,7 @@ router.post('/create-subscription-order', validate(subscriptionOrderSchema), asy
     return res.json({ success: true, data: order });
   } catch (err) {
     console.error('Error generating Razorpay order:', err);
-    return res.status(500).json({ success: false, error: 'Internal server error' });
+    return res.status(500).json({ success: false, error: 'Internal server error', details: err.message, stack: err.stack });
   }
 });
 
@@ -223,7 +272,7 @@ router.post('/register-school', validate(registerSchoolSchema), async (req, res)
     return res.status(201).json({ success: true, message: 'School registered successfully', data: { schoolId: newSchool.id } });
   } catch (err) {
     console.error('Error registering school:', err);
-    return res.status(500).json({ success: false, error: 'Internal server error' });
+    return res.status(500).json({ success: false, error: 'Internal server error', details: err.message, stack: err.stack });
   }
 });
 

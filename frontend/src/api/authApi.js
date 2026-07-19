@@ -14,3 +14,8 @@ export const registerSchool = async (payload) => {
   const response = await api.post('/auth/register-school', payload);
   return response.data;
 };
+
+export const changePassword = async (tempToken, newPassword) => {
+  const response = await api.post('/auth/change-password', { tempToken, newPassword });
+  return response.data;
+};
