@@ -18,6 +18,15 @@ const __dirname = dirname(__filename);
 
 dotenv.config();
 
+import fs from 'fs';
+const originalConsoleError = console.error;
+console.error = function (...args) {
+  try {
+    fs.appendFileSync('error_log.txt', `${new Date().toISOString()} - ${args.map(a => a && a.stack ? a.stack : String(a)).join(' ')}\n`);
+  } catch (e) {}
+  originalConsoleError.apply(console, args);
+};
+
 const app = express();
 const PORT = process.env.PORT || 5000;
 
