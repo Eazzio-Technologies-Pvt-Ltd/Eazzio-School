@@ -1,140 +1,211 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { getAttendance } from '../../api/studentApi';
 import Loader from '../../components/Loader';
+import { Calendar, CheckCircle, XCircle, Clock, Filter, CalendarDays } from 'lucide-react';
 
 export default function MyAttendance() {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [selectedMonth, setSelectedMonth] = useState('ALL');
 
   useEffect(() => {
-    const loadLogs = async () => {
+    const loadData = async () => {
       try {
-        const payload = await getAttendance();
-        setData(payload);
+        setLoading(true);
+        setError('');
+        const res = await getAttendance();
+        // The interceptor unwraps response.data, so res is the payload: { stats, records }
+        setData(res);
       } catch (err) {
         console.error(err);
+        setError('Failed to load attendance records.');
       } finally {
         setLoading(false);
       }
     };
-    loadLogs();
+    loadData();
   }, []);
 
-  if (loading) return <Loader message="Loading attendance logs history..." />;
+  const { stats, records } = data || {};
 
-  const { stats, records = [] } = data || {};
+  // Extract unique months for the filter
+  const availableMonths = useMemo(() => {
+    if (!records) return [];
+    const months = new Set();
+    records.forEach(r => {
+      const date = new Date(r.date);
+      const monthStr = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+      months.add(monthStr);
+    });
+    return Array.from(months).sort().reverse(); // Newest first
+  }, [records]);
+
+  // Filter records based on selected month
+  const filteredRecords = useMemo(() => {
+    if (!records) return [];
+    if (selectedMonth === 'ALL') return records;
+    return records.filter(r => {
+      const date = new Date(r.date);
+      const monthStr = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+      return monthStr === selectedMonth;
+    });
+  }, [records, selectedMonth]);
+
+  const formatMonth = (yyyyMm) => {
+    const [y, m] = yyyyMm.split('-');
+    const date = new Date(y, parseInt(m) - 1, 1);
+    return date.toLocaleString('default', { month: 'long', year: 'numeric' });
+  };
+
+  if (loading) return <Loader message="Loading Attendance Records..." />;
+  if (error) return <div className="p-4 bg-red-50 text-red-600 border border-red-200 rounded-lg">{error}</div>;
+  if (!data) return null;
 
   return (
-    <div style={styles.container} className="animate-fade-in">
-      <div style={styles.header}>
-        <h2>My Attendance Ledger</h2>
-        <p style={styles.sub}>Track all daily roll call entries registered by your course instructors.</p>
+    <div className="flex flex-col gap-8 animate-fade-in text-gray-800">
+      
+      <div>
+        <h2 className="text-2xl font-bold text-gray-900 mb-2">My Attendance</h2>
+        <p className="text-gray-500">Track your daily presence and academic engagement.</p>
       </div>
 
-      <div style={styles.summaryGrid}>
-        {/* Percentage Card */}
-        <div style={styles.statCard}>
-          <span style={styles.statLabel}>Attendance Rate</span>
-          <span style={{
-            ...styles.statValue,
-            color: (stats?.percentage || 100) >= 75 ? 'var(--success)' : 'var(--danger)'
-          }}>
-            {stats?.percentage || 100}%
-          </span>
-          <p style={styles.statDesc}>
-            {stats?.percentage >= 75 ? '🟢 In good standing' : '🔴 Attendance risk notice'}
-          </p>
+      {/* SUMMARY STATS */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="bg-emerald-600 text-white shadow-sm hover:shadow-md transition-all transform hover:-translate-y-1 rounded-xl p-6 flex flex-col items-center justify-center relative overflow-hidden">
+          <div className="absolute -right-4 -top-4 opacity-10">
+            <CalendarDays size={100} />
+          </div>
+          <span className="text-sm font-bold uppercase tracking-widest text-emerald-100 mb-1 z-10">Overall</span>
+          <span className="text-5xl font-black z-10">{stats.percentage}%</span>
         </div>
 
-        {/* Present/Absent Card */}
-        <div style={styles.statCard}>
-          <span style={styles.statLabel}>Presence Logs</span>
-          <div style={styles.presenceSummary}>
-            <div style={styles.presCol}>
-              <span style={styles.presNum}>{stats?.present || 0}</span>
-              <span style={styles.presTxt}>Present</span>
-            </div>
-            <div style={styles.presDivider}></div>
-            <div style={styles.presCol}>
-              <span style={{ ...styles.presNum, color: 'var(--warning)' }}>{stats?.late || 0}</span>
-              <span style={styles.presTxt}>Late</span>
-            </div>
-            <div style={styles.presDivider}></div>
-            <div style={styles.presCol}>
-              <span style={{ ...styles.presNum, color: 'var(--danger)' }}>{stats?.absent || 0}</span>
-              <span style={styles.presTxt}>Absent</span>
-            </div>
+        <div className="bg-white border border-gray-200 shadow-sm hover:shadow-md transition-all transform hover:-translate-y-1 rounded-xl p-5 flex items-center gap-4">
+          <div className="p-3 bg-emerald-50 text-emerald-600 rounded-lg">
+            <CheckCircle size={28} />
+          </div>
+          <div className="flex flex-col">
+            <span className="text-sm font-semibold text-gray-500 uppercase tracking-wider">Present</span>
+            <span className="text-2xl font-bold text-gray-900">{stats.present} <span className="text-sm font-medium text-gray-500 lowercase">days</span></span>
+          </div>
+        </div>
+
+        <div className="bg-white border border-gray-200 shadow-sm hover:shadow-md transition-all transform hover:-translate-y-1 rounded-xl p-5 flex items-center gap-4">
+          <div className="p-3 bg-amber-50 text-amber-600 rounded-lg">
+            <Clock size={28} />
+          </div>
+          <div className="flex flex-col">
+            <span className="text-sm font-semibold text-gray-500 uppercase tracking-wider">Late</span>
+            <span className="text-2xl font-bold text-gray-900">{stats.late} <span className="text-sm font-medium text-gray-500 lowercase">days</span></span>
+          </div>
+        </div>
+
+        <div className="bg-white border border-gray-200 shadow-sm hover:shadow-md transition-all transform hover:-translate-y-1 rounded-xl p-5 flex items-center gap-4">
+          <div className="p-3 bg-red-50 text-red-600 rounded-lg">
+            <XCircle size={28} />
+          </div>
+          <div className="flex flex-col">
+            <span className="text-sm font-semibold text-gray-500 uppercase tracking-wider">Absent</span>
+            <span className="text-2xl font-bold text-gray-900">{stats.absent} <span className="text-sm font-medium text-gray-500 lowercase">days</span></span>
           </div>
         </div>
       </div>
 
-      {/* History table */}
-      <div style={styles.pane}>
-        <h3 style={{ marginBottom: '20px' }}>📋 Attendance Record Logs</h3>
-        <div style={styles.tableContainer}>
-          <table style={styles.table}>
-            <thead>
-              <tr style={styles.thRow}>
-                <th style={styles.th}>Roll Date</th>
-                <th style={styles.th}>Instructor Record</th>
-                <th style={styles.th}>Instructor Name</th>
+      {/* FILTER & RECORDS */}
+      <div className="bg-white border border-gray-200 shadow-sm rounded-xl overflow-hidden flex flex-col">
+        
+        {/* Header & Filter */}
+        <div className="p-6 border-b border-gray-100 flex flex-col sm:flex-row justify-between items-center gap-4">
+          <h3 className="text-lg font-bold text-gray-900 flex items-center gap-2">
+            <Calendar className="text-emerald-500" size={20} />
+            Daily Records
+          </h3>
+          
+          <div className="flex items-center gap-2 bg-gray-50 border border-gray-200 rounded-lg p-1">
+            <Filter size={16} className="text-gray-400 ml-2" />
+            <select
+              value={selectedMonth}
+              onChange={(e) => setSelectedMonth(e.target.value)}
+              className="bg-transparent text-sm font-medium text-gray-700 py-1.5 px-2 outline-none cursor-pointer"
+            >
+              <option value="ALL">All Months</option>
+              {availableMonths.map(m => (
+                <option key={m} value={m}>{formatMonth(m)}</option>
+              ))}
+            </select>
+          </div>
+        </div>
+
+        {/* List View */}
+        <div className="overflow-x-auto max-h-[500px] custom-scrollbar-emerald">
+          <table className="w-full text-left border-collapse">
+            <thead className="sticky top-0 bg-gray-50 border-b border-gray-200 shadow-sm">
+              <tr>
+                <th className="py-3 px-6 font-semibold text-gray-600 text-sm">Date</th>
+                <th className="py-3 px-6 font-semibold text-gray-600 text-sm">Day</th>
+                <th className="py-3 px-6 font-semibold text-gray-600 text-sm">Status</th>
+                <th className="py-3 px-6 font-semibold text-gray-600 text-sm">Remarks</th>
               </tr>
             </thead>
             <tbody>
-              {records.length === 0 ? (
+              {filteredRecords.length === 0 ? (
                 <tr>
-                  <td colSpan="3" style={styles.noRecords}>
-                    No roll logs recorded for this student profile.
+                  <td colSpan="4" className="py-12">
+                    <div className="flex flex-col items-center justify-center text-center">
+                      <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mb-4">
+                        <CalendarDays className="text-gray-300" size={32} />
+                      </div>
+                      <h3 className="text-lg font-bold text-gray-700">No Records Found</h3>
+                      <p className="text-gray-500 max-w-sm mt-2 text-sm">There are currently no attendance records logged for the selected period.</p>
+                    </div>
                   </td>
                 </tr>
               ) : (
-                records.map((row, idx) => (
-                  <tr key={idx} style={styles.tr}>
-                    <td style={{ ...styles.td, fontWeight: '700', color: 'var(--text-primary)' }}>
-                      {new Date(row.date).toLocaleDateString(undefined, { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' })}
-                    </td>
-                    <td style={styles.td}>
-                      <span style={{
-                        ...styles.badge,
-                        color: row.status === 'PRESENT' ? 'var(--success)' : row.status === 'LATE' ? 'var(--warning)' : 'var(--danger)',
-                        background: row.status === 'PRESENT' ? 'var(--success-glow)' : row.status === 'LATE' ? 'rgba(245, 158, 11, 0.1)' : 'var(--danger-glow)'
-                      }}>
-                        {row.status}
-                      </span>
-                    </td>
-                    <td style={styles.td}>{row.teacher?.name || '-'}</td>
-                  </tr>
-                ))
+                filteredRecords.map(record => {
+                  const dateObj = new Date(record.date);
+                  
+                  let statusStyles = '';
+                  let StatusIcon = null;
+                  if (record.status === 'PRESENT') {
+                    statusStyles = 'bg-emerald-100 text-emerald-700 border-emerald-200';
+                    StatusIcon = CheckCircle;
+                  } else if (record.status === 'ABSENT') {
+                    statusStyles = 'bg-red-100 text-red-700 border-red-200';
+                    StatusIcon = XCircle;
+                  } else if (record.status === 'LATE') {
+                    statusStyles = 'bg-amber-100 text-amber-700 border-amber-200';
+                    StatusIcon = Clock;
+                  } else {
+                    statusStyles = 'bg-gray-100 text-gray-700 border-gray-200';
+                    StatusIcon = Calendar;
+                  }
+
+                  return (
+                    <tr key={record.id} className="border-b border-gray-50 hover:bg-gray-50/80 transition-colors group">
+                      <td className="py-4 px-6 text-sm font-medium text-gray-800">
+                        {dateObj.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}
+                      </td>
+                      <td className="py-4 px-6 text-sm text-gray-600">
+                        {dateObj.toLocaleDateString('en-US', { weekday: 'long' })}
+                      </td>
+                      <td className="py-4 px-6">
+                        <span className={`inline-flex items-center gap-1.5 px-3 py-1 text-xs rounded-full font-bold border ${statusStyles}`}>
+                          <StatusIcon size={12} />
+                          {record.status}
+                        </span>
+                      </td>
+                      <td className="py-4 px-6 text-sm text-gray-500">
+                        {record.remarks || '-'}
+                      </td>
+                    </tr>
+                  );
+                })
               )}
             </tbody>
           </table>
         </div>
       </div>
+
     </div>
   );
 }
-
-const styles = {
-  container: { display: 'flex', flexDirection: 'column', gap: '30px' },
-  header: { marginBottom: '10px' },
-  sub: { color: 'var(--text-secondary)' },
-  summaryGrid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '20px' },
-  statCard: { background: 'var(--bg-card)', border: '1px solid var(--glass-border)', borderRadius: 'var(--radius-md)', padding: '24px', boxShadow: '0 8px 32px rgba(0, 0, 0, 0.2)', display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: '8px' },
-  statLabel: { fontSize: '0.85rem', color: 'var(--text-secondary)', fontWeight: '600' },
-  statValue: { fontSize: '2rem', fontWeight: '800' },
-  statDesc: { fontSize: '0.8rem', color: 'var(--text-muted)' },
-  presenceSummary: { display: 'flex', justifyContent: 'space-around', alignItems: 'center', height: '60px' },
-  presCol: { display: 'flex', flexDirection: 'column', alignItems: 'center' },
-  presNum: { fontSize: '1.6rem', fontWeight: '800', color: 'var(--success)' },
-  presTxt: { fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: '600' },
-  presDivider: { width: '1px', height: '40px', background: 'var(--glass-border)' },
-  pane: { background: 'var(--bg-card)', border: '1px solid var(--glass-border)', borderRadius: 'var(--radius-md)', padding: '30px', boxShadow: '0 8px 32px rgba(0, 0, 0, 0.2)' },
-  tableContainer: { overflowX: 'auto' },
-  table: { width: '100%', borderCollapse: 'collapse', textAlign: 'left' },
-  thRow: { borderBottom: '2px solid var(--glass-border)' },
-  th: { color: 'var(--text-secondary)', padding: '12px 16px', fontWeight: '600', fontSize: '0.85rem' },
-  td: { padding: '16px', color: 'var(--text-secondary)', borderBottom: '1px solid var(--glass-border)', fontSize: '0.88rem' },
-  tr: { transition: 'var(--transition-fast)', '&:hover': { background: 'var(--bg-card-hover)' } },
-  badge: { padding: '3px 8px', borderRadius: '4px', fontSize: '0.75rem', fontWeight: '700' },
-  noRecords: { padding: '24px', color: 'var(--text-muted)', fontSize: '0.88rem', textAlign: 'center' }
-};

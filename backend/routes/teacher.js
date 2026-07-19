@@ -260,7 +260,7 @@ router.post('/students', async (req, res) => {
     // Generate studentId: SCH001-ST0001
     const studentCount = await prisma.student.count({ where: { schoolId } });
     const studentId = `${school.schoolCode}-ST${(studentCount + 1).toString().padStart(4, '0')}`;
-    const password = generatePassword();
+    const password = studentId;
     const passwordHash = await bcrypt.hash(password, 10);
 
     const newStudent = await prisma.student.create({

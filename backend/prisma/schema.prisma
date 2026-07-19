@@ -23,7 +23,7 @@ model School {
   accountants        Accountant[]
   Admin              Admin[]
   attendance         Attendance[]
-  courses            Course[]
+  courses            Course[] 
   feeInvoices        FeeInvoice[]
   payments           FeePayment[]
   feeStructures      FeeStructure[]
@@ -32,6 +32,8 @@ model School {
   students           Student[]
   teachers           Teacher[]
   timetables         Timetable[]
+  exams              Exam[]
+  results            Result[]
 }
 
 model Course {
@@ -49,6 +51,7 @@ model Course {
   notices       Notice[]
   students      Student[]
   timetables    Timetable[]
+  exams         Exam[]
 
   @@unique([schoolId, courseName, section, academicYear])
   @@index([schoolId])
@@ -101,6 +104,7 @@ model Student {
   attendance    Attendance[]
   feeInvoices   FeeInvoice[]
   payments      FeePayment[]
+  results       Result[]
   course        Course?      @relation(fields: [courseId], references: [id])
   school        School       @relation(fields: [schoolId], references: [id], onDelete: Cascade)
   mustChangePassword Boolean @default(true)
@@ -179,10 +183,13 @@ model FeePayment {
   date          DateTime   @default(now())
   status        String
   paymentMethod String
-  receiptNumber String?
-  feeInvoice    FeeInvoice @relation(fields: [feeInvoiceId], references: [id], onDelete: Cascade)
-  school        School     @relation(fields: [schoolId], references: [id], onDelete: Cascade)
-  student       Student    @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  receiptNumber     String?
+  razorpayOrderId   String?
+  razorpayPaymentId String?
+  razorpaySignature String?
+  feeInvoice        FeeInvoice @relation(fields: [feeInvoiceId], references: [id], onDelete: Cascade)
+  school            School     @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  student           Student    @relation(fields: [studentId], references: [id], onDelete: Cascade)
 
   @@index([schoolId])
 }
@@ -246,4 +253,38 @@ enum AttendanceStatus {
   PRESENT
   ABSENT
   LATE
+}
+
+model Exam {
+  id           Int      @id @default(autoincrement())
+  schoolId     Int
+  courseId     Int
+  examName     String
+  term         String
+  academicYear String
+  examDate     DateTime?
+  createdAt    DateTime @default(now())
+  course       Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  school       School   @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  results      Result[]
+
+  @@index([schoolId])
+}
+
+model Result {
+  id            Int      @id @default(autoincrement())
+  schoolId      Int
+  studentId     Int
+  examId        Int
+  subject       String
+  marksObtained Float
+  maxMarks      Float
+  grade         String?
+  remarks       String?
+  student       Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  exam          Exam     @relation(fields: [examId], references: [id], onDelete: Cascade)
+  school        School   @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+
+  @@unique([studentId, examId, subject])
+  @@index([schoolId])
 }

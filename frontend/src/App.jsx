@@ -46,10 +46,12 @@ import TeacherNotices from './pages/teacher/Notices';
 
 // Student Pages
 import StudentDashboard from './pages/student/StudentDashboard';
+import ClassDetails from './pages/student/ClassDetails';
 import MyAttendance from './pages/student/MyAttendance';
 import MyFees from './pages/student/MyFees';
 import Notices from './pages/student/Notices';
-import MyProfile from './pages/student/MyProfile';
+import AcademicReport from './pages/student/AcademicReport';
+import StudentSettings from './pages/student/StudentSettings';
 
 // Accountant Pages
 import AccountantDashboard from './pages/accountant/AccountantDashboard';
@@ -170,10 +172,12 @@ export default function App() {
             }
           >
             <Route path="dashboard" element={<StudentDashboard />} />
+            <Route path="class-details" element={<ClassDetails />} />
             <Route path="attendance" element={<MyAttendance />} />
             <Route path="fees" element={<MyFees />} />
             <Route path="notices" element={<Notices />} />
-            <Route path="profile" element={<MyProfile />} />
+            <Route path="academic-report" element={<AcademicReport />} />
+            <Route path="settings" element={<StudentSettings />} />
           </Route>
 
           {/* Accountant Workspace Routes */}

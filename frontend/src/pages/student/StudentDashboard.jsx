@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getDashboardSummary } from '../../api/studentApi';
-import StatCard from '../../components/StatCard';
-import ChartCard from '../../components/ChartCard';
 import Loader from '../../components/Loader';
+import { 
+  User, BookOpen, Clock, Calendar, 
+  CreditCard, Megaphone, CheckCircle, RefreshCw, AlertCircle
+} from 'lucide-react';
 
 export default function StudentDashboard() {
   const [data, setData] = useState(null);
@@ -11,121 +13,165 @@ export default function StudentDashboard() {
   const [error, setError] = useState('');
   const navigate = useNavigate();
 
-  const loadDashboard = async () => {
+  const loadData = async () => {
     try {
       setLoading(true);
       setError('');
-      const payload = await getDashboardSummary();
-      setData(payload);
+      const response = await getDashboardSummary();
+      setData(response);
     } catch (err) {
       console.error(err);
-      setError('Failed to load student dashboard parameters.');
+      setError('Failed to load dashboard summary.');
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    loadDashboard();
+    loadData();
   }, []);
 
-  if (loading) return <Loader message="Loading student workspace..." />;
-  if (error) return <div className="error-feedback" style={styles.error}>{error}</div>;
+  if (loading) return <Loader message="Loading Student Dashboard..." />;
+  if (error) return <div className="p-4 bg-red-50 text-red-600 border border-red-200 rounded-lg">{error}</div>;
+  if (!data) return null;
 
-  const { profile, fees, attendance, notices, todayRoutine } = data || {};
+  const { profile, attendance, fees, notices, todayRoutine } = data;
+
+  const getNextClass = () => {
+    if (!todayRoutine || todayRoutine.length === 0) return null;
+    const now = new Date();
+    const currentHour = now.getHours();
+    const currentMinute = now.getMinutes();
+    const currentTimeStr = `${currentHour.toString().padStart(2, '0')}:${currentMinute.toString().padStart(2, '0')}`;
+    
+    const periods = [
+      { p: '1', start: '08:00' }, { p: '2', start: '09:00' }, { p: '3', start: '10:00' }, 
+      { p: '4', start: '11:00' }, { p: '5', start: '12:00' }, { p: '6', start: '13:00' }, 
+      { p: '7', start: '14:00' }, { p: '8', start: '15:00' }
+    ];
+
+    for (const timeSlot of periods) {
+      if (currentTimeStr < timeSlot.start) {
+        const routineItem = todayRoutine.find(r => r.period === timeSlot.p);
+        if (routineItem) return { ...routineItem, startTime: timeSlot.start };
+      }
+    }
+    return null;
+  };
+
+  const nextClass = getNextClass();
 
   return (
-    <div style={styles.container} className="animate-fade-in">
-      <div style={styles.headerRow}>
+    <div className="flex flex-col gap-8 animate-fade-in text-gray-800">
+      {/* HEADER SECTION */}
+      <div className="flex justify-between items-center flex-wrap gap-4">
         <div>
-          <h2>Student Portal</h2>
-          <p style={styles.sub}>Welcome back, <span style={{ color: 'var(--primary)', fontWeight: '600' }}>{profile?.name}</span>. Review your schedules, attendance, and dues.</p>
+          <h2 className="text-2xl font-bold text-gray-900">Welcome, {profile.name}</h2>
+          <p className="text-gray-500">
+            Student ID: <span className="font-medium text-gray-700">{profile.studentId}</span> | Roll No: <span className="font-medium text-gray-700">{profile.rollNumber || 'N/A'}</span> | Class: <span className="font-medium text-gray-700">{profile.courseName}</span>
+          </p>
         </div>
+        <button onClick={loadData} className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white flex items-center gap-2 rounded-lg text-sm transition-colors duration-150 shadow-sm">
+          <RefreshCw size={16} /> Refresh
+        </button>
       </div>
 
-      {/* Analytics Cards */}
-      <div style={styles.metricsGrid}>
-        <StatCard
-          label="Attendance Rate"
-          value={`${attendance?.percentage || 100}%`}
-          icon="📈"
-          trend={attendance?.percentage >= 75 ? 'Good standing' : 'Attendance Warning'}
-          trendColor={attendance?.percentage >= 75 ? 'var(--success)' : 'var(--danger)'}
-        />
-        <StatCard
-          label="Present Days"
-          value={`${attendance?.presentCount || 0} Days`}
-          icon="✅"
-          trend="Attended course rolls"
-          trendColor="var(--success)"
-        />
-        <StatCard
-          label="Absent / Late"
-          value={`${(attendance?.absent || 0) + (attendance?.late || 0)} Days`}
-          icon="❌"
-          trend="Missed course rolls"
-          trendColor="var(--danger)"
-        />
-        <StatCard
-          label="Pending Fees"
-          value={`₹${fees?.feeStatus === 'PENDING' ? fees?.totalFees?.toLocaleString() : '0'}`}
-          icon="💰"
-          trend={`Billing Status: ${fees?.feeStatus || 'PENDING'}`}
-          trendColor={fees?.feeStatus === 'PAID' ? 'var(--success)' : 'var(--warning)'}
-        />
-      </div>
+      <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
+        
+        {/* Left Column (Span 2) */}
+        <div className="xl:col-span-2 flex flex-col gap-6">
+          
+          {/* NEXT CLASS BANNER */}
+          {nextClass && (
+            <div className="bg-emerald-600 rounded-xl p-5 text-white shadow-sm hover:shadow-md transition-shadow flex items-center justify-between">
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center shrink-0">
+                  <Clock size={24} className="text-emerald-50" />
+                </div>
+                <div className="flex flex-col">
+                  <span className="text-emerald-100 text-xs font-bold uppercase tracking-wider mb-0.5">Up Next</span>
+                  <h3 className="text-xl font-bold">{nextClass.subject}</h3>
+                  <p className="text-emerald-100 text-sm mt-0.5">Period {nextClass.period} • {nextClass.teacher?.name} • Starts at {nextClass.startTime}</p>
+                </div>
+              </div>
+              <div className="hidden sm:flex px-4 py-2 bg-white/10 rounded-lg backdrop-blur-sm border border-white/20 items-center gap-2">
+                 <div className="w-2 h-2 rounded-full bg-emerald-300 animate-ping"></div>
+                 <span className="text-sm font-semibold">Coming up soon</span>
+              </div>
+            </div>
+          )}
 
-      {/* Main Grid */}
-      <div style={styles.contentGrid}>
-        {/* Left Col: Attendance Gauge & Logs */}
-        <div style={styles.leftCol}>
-          <div style={styles.chartPanel}>
-            <ChartCard
-              title="Attendance Goal Progress"
-              value={attendance?.percentage || 100}
-              subtitle="Tip: Institutional rules mandate maintaining roll attendance levels above 75% for exam authorization."
-              color={attendance?.percentage >= 75 ? 'var(--success)' : 'var(--danger)'}
-            />
+          {/* FEE DUE CARD */}
+          <div className="bg-white border border-gray-200 shadow-sm hover:shadow-md transition-shadow rounded-xl p-6">
+            <div className="flex justify-between items-start mb-4">
+              <div>
+                <h3 className="text-lg font-bold text-gray-900 flex items-center gap-2">
+                  <CreditCard className="text-emerald-500" size={20} /> 
+                  Fee Status
+                </h3>
+                <p className="text-sm text-gray-500">Your current fee overview and pending dues.</p>
+              </div>
+              <span className={`px-3 py-1 text-xs rounded-full font-bold border ${fees.pendingAmount > 0 ? 'bg-amber-100 text-amber-700 border-amber-200' : 'bg-emerald-100 text-emerald-700 border-emerald-200'}`}>
+                {fees.feeStatus}
+              </span>
+            </div>
+
+            <div className="flex flex-col sm:flex-row sm:items-center gap-6 justify-between p-4 bg-gray-50 rounded-lg border border-gray-100">
+              <div className="flex flex-col gap-1">
+                <span className="text-sm text-gray-500 font-medium">Pending Amount</span>
+                <span className={`text-3xl font-bold ${fees.pendingAmount > 0 ? 'text-amber-600' : 'text-emerald-600'}`}>
+                  ₹{fees.pendingAmount.toLocaleString()}
+                </span>
+                {fees.pendingAmount > 0 && fees.dueDate && (
+                  <span className="text-xs text-red-500 font-medium flex items-center gap-1 mt-1">
+                    <AlertCircle size={12} /> Due by: {new Date(fees.dueDate).toLocaleDateString()}
+                  </span>
+                )}
+              </div>
+              
+              {fees.pendingAmount > 0 ? (
+                <button 
+                  onClick={() => navigate('/student/fees')}
+                  className="px-6 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-medium rounded-lg shadow-sm transition-colors flex items-center justify-center whitespace-nowrap"
+                >
+                  Pay Now
+                </button>
+              ) : (
+                <div className="flex items-center gap-2 text-emerald-600 font-medium px-4 py-2 bg-emerald-50 rounded-lg border border-emerald-100">
+                  <CheckCircle size={18} /> All caught up!
+                </div>
+              )}
+            </div>
           </div>
 
-          {/* Recent Attendance Logs Table */}
-          <div style={styles.panel}>
-            <div style={styles.panelHeader}>
-              <h3 style={styles.panelTitle}>🕒 Recent Attendance Logs</h3>
-              <button onClick={() => navigate('/student/attendance')} style={styles.viewLink}>
-                View All Logs ➔
-              </button>
-            </div>
-            <div style={styles.tableContainer}>
-              <table style={styles.table}>
+          {/* TODAY'S ROUTINE */}
+          <div className="bg-white border border-gray-200 shadow-sm hover:shadow-md transition-shadow rounded-xl p-6">
+            <h3 className="text-lg font-bold text-gray-900 mb-1 flex items-center gap-2">
+              <Clock className="text-blue-500" size={20} />
+              Today's Class Routine
+            </h3>
+            <p className="text-sm text-gray-500 mb-4">Your schedule for {new Date().toLocaleDateString('en-US', { weekday: 'long' })}.</p>
+            
+            <div className="overflow-x-auto">
+              <table className="w-full text-left border-collapse min-w-[500px]">
                 <thead>
-                  <tr style={styles.thRow}>
-                    <th style={styles.th}>Date</th>
-                    <th style={styles.th}>Status</th>
+                  <tr className="border-b border-gray-200 bg-gray-50">
+                    <th className="py-3 px-4 font-semibold text-gray-600 text-sm rounded-tl-lg">Period</th>
+                    <th className="py-3 px-4 font-semibold text-gray-600 text-sm">Subject</th>
+                    <th className="py-3 px-4 font-semibold text-gray-600 text-sm rounded-tr-lg">Teacher</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {attendance?.logs?.length === 0 ? (
+                  {!todayRoutine || todayRoutine.length === 0 ? (
                     <tr>
-                      <td colSpan="2" style={styles.noRecords}>
-                        No attendance entries have been logged yet for your profile.
-                      </td>
+                      <td colSpan="3" className="py-6 text-center text-gray-500 italic text-sm">No classes scheduled for today.</td>
                     </tr>
                   ) : (
-                    attendance?.logs?.slice(0, 4).map((log, idx) => (
-                      <tr key={idx} style={styles.tr}>
-                        <td style={{ ...styles.td, color: 'var(--text-primary)', fontWeight: '600' }}>
-                          {new Date(log.date).toLocaleDateString()}
-                        </td>
-                        <td style={styles.td}>
-                          <span style={{
-                            ...styles.badge,
-                            color: log.status === 'PRESENT' ? 'var(--success)' : 'var(--danger)',
-                            background: log.status === 'PRESENT' ? 'var(--success-glow)' : 'var(--danger-glow)'
-                          }}>
-                            {log.status}
-                          </span>
-                        </td>
+                    todayRoutine.map((routine, idx) => (
+                      <tr key={idx} className="border-b border-gray-100 hover:bg-gray-50 transition-colors duration-150 text-sm">
+                        <td className="py-3 px-4 font-medium text-gray-800">Period {routine.period}</td>
+                        <td className="py-3 px-4 font-bold text-emerald-600">{routine.subject}</td>
+                        <td className="py-3 px-4 text-gray-600">{routine.teacher?.name || 'N/A'}</td>
                       </tr>
                     ))
                   )}
@@ -133,299 +179,82 @@ export default function StudentDashboard() {
               </table>
             </div>
           </div>
+
         </div>
 
-        {/* Right Col: Notices & Fees */}
-        <div style={styles.rightCol}>
-          {/* Notices Bulletin */}
-          <div style={styles.panel}>
-            <div style={styles.panelHeader}>
-              <h3 style={styles.panelTitle}>📢 Campus Announcements</h3>
-              <button onClick={() => navigate('/student/notices')} style={styles.viewLink}>
-                Notice Board ➔
-              </button>
+        {/* Right Column */}
+        <div className="flex flex-col gap-6">
+          
+          {/* ATTENDANCE STATS */}
+          <div className="bg-white border border-gray-200 shadow-sm hover:shadow-md transition-shadow rounded-xl p-6 flex flex-col items-center">
+            <div className="w-full text-left mb-4">
+              <h3 className="text-lg font-bold text-gray-900 flex items-center gap-2">
+                <Calendar className="text-emerald-500" size={20} />
+                Attendance
+              </h3>
+              <p className="text-sm text-gray-500">Overall presence this academic year.</p>
             </div>
 
-            <div style={styles.noticesList}>
-              {notices?.length === 0 ? (
-                <p style={styles.noRecords}>No recent announcements.</p>
-              ) : (
-                notices?.slice(0, 3).map((note) => (
-                  <div key={note.id} style={styles.noticeCard}>
-                    <div style={styles.noticeHeader}>
-                      <span style={styles.noticeTitle}>{note.title}</span>
-                      <span style={styles.noticeDate}>{new Date(note.date).toLocaleDateString()}</span>
-                    </div>
-                    <p style={styles.noticeDesc}>{note.content}</p>
-                  </div>
-                ))
-              )}
+            {/* Ring Chart implementation using CSS */}
+            <div className="relative w-40 h-40 flex items-center justify-center rounded-full bg-emerald-50 mb-6 shadow-inner" style={{ background: `conic-gradient(#10b981 ${(attendance?.percentage || 0)}%, #d1fae5 0)` }}>
+              <div className="absolute inset-2 bg-white rounded-full flex flex-col items-center justify-center">
+                <span className="text-4xl font-bold text-emerald-700">{attendance?.percentage || 0}%</span>
+                <span className="text-[10px] text-emerald-600 font-bold uppercase tracking-wider mt-1">Present</span>
+              </div>
+            </div>
+
+            <div className="w-full grid grid-cols-2 gap-3">
+               <div className="bg-gray-50 p-3 rounded-lg border border-gray-100 text-center flex flex-col items-center justify-center">
+                 <span className="text-gray-500 text-xs font-medium uppercase">Present Days</span>
+                 <span className="text-lg font-bold text-gray-800">{(attendance?.present || 0) + (attendance?.late || 0)}</span>
+               </div>
+               <div className="bg-gray-50 p-3 rounded-lg border border-gray-100 text-center flex flex-col items-center justify-center">
+                 <span className="text-gray-500 text-xs font-medium uppercase">Absent Days</span>
+                 <span className="text-lg font-bold text-gray-800">{attendance?.absent || 0}</span>
+               </div>
             </div>
           </div>
 
-          {/* Today's Routine */}
-          <div style={styles.panel}>
-            <div style={styles.panelHeader}>
-              <h3 style={styles.panelTitle}>📆 Today's Routine</h3>
+          {/* RECENT NOTICES */}
+          <div className="bg-white border border-gray-200 shadow-sm hover:shadow-md transition-shadow rounded-xl p-6">
+            <h3 className="text-lg font-bold text-gray-900 mb-1 flex items-center gap-2">
+              <Megaphone className="text-pink-500" size={20} />
+              Notice Board
+            </h3>
+            <p className="text-sm text-gray-500 mb-4">Latest school and class announcements.</p>
+            <div className="flex flex-col gap-3">
+              {!notices || notices.length === 0 ? (
+                <div className="flex flex-col items-center justify-center text-center py-6">
+                  <div className="w-12 h-12 bg-gray-50 rounded-full flex items-center justify-center mb-3">
+                    <Megaphone className="text-gray-300" size={24} />
+                  </div>
+                  <h4 className="text-sm font-bold text-gray-700">No Recent Notices</h4>
+                  <p className="text-xs text-gray-500 mt-1">Check back later for announcements.</p>
+                </div>
+              ) : (
+                notices.map(notice => (
+                  <div key={notice.id} className="p-4 bg-gray-50 rounded-lg border border-gray-200 hover:shadow-sm transition cursor-pointer" onClick={() => navigate('/student/notices')}>
+                    <div className="flex justify-between items-start mb-2">
+                      <h4 className="font-semibold text-gray-800 text-sm leading-tight">{notice.title}</h4>
+                      <span className="text-[10px] bg-emerald-100 text-emerald-700 font-bold px-2 py-0.5 rounded-full border border-emerald-200 shrink-0 ml-2">{notice.audience}</span>
+                    </div>
+                    <p className="text-xs text-gray-600 line-clamp-2 leading-relaxed">{notice.content}</p>
+                    <p className="text-[10px] text-gray-400 mt-2 font-medium">{new Date(notice.date).toLocaleDateString()}</p>
+                  </div>
+                ))
+              )}
             </div>
             
-            <div style={styles.routineList}>
-              {!todayRoutine || todayRoutine.length === 0 ? (
-                <p style={styles.noRecords}>No courses scheduled for today.</p>
-              ) : (
-                todayRoutine.map((r, idx) => (
-                  <div key={idx} style={styles.routineCard}>
-                    <div style={styles.periodBadge}>{r.period}</div>
-                    <div style={styles.routineInfo}>
-                      <div style={styles.subjectText}>{r.subject}</div>
-                      <div style={styles.teacherText}>{r.teacher?.name}</div>
-                    </div>
-                  </div>
-                ))
-              )}
-            </div>
+            <button 
+              onClick={() => navigate('/student/notices')}
+              className="mt-4 w-full py-2 text-sm text-emerald-600 font-medium hover:bg-emerald-50 rounded-lg transition-colors"
+            >
+              View All Notices
+            </button>
           </div>
 
-          {/* Dues Summary Panel */}
-          <div style={styles.panel}>
-            <h3 style={styles.panelTitle}>💳 Billing & Accounts Summary</h3>
-            <p style={styles.panelDesc}>Access payment forms and current term statements.</p>
-            <div style={styles.feeDetails}>
-              <div style={styles.feeDetailRow}>
-                <span>Tuition Billing Term:</span>
-                <span>Fall Semester 2026</span>
-              </div>
-              <div style={styles.feeDetailRow}>
-                <span>Billing Status:</span>
-                <span style={{
-                  fontWeight: '700',
-                  color: fees?.feeStatus === 'PAID' ? 'var(--success)' : 'var(--warning)'
-                }}>
-                  {fees?.feeStatus || 'PENDING'}
-                </span>
-              </div>
-              <div style={styles.feeDetailRow}>
-                <span>Total Amount:</span>
-                <span style={{ color: 'var(--text-primary)', fontWeight: '700' }}>
-                  ₹${fees?.totalFees?.toLocaleString() || '0'}
-                </span>
-              </div>
-              <button
-                onClick={() => navigate('/student/fees')}
-                className="btn-primary"
-                style={styles.actionBtn}
-              >
-                Access Fee Ledger
-              </button>
-            </div>
-          </div>
         </div>
       </div>
     </div>
   );
 }
-
-const styles = {
-  container: {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '30px',
-  },
-  headerRow: {
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  sub: {
-    color: 'var(--text-secondary)',
-  },
-  metricsGrid: {
-    display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
-    gap: '20px',
-  },
-  contentGrid: {
-    display: 'grid',
-    gridTemplateColumns: '1.2fr 1fr',
-    gap: '24px',
-    alignItems: 'start',
-  },
-  leftCol: {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '24px',
-  },
-  rightCol: {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '24px',
-  },
-  chartPanel: {
-    display: 'flex',
-    flexDirection: 'column',
-  },
-  panel: {
-    background: 'var(--bg-card)',
-    border: '1px solid var(--glass-border)',
-    borderRadius: 'var(--radius-md)',
-    padding: '24px',
-    boxShadow: '0 8px 32px rgba(0, 0, 0, 0.2)',
-  },
-  panelHeader: {
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: '16px',
-    borderBottom: '1px solid var(--glass-border)',
-    paddingBottom: '12px',
-  },
-  panelTitle: {
-    fontSize: '1rem',
-    fontWeight: '700',
-    color: 'var(--text-primary)',
-  },
-  panelDesc: {
-    fontSize: '0.85rem',
-    color: 'var(--text-secondary)',
-    marginBottom: '16px',
-  },
-  viewLink: {
-    background: 'transparent',
-    color: 'var(--primary)',
-    border: 'none',
-    fontWeight: '600',
-    fontSize: '0.85rem',
-    cursor: 'pointer',
-  },
-  noticesList: {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '12px',
-  },
-  noticeCard: {
-    background: 'var(--glass-bg)',
-    border: '1px solid var(--glass-border)',
-    borderRadius: 'var(--radius-sm)',
-    padding: '14px',
-  },
-  noticeHeader: {
-    display: 'flex',
-    justifyContent: 'space-between',
-    marginBottom: '6px',
-  },
-  noticeTitle: {
-    fontWeight: '600',
-    color: 'var(--text-primary)',
-    fontSize: '0.85rem',
-  },
-  noticeDate: {
-    fontSize: '0.75rem',
-    color: 'var(--text-muted)',
-  },
-  noticeDesc: {
-    fontSize: '0.82rem',
-    color: 'var(--text-secondary)',
-    lineHeight: '1.4',
-  },
-  feeDetails: {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '12px',
-    marginTop: '10px',
-  },
-  feeDetailRow: {
-    display: 'flex',
-    justifyContent: 'space-between',
-    fontSize: '0.88rem',
-    color: 'var(--text-secondary)',
-  },
-  actionBtn: {
-    width: '100%',
-    padding: '12px',
-    fontSize: '0.9rem',
-    marginTop: '12px',
-  },
-  tableContainer: {
-    overflowX: 'auto',
-  },
-  table: {
-    width: '100%',
-    borderCollapse: 'collapse',
-    textAlign: 'left',
-  },
-  thRow: {
-    borderBottom: '2px solid var(--glass-border)',
-  },
-  th: {
-    color: 'var(--text-secondary)',
-    padding: '10px 12px',
-    fontWeight: '600',
-    fontSize: '0.82rem',
-  },
-  td: {
-    padding: '12px',
-    color: 'var(--text-secondary)',
-    borderBottom: '1px solid var(--glass-border)',
-    fontSize: '0.82rem',
-  },
-  tr: {
-    transition: 'var(--transition-fast)',
-    '&:hover': {
-      background: 'var(--bg-card-hover)',
-    },
-  },
-  badge: {
-    padding: '3px 8px',
-    borderRadius: '4px',
-    fontSize: '0.72rem',
-    fontWeight: '700',
-  },
-  noRecords: {
-    padding: '20px',
-    color: 'var(--text-muted)',
-    fontSize: '0.85rem',
-    textAlign: 'center',
-  },
-  error: {
-    padding: '16px',
-    background: 'var(--danger-glow)',
-    border: '1px solid var(--danger)',
-    color: 'var(--danger)',
-    borderRadius: 'var(--radius-sm)',
-  },
-  routineList: {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '10px'
-  },
-  routineCard: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '12px',
-    background: 'rgba(139, 92, 246, 0.05)',
-    border: '1px solid rgba(139, 92, 246, 0.2)',
-    borderRadius: 'var(--radius-sm)',
-    padding: '10px'
-  },
-  periodBadge: {
-    background: 'var(--primary)',
-    color: '#fff',
-    padding: '4px 8px',
-    borderRadius: '8px',
-    fontSize: '0.75rem',
-    fontWeight: 'bold'
-  },
-  routineInfo: {
-    display: 'flex',
-    flexDirection: 'column'
-  },
-  subjectText: {
-    fontWeight: 'bold',
-    fontSize: '0.9rem',
-    color: 'var(--text-primary)'
-  },
-  teacherText: {
-    fontSize: '0.8rem',
-    color: 'var(--text-secondary)'
-  }
-};

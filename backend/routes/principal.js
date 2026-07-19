@@ -471,7 +471,7 @@ router.post('/students', validate(createStudentSchema), async (req, res) => {
     const studentCount = await prisma.student.count({ where: { schoolId } });
     const studentId = `${school.schoolCode}-ST${(studentCount + 1).toString().padStart(4, '0')}`;
 
-    const password = generatePassword();
+    const password = studentId;
     const passwordHash = await bcrypt.hash(password, 10);
 
     const newStudent = await prisma.student.create({
@@ -630,7 +630,7 @@ router.post('/students/bulk-import-update', async (req, res) => {
          // Create
          const studentCount = await prisma.student.count({ where: { schoolId } });
          const newStudentId = `${school.schoolCode}-ST${(studentCount + 1).toString().padStart(4, '0')}`;
-         const password = Math.random().toString(36).slice(-8);
+         const password = newStudentId;
          const passwordHash = await bcrypt.hash(password, 10);
          
          await prisma.student.create({

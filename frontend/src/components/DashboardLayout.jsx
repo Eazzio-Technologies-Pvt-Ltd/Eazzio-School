@@ -80,10 +80,12 @@ export default function DashboardLayout() {
     ],
     STUDENT: [
       { path: '/student/dashboard', label: 'Dashboard', icon: <LayoutDashboard size={20} /> },
-      { path: '/student/attendance', label: 'My Attendance', icon: <Calendar size={20} /> },
-      { path: '/student/fees', label: 'My Fees', icon: <CreditCard size={20} /> },
+      { path: '/student/class-details', label: 'Class Details', icon: <Users size={20} /> },
+      { path: '/student/fees', label: 'Fees', icon: <CreditCard size={20} /> },
+      { path: '/student/attendance', label: 'Attendance', icon: <Calendar size={20} /> },
       { path: '/student/notices', label: 'Notice Board', icon: <Megaphone size={20} /> },
-      { path: '/student/profile', label: 'My Profile', icon: <Users size={20} /> },
+      { path: '/student/academic-report', label: 'Academic Report', icon: <FileText size={20} /> },
+      { path: '/student/settings', label: 'Settings', icon: <Settings size={20} /> },
     ],
     ACCOUNTANT: [
       { path: '/accountant/dashboard', label: 'Dashboard', icon: <LayoutDashboard size={20} /> },

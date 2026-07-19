@@ -1,12 +1,49 @@
 import React, { useContext, useState, useEffect } from 'react';
 import { AuthContext } from '../../context/AuthContext';
-import { getProfile } from '../../api/studentApi';
+import { getProfile, changePassword } from '../../api/studentApi';
 import Loader from '../../components/Loader';
 
 export default function MyProfile() {
   const { user } = useContext(AuthContext);
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
+
+  // Password change states
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [pwdLoading, setPwdLoading] = useState(false);
+  const [pwdMessage, setPwdMessage] = useState('');
+  const [pwdError, setPwdError] = useState('');
+
+  const handlePasswordChange = async (e) => {
+    e.preventDefault();
+    setPwdMessage('');
+    setPwdError('');
+
+    if (newPassword !== confirmPassword) {
+      setPwdError('New passwords do not match.');
+      return;
+    }
+
+    if (newPassword.length < 6) {
+      setPwdError('Password must be at least 6 characters.');
+      return;
+    }
+
+    setPwdLoading(true);
+    try {
+      await changePassword(currentPassword, newPassword);
+      setPwdMessage('Password changed successfully.');
+      setCurrentPassword('');
+      setNewPassword('');
+      setConfirmPassword('');
+    } catch (err) {
+      setPwdError(err.response?.data?.error || err.message || 'Failed to change password.');
+    } finally {
+      setPwdLoading(false);
+    }
+  };
 
   useEffect(() => {
     const loadProfile = async () => {
@@ -92,6 +129,61 @@ export default function MyProfile() {
           </div>
         </div>
       </div>
+
+      <div style={styles.pane}>
+        <div style={{ ...styles.header, marginBottom: '20px', width: '100%' }}>
+          <h3 style={{ fontSize: '1.2rem', fontWeight: '700', color: 'var(--text-primary)' }}>Security Settings</h3>
+          <p style={styles.sub}>Change your account password.</p>
+        </div>
+
+        {pwdError && (
+          <div style={{ ...styles.alert, background: '#fef2f2', color: '#ef4444', border: '1px solid #fecaca' }}>
+            <span>⚠️</span> {pwdError}
+          </div>
+        )}
+
+        {pwdMessage && (
+          <div style={{ ...styles.alert, background: '#f0fdf4', color: '#22c55e', border: '1px solid #bbf7d0' }}>
+            <span>✅</span> {pwdMessage}
+          </div>
+        )}
+
+        <form onSubmit={handlePasswordChange} style={styles.form}>
+          <div style={styles.inputGroup}>
+            <label style={styles.inputLabel}>Current Password</label>
+            <input
+              type="password"
+              style={styles.input}
+              value={currentPassword}
+              onChange={(e) => setCurrentPassword(e.target.value)}
+              required
+            />
+          </div>
+          <div style={styles.inputGroup}>
+            <label style={styles.inputLabel}>New Password</label>
+            <input
+              type="password"
+              style={styles.input}
+              value={newPassword}
+              onChange={(e) => setNewPassword(e.target.value)}
+              required
+            />
+          </div>
+          <div style={styles.inputGroup}>
+            <label style={styles.inputLabel}>Confirm New Password</label>
+            <input
+              type="password"
+              style={styles.input}
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              required
+            />
+          </div>
+          <button type="submit" disabled={pwdLoading} style={styles.submitBtn}>
+            {pwdLoading ? 'Saving...' : 'Change Password'}
+          </button>
+        </form>
+      </div>
     </div>
   );
 }
@@ -157,5 +249,52 @@ const styles = {
     fontSize: '1.05rem',
     color: 'var(--text-primary)',
     fontWeight: '500',
+  },
+  alert: {
+    padding: '10px 14px',
+    borderRadius: '8px',
+    fontSize: '0.85rem',
+    marginBottom: '16px',
+    display: 'flex',
+    gap: '8px',
+    alignItems: 'center',
+    width: '100%',
+  },
+  form: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '16px',
+    width: '100%',
+  },
+  inputGroup: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '6px',
+  },
+  inputLabel: {
+    fontSize: '0.85rem',
+    color: 'var(--text-secondary)',
+    fontWeight: '600',
+  },
+  input: {
+    padding: '10px 12px',
+    borderRadius: '8px',
+    border: '1px solid var(--glass-border)',
+    background: 'var(--bg-card)',
+    color: 'var(--text-primary)',
+    fontSize: '0.9rem',
+    outline: 'none',
+  },
+  submitBtn: {
+    padding: '12px',
+    fontSize: '0.95rem',
+    borderRadius: '8px',
+    backgroundColor: 'var(--primary)',
+    border: 'none',
+    color: 'white',
+    fontWeight: 'bold',
+    cursor: 'pointer',
+    marginTop: '10px',
+    transition: 'opacity 0.2s',
   },
 };
