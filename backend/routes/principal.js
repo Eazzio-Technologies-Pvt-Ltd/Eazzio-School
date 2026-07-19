@@ -739,7 +739,7 @@ router.get('/students/:id', async (req, res) => {
         OR: [
           { audience: 'SCHOOL' },
           { audience: 'STUDENTS' },
-          ...(student.courseId ? [{ audience: 'CLASS', courseId: student.courseId }] : [])
+          ...(student.courseId ? [{ audience: 'COURSE', courseId: student.courseId }] : [])
         ]
       },
       orderBy: { date: 'desc' },
@@ -1098,7 +1098,7 @@ router.post('/notices', async (req, res) => {
   }
 
   if (audience === 'COURSE' && !courseId) {
-    return res.status(400).json({ error: 'Class ID is required for CLASS audience' });
+    return res.status(400).json({ error: 'Course ID is required for COURSE audience' });
   }
 
   try {

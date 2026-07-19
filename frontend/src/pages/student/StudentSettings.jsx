@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { getProfile, updateProfile, changePassword } from '../../api/studentApi';
 import Loader from '../../components/Loader';
-import { User, Lock, Bell, Palette, Save, CheckCircle } from 'lucide-react';
+import { User, Lock, Bell, Save, CheckCircle } from 'lucide-react';
 
 export default function StudentSettings() {
   const [profile, setProfile] = useState(null);
@@ -21,7 +21,6 @@ export default function StudentSettings() {
   // Preferences (Client-side mock)
   const [emailNotif, setEmailNotif] = useState(true);
   const [smsNotif, setSmsNotif] = useState(true);
-  const [theme, setTheme] = useState('light');
 
   useEffect(() => {
     const loadProfile = async () => {
@@ -253,39 +252,7 @@ export default function StudentSettings() {
             <p className="text-xs text-gray-400 mt-4 italic">* These preferences are saved locally.</p>
           </div>
 
-          <div className="bg-white border border-gray-200 shadow-sm rounded-xl p-6">
-            <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2 border-b border-gray-100 pb-2">
-              <Palette className="text-blue-500" size={20} />
-              Appearance
-            </h3>
-            
-            <div className="flex flex-col gap-3 mt-4">
-              <label className="flex items-center gap-3 cursor-pointer p-3 border rounded-lg hover:bg-gray-50 transition-colors">
-                <input 
-                  type="radio" 
-                  name="theme" 
-                  value="light"
-                  checked={theme === 'light'} 
-                  onChange={() => setTheme('light')}
-                  className="text-emerald-600 focus:ring-emerald-500 h-4 w-4" 
-                />
-                <span className="text-sm font-medium text-gray-800">Light Mode</span>
-              </label>
 
-              <label className="flex items-center gap-3 cursor-pointer p-3 border rounded-lg hover:bg-gray-50 transition-colors">
-                <input 
-                  type="radio" 
-                  name="theme" 
-                  value="dark"
-                  checked={theme === 'dark'} 
-                  onChange={() => setTheme('dark')}
-                  className="text-emerald-600 focus:ring-emerald-500 h-4 w-4" 
-                />
-                <span className="text-sm font-medium text-gray-800">Dark Mode</span>
-              </label>
-            </div>
-             <p className="text-xs text-gray-400 mt-4 italic">* Theme is currently locked to Light for brand consistency.</p>
-          </div>
 
         </div>
 
