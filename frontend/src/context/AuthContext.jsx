@@ -10,13 +10,12 @@ export default function AuthProvider({ children }) {
     return savedUser ? JSON.parse(savedUser) : null;
   });
 
-  const login = async (email, password) => {
+  const login = async (email, password, role) => {
     try {
-      const response = await loginService(email, password);
-      if (response.requirePasswordChange) {
-        return { requirePasswordChange: true, tempToken: response.tempToken };
+      const data = await loginService(email, password, role);
+      if (data.requirePasswordChange) {
+        return { requirePasswordChange: true, tempToken: data.tempToken };
       }
-      const data = response.data;
       setToken(data.token);
       setUser(data.user);
       localStorage.setItem('token', data.token);
@@ -30,8 +29,7 @@ export default function AuthProvider({ children }) {
 
   const changePassword = async (tempToken, newPassword) => {
     try {
-      const response = await changePasswordService(tempToken, newPassword);
-      const data = response.data;
+      const data = await changePasswordService(tempToken, newPassword);
       setToken(data.token);
       setUser(data.user);
       localStorage.setItem('token', data.token);

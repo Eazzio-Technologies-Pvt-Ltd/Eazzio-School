@@ -1004,18 +1004,28 @@ router.post('/timetables', async (req, res) => {
   }
 
   try {
-    const existing = await prisma.timetable.findUnique({
-      where: { schoolId_teacherId_dayOfWeek_period: { schoolId, teacherId, dayOfWeek, period } }
+    const tId = parseInt(teacherId);
+    const cId = parseInt(courseId);
+    
+    const teacherBusy = await prisma.timetable.findFirst({
+      where: { schoolId, teacherId: tId, dayOfWeek, period }
     });
-    if (existing) {
-      return res.status(400).json({ error: 'Timetable entry already exists for this period' });
+    if (teacherBusy) {
+      return res.status(400).json({ error: 'This teacher is already assigned to a class during this period.' });
+    }
+
+    const courseBusy = await prisma.timetable.findFirst({
+      where: { schoolId, courseId: cId, dayOfWeek, period }
+    });
+    if (courseBusy) {
+      return res.status(400).json({ error: 'This course already has a subject assigned during this period.' });
     }
 
     const newTimetable = await prisma.timetable.create({
       data: {
         schoolId,
-        teacherId: parseInt(teacherId),
-        courseId: parseInt(courseId),
+        teacherId: tId,
+        courseId: cId,
         dayOfWeek,
         period,
         subject

@@ -6,7 +6,7 @@ import logo from '../assets/logo.png';
 import {
   LayoutDashboard, GraduationCap, Users, UsersRound, Calendar,
   CreditCard, Megaphone, Clock, FileText, Settings,
-  LogOut, Menu, ChevronLeft, ChevronRight
+  LogOut, Menu, ChevronLeft, ChevronRight, Briefcase
 } from 'lucide-react';
 
 export default function DashboardLayout() {
@@ -60,6 +60,7 @@ export default function DashboardLayout() {
       { path: '/admin/courses', label: 'Courses', icon: <GraduationCap size={20} /> },
       { path: '/admin/students', label: 'Students', icon: <Users size={20} /> },
       { path: '/admin/teachers', label: 'Teachers', icon: <UsersRound size={20} /> },
+      { path: '/admin/staff', label: 'Management Staff', icon: <Briefcase size={20} /> },
       { path: '/admin/attendance', label: 'Attendance', icon: <Calendar size={20} /> },
       { path: '/admin/fees', label: 'Fees Overview', icon: <CreditCard size={20} /> },
       { path: '/admin/notices', label: 'Notice Board', icon: <Megaphone size={20} /> },

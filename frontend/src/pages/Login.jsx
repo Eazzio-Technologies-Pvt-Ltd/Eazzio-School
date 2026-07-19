@@ -42,7 +42,7 @@ export default function Login() {
 
     setLoading(true);
     try {
-      const res = await login(email, password);
+      const res = await login(email, password, role);
       if (res && res.requirePasswordChange) {
         setRequirePasswordChange(true);
         setTempToken(res.tempToken);

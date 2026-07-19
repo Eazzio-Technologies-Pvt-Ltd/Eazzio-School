@@ -3,6 +3,7 @@ import { z } from 'zod';
 export const loginSchema = z.object({
   email: z.string().min(1, 'Login ID is required'),
   password: z.string().min(1, 'Password is required'),
+  role: z.string().optional(),
 });
 
 export const subscriptionOrderSchema = z.object({
@@ -44,7 +45,7 @@ export const createClassSchema = z.object({
 
 export const createStudentSchema = z.object({
   name: z.string().min(1, 'Name is required'),
-  classId: z.coerce.number().min(1, 'Class ID is required'),
+  courseId: z.coerce.number().min(1, 'Course ID is required'),
   fatherName: z.string().optional(),
   motherName: z.string().optional(),
   phone: z.string().optional(),
@@ -69,3 +70,9 @@ export const createAccountantSchema = z.object({
   password: z.string().min(6, 'Password must be at least 6 characters'),
 });
 
+export const createPrincipalSchema = z.object({
+  name: z.string().min(1, 'Name is required'),
+  email: z.string().email('Invalid email'),
+  phone: z.string().optional(),
+  password: z.string().min(6, 'Password must be at least 6 characters'),
+});

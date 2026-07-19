@@ -33,7 +33,7 @@ export const createCourse = async (payload) => {
 };
 
 export const assignCourseTeacher = async (courseId, teacherId) => {
-  const response = await api.put(`/principal/courses/${courseId}/assign-teacher`, { teacherId });
+  const response = await api.put(`/admin/courses/${courseId}/assign-teacher`, { teacherId });
   return response.data;
 };
 
@@ -49,7 +49,7 @@ export const registerStudent = async (payload) => {
 };
 
 export const deleteStudent = async (id) => {
-  const response = await api.delete(`/principal/students/${id}`);
+  const response = await api.delete(`/admin/students/${id}`);
   return response.data;
 };
 
@@ -61,6 +61,14 @@ export const getAttendanceSummary = async () => {
 
 export const getFeeCollection = async () => {
   const response = await api.get('/admin/fee-collection');
+  return response.data;
+};
+
+// --- Detailed Attendance ---
+export const getDetailedAttendance = async (courseId, date) => {
+  const query = new URLSearchParams({ courseId });
+  if (date) query.append('date', date);
+  const response = await api.get(`/admin/attendance-detailed?${query.toString()}`);
   return response.data;
 };
 
@@ -86,7 +94,7 @@ export const getInvoices = async () => {
 };
 
 export const payInvoice = async (invoiceId, payload) => {
-  const response = await api.post(`/principal/fees/invoices/${invoiceId}/pay`, payload);
+  const response = await api.post(`/admin/fees/invoices/${invoiceId}/pay`, payload);
   return response.data;
 };
 
@@ -102,6 +110,37 @@ export const createTimetable = async (payload) => {
 };
 
 export const deleteTimetable = async (id) => {
-  const response = await api.delete(`/principal/timetables/${id}`);
+  const response = await api.delete(`/admin/timetables/${id}`);
+  return response.data;
+};
+
+// --- Staff Management ---
+export const getPrincipals = async () => {
+  const response = await api.get('/admin/principals');
+  return response.data;
+};
+
+export const createPrincipal = async (payload) => {
+  const response = await api.post('/admin/principals', payload);
+  return response.data;
+};
+
+export const deletePrincipal = async (id) => {
+  const response = await api.delete(`/admin/principals/${id}`);
+  return response.data;
+};
+
+export const getAccountants = async () => {
+  const response = await api.get('/admin/accountants');
+  return response.data;
+};
+
+export const createAccountant = async (payload) => {
+  const response = await api.post('/admin/accountants', payload);
+  return response.data;
+};
+
+export const deleteAccountant = async (id) => {
+  const response = await api.delete(`/admin/accountants/${id}`);
   return response.data;
 };

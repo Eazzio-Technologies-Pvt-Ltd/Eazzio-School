@@ -13,7 +13,7 @@ const JWT_SECRET = process.env.JWT_SECRET || 'super_secret_key_change_me_in_prod
 
 // POST /api/auth/login
 router.post('/login', validate(loginSchema), async (req, res) => {
-  const { email: rawLoginId, password: rawPassword } = req.body;
+  const { email: rawLoginId, password: rawPassword, role: requestedRole } = req.body;
   const loginId = rawLoginId ? rawLoginId.trim() : '';
   const password = rawPassword ? rawPassword.trim() : '';
 
@@ -21,42 +21,38 @@ router.post('/login', validate(loginSchema), async (req, res) => {
     let user = null;
     let role = null;
     let isMock = false;
+    const reqRole = requestedRole ? requestedRole.toLowerCase() : null;
 
-    // 1. Try Principal (by email)
-    user = await prisma.principal.findUnique({ where: { email: loginId } });
-    if (user) {
-      role = 'PRINCIPAL';
-    } else {
-      // 2. Try Teacher (by email or teacherId/employeeId)
+    // 1. Try Principal
+    if (!reqRole || reqRole === 'principal') {
+      user = await prisma.principal.findUnique({ where: { email: loginId } });
+      if (user) role = 'PRINCIPAL';
+    }
+    
+    // 2. Try Teacher
+    if (!user && (!reqRole || reqRole === 'teacher')) {
       user = await prisma.teacher.findFirst({ 
-        where: { 
-          OR: [
-            { email: loginId },
-            { employeeId: loginId }
-          ]
-        }
+        where: { OR: [{ email: loginId }, { employeeId: loginId }] }
       });
-      if (user) {
-        role = 'TEACHER';
-      } else {
-        // 3. Try Student (by studentId)
-        user = await prisma.student.findFirst({ where: { studentId: loginId } });
-        if (user) {
-          role = 'STUDENT';
-        } else {
-          // 4. Try Accountant (by email)
-          user = await prisma.accountant.findUnique({ where: { email: loginId } });
-          if (user) {
-            role = 'ACCOUNTANT';
-          } else {
-            // 5. Try Admin (by email)
-            user = await prisma.admin.findUnique({ where: { email: loginId } });
-            if (user) {
-              role = 'ADMIN';
-            }
-          }
-        }
-      }
+      if (user) role = 'TEACHER';
+    }
+
+    // 3. Try Student
+    if (!user && (!reqRole || reqRole === 'student')) {
+      user = await prisma.student.findFirst({ where: { studentId: loginId } });
+      if (user) role = 'STUDENT';
+    }
+
+    // 4. Try Accountant
+    if (!user && (!reqRole || reqRole === 'accountant')) {
+      user = await prisma.accountant.findUnique({ where: { email: loginId } });
+      if (user) role = 'ACCOUNTANT';
+    }
+
+    // 5. Try Admin
+    if (!user && (!reqRole || reqRole === 'admin')) {
+      user = await prisma.admin.findUnique({ where: { email: loginId } });
+      if (user) role = 'ADMIN';
     }
 
     if (!user) {

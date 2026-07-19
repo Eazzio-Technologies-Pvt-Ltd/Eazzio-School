@@ -55,7 +55,7 @@ export default function TeacherRoutine() {
                       <div key={idx} style={styles.periodCard}>
                         <div style={styles.periodBadge}>{periodObj.period}</div>
                         <div style={styles.subjectText}>{periodObj.subject}</div>
-                        <div style={styles.courseText}>Course: {periodObj.course?.className}-{periodObj.course?.section}</div>
+                        <div style={styles.courseText}>Course: {periodObj.course?.courseName}-{periodObj.course?.section}</div>
                       </div>
                     ))}
                   </div>

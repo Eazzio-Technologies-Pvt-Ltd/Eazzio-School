@@ -80,7 +80,7 @@ export default function MyFees() {
                 className="btn-primary"
                 style={styles.modalBtn}
               >
-                Pay ${pendingAmount.toLocaleString()}
+                Pay ₹${pendingAmount.toLocaleString()}
               </button>
             </div>
           </div>
@@ -91,19 +91,19 @@ export default function MyFees() {
       <div style={styles.summaryGrid}>
         <div style={styles.statCard}>
           <span style={styles.statLabel}>Total Dues Balance</span>
-          <span style={styles.statValue}>${totalAmount.toLocaleString()}</span>
+          <span style={styles.statValue}>₹${totalAmount.toLocaleString()}</span>
           <p style={styles.statDesc}>Academic Term Fees</p>
         </div>
 
         <div style={styles.statCard}>
           <span style={styles.statLabel}>Total Paid Amount</span>
-          <span style={{ ...styles.statValue, color: 'var(--success)' }}>${paidAmount.toLocaleString()}</span>
+          <span style={{ ...styles.statValue, color: 'var(--success)' }}>₹${paidAmount.toLocaleString()}</span>
           <p style={styles.statDesc}>Cleared & settled balances</p>
         </div>
 
         <div style={styles.statCard}>
           <span style={styles.statLabel}>Total Pending Amount</span>
-          <span style={{ ...styles.statValue, color: 'var(--warning)' }}>${pendingAmount.toLocaleString()}</span>
+          <span style={{ ...styles.statValue, color: 'var(--warning)' }}>₹${pendingAmount.toLocaleString()}</span>
           <p style={styles.statDesc}>Due by: {dueDate}</p>
         </div>
       </div>
@@ -148,7 +148,7 @@ export default function MyFees() {
                   <span style={styles.itemMeta}>Due: {new Date(inv.dueDate).toLocaleDateString()}</span>
                 </div>
                 <div style={styles.itemRight}>
-                  <span style={styles.itemValue}>${inv.amount.toLocaleString()}</span>
+                  <span style={styles.itemValue}>₹${inv.amount.toLocaleString()}</span>
                   <span style={{
                     ...styles.statusBadge,
                     fontSize: '0.7rem',
@@ -174,7 +174,7 @@ export default function MyFees() {
                     <span style={styles.itemMeta}>Receipt {payment.receiptNumber || 'N/A'} • {new Date(payment.date).toLocaleDateString()} • {payment.feeType}</span>
                   </div>
                   <span style={{ ...styles.itemValue, color: 'var(--success)' }}>
-                    -${payment.amount.toLocaleString()}
+                    -₹${payment.amount.toLocaleString()}
                   </span>
                 </div>
               ))}

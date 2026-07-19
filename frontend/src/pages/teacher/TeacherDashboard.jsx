@@ -118,7 +118,7 @@ export default function TeacherDashboard() {
                 <div key={idx} style={styles.routineCard}>
                   <div style={styles.periodBadge}>{r.period}</div>
                   <div style={styles.subjectText}>{r.subject}</div>
-                  <div style={styles.courseText}>{r.course.className}-{r.course.section}</div>
+                  <div style={styles.courseText}>{r.course.courseName}-{r.course.section}</div>
                 </div>
               ))}
             </div>

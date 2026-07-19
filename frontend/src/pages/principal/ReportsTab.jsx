@@ -105,7 +105,7 @@ export default function ReportsTab() {
             <div className="flex flex-col gap-4 bg-gray-50 p-6 rounded-lg border border-gray-100">
               {coursesAttendanceData.map((item, idx) => (
                 <div key={idx} className="flex items-center gap-4">
-                  <span className="w-24 text-sm font-semibold text-gray-600">{item.className}</span>
+                  <span className="w-24 text-sm font-semibold text-gray-600">{item.courseName}</span>
                   <div className="flex-1 h-6 bg-gray-200 rounded-full overflow-hidden">
                     <div
                       className={`h-full rounded-full flex items-center justify-end pr-3 transition-all duration-700 ${getPercentageClass(item.rate)} ${item.rate >= 90 ? 'bg-emerald-500' : item.rate >= 75 ? 'bg-amber-500' : 'bg-red-500'}`}

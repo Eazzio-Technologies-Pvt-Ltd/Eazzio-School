@@ -120,7 +120,7 @@ export default function Timetable() {
               <label>Course</label>
               <select value={courseId} onChange={e => setCourseId(e.target.value)} required>
                 <option value="">Select Course</option>
-                {courses.map(c => <option key={c.id} value={c.id}>{c.className}-{c.section}</option>)}
+                {courses.map(c => <option key={c.id} value={c.id}>{c.courseName}-{c.section}</option>)}
               </select>
             </div>
 
@@ -155,7 +155,7 @@ export default function Timetable() {
             <h3 style={styles.paneTitle}>Routine Viewer</h3>
             <select style={styles.filterSelect} value={filterCourse} onChange={e => setFilterCourse(e.target.value)}>
               <option value="">All Courses</option>
-              {courses.map(c => <option key={c.id} value={c.id}>{c.className}-{c.section}</option>)}
+              {courses.map(c => <option key={c.id} value={c.id}>{c.courseName}-{c.section}</option>)}
             </select>
           </div>
 
@@ -174,7 +174,7 @@ export default function Timetable() {
                           <button onClick={() => handleDelete(t.id)} style={styles.deleteBtn}>✕</button>
                         </div>
                         <div style={styles.subjectText}>{t.subject}</div>
-                        <div style={styles.metaText}>Course: {t.course.className}-{t.course.section}</div>
+                        <div style={styles.metaText}>Course: {t.course.courseName}-{t.course.section}</div>
                         <div style={styles.metaText}>Teacher: {t.teacher.name}</div>
                       </div>
                     ))}

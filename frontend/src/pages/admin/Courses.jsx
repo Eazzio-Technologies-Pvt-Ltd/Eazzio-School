@@ -7,7 +7,7 @@ export default function Courses() {
   const [loading, setLoading] = useState(true);
 
   // Create Course Form
-  const [className, setClassName] = useState('');
+  const [courseName, setCourseName] = useState('');
   const [section, setSection] = useState('');
   const [academicYear, setAcademicYear] = useState('2026-2027');
   const [creating, setCreating] = useState(false);
@@ -41,8 +41,8 @@ export default function Courses() {
     setError('');
     setCreating(true);
     try {
-      await createCourse({ className, section, academicYear });
-      setClassName('');
+      await createCourse({ courseName, section, academicYear });
+      setCourseName('');
       setSection('');
       await fetchData();
     } catch (err) {
@@ -84,7 +84,7 @@ export default function Courses() {
           <form onSubmit={handleCreateCourse} style={styles.form}>
             <div style={styles.inputGroup}>
               <label>Course Name (e.g. 10)</label>
-              <input type="text" value={className} onChange={e => setClassName(e.target.value)} required />
+              <input type="text" value={courseName} onChange={e => setCourseName(e.target.value)} required />
             </div>
             <div style={styles.inputGroup}>
               <label>Section (e.g. A)</label>
@@ -122,7 +122,7 @@ export default function Courses() {
                 <tbody>
                   {courses.map(cls => (
                     <tr key={cls.id}>
-                      <td>{cls.className} - {cls.section}</td>
+                      <td>{cls.courseName} - {cls.section}</td>
                       <td>{cls.academicYear}</td>
                       <td>{cls.teacher ? cls.teacher.name : <span style={{ color: 'var(--text-muted)' }}>Unassigned</span>}</td>
                       <td>{cls._count.students}</td>
@@ -144,7 +144,7 @@ export default function Courses() {
       {assignModalOpen && (
         <div style={styles.modalOverlay}>
           <div style={styles.modalCard}>
-            <h3>Assign Teacher for {selectedCourse?.className}-{selectedCourse?.section}</h3>
+            <h3>Assign Teacher for {selectedCourse?.courseName}-{selectedCourse?.section}</h3>
             <div style={styles.inputGroup}>
               <label>Select Teacher</label>
               <select

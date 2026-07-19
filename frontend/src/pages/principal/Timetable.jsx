@@ -199,7 +199,7 @@ export default function Timetable() {
               <label className="block text-sm font-medium text-gray-700">Course</label>
               <select className="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 outline-none" value={courseId} onChange={e => setCourseId(e.target.value)} required>
                 <option value="">Select Course</option>
-                {courses.map(c => <option key={c.id} value={c.id}>{c.className}-{c.section}</option>)}
+                {courses.map(c => <option key={c.id} value={c.id}>{c.courseName}-{c.section}</option>)}
               </select>
             </div>
 
@@ -234,7 +234,7 @@ export default function Timetable() {
             <h3 className="text-lg font-bold text-gray-900">Routine Viewer</h3>
             <select className="px-3 py-1.5 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 outline-none" value={filterCourse} onChange={e => setFilterCourse(e.target.value)}>
               <option value="">All Courses</option>
-              {courses.map(c => <option key={c.id} value={c.id}>{c.className}-{c.section}</option>)}
+              {courses.map(c => <option key={c.id} value={c.id}>{c.courseName}-{c.section}</option>)}
             </select>
           </div>
 
@@ -253,7 +253,7 @@ export default function Timetable() {
                           <button onClick={() => handleDelete(t.id)} className="text-gray-400 hover:text-red-600 opacity-0 group-hover:opacity-100 transition-colors duration-150"><Trash2 size={16} /></button>
                         </div>
                         <div className="font-bold text-gray-900 text-base mt-1">{t.subject}</div>
-                        <div className="text-xs text-gray-500">Course: {t.course.className}-{t.course.section}</div>
+                        <div className="text-xs text-gray-500">Course: {t.course.courseName}-{t.course.section}</div>
                         <div className="text-xs text-gray-500">Teacher: {t.teacher.name}</div>
                       </div>
                     ))}

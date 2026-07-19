@@ -98,7 +98,7 @@ export default function Teachers() {
       user.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       user.email.toLowerCase().includes(searchQuery.toLowerCase());
 
-    const teacherCourse = user.assignedCourse ? `${user.assignedCourse.className}-${user.assignedCourse.section}` : '';
+    const teacherCourse = user.assignedCourse ? `${user.assignedCourse.courseName}-${user.assignedCourse.section}` : '';
     const matchesCourse = !courseFilter || teacherCourse === courseFilter;
 
     // Subject matching (mocked logic - associates teacher ID to mock index)
@@ -275,7 +275,7 @@ export default function Teachers() {
                           </td>
                           <td style={styles.td}>{mockSubject}</td>
                           <td style={{ ...styles.td, fontWeight: '700', color: 'var(--primary)' }}>
-                            {user.assignedCourse ? `${user.assignedCourse.className}-${user.assignedCourse.section}` : 'Unassigned'}
+                            {user.assignedCourse ? `${user.assignedCourse.courseName}-${user.assignedCourse.section}` : 'Unassigned'}
                           </td>
                           <td style={styles.td}>{user.phone || 'N/A'}</td>
                           <td style={styles.td}>

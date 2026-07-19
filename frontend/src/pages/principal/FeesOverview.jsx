@@ -151,7 +151,7 @@ export default function FeesOverview() {
                   <tr key={student.id} onClick={() => navigate(`/principal/students/${student.id}`)} className="hover:bg-gray-50/50 transition-colors duration-150 cursor-pointer group">
                     <td className="py-4 px-5 font-medium text-gray-900 group-hover:text-emerald-700 transition-colors">{student.name}</td>
                     <td className="py-4 px-5 text-sm text-gray-500">{student.rollNumber || '-'}</td>
-                    <td className="py-4 px-5 text-sm text-gray-700">{student.className}</td>
+                    <td className="py-4 px-5 text-sm text-gray-700">{student.courseName}</td>
                     <td className="py-4 px-5 text-sm font-medium text-gray-600">₹{student.totalFees.toLocaleString()}</td>
                     <td className="py-4 px-5 text-sm font-medium text-emerald-600">₹{student.paid.toLocaleString()}</td>
                     <td className="py-4 px-5 text-sm font-bold text-amber-600">₹{student.pending.toLocaleString()}</td>

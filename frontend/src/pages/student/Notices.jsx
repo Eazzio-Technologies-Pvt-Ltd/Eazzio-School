@@ -42,7 +42,7 @@ export default function Notices() {
                   <h3 style={styles.title}>{note.title}</h3>
                   <span style={styles.badge(note.audience)}>
                     {note.audience === 'COURSE' 
-                      ? `Course: ${note.course?.className || 'N/A'}` 
+                      ? `Course: ${note.course?.courseName || 'N/A'}` 
                       : note.audience}
                   </span>
                 </div>

@@ -3,7 +3,7 @@ import bcrypt from 'bcryptjs';
 import prisma from '../prismaClient.js';
 import { authenticateJWT, requireAdmin } from '../middleware/auth.js';
 import { validate } from '../middleware/validate.js';
-import { createTeacherSchema, createClassSchema, createStudentSchema } from '../validators/schemas.js';
+import { createTeacherSchema, createClassSchema, createStudentSchema, createPrincipalSchema, createAccountantSchema } from '../validators/schemas.js';
 
 const router = express.Router();
 
@@ -461,7 +461,7 @@ router.post('/timetables', async (req, res) => {
 
   try {
     const existing = await prisma.timetable.findUnique({
-      where: { schoolId_teacherId_dayOfWeek_period: { schoolId, teacherId, dayOfWeek, period } }
+      where: { schoolId_teacherId_dayOfWeek_period: { schoolId, teacherId: parseInt(teacherId), dayOfWeek, period } }
     });
     if (existing) {
       return res.status(400).json({ error: 'Timetable entry already exists for this period' });
@@ -710,6 +710,130 @@ router.post('/fees/invoices/:id/pay', async (req, res) => {
     return res.status(201).json({ message: 'Payment recorded successfully', payment: newPayment });
   } catch (err) {
     console.error('Error recording payment:', err);
+    return res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// ==================== STAFF MANAGEMENT ====================
+
+// --- Principals ---
+router.get('/principals', async (req, res) => {
+  try {
+    const principals = await prisma.principal.findMany({ where: { schoolId: req.user.schoolId } });
+    return res.json({ success: true, principals });
+  } catch (err) {
+    console.error('Error fetching principals:', err);
+    return res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+router.post('/principals', async (req, res) => {
+  const result = createPrincipalSchema.safeParse(req.body);
+  if (!result.success) return res.status(400).json({ error: result.error.errors[0].message });
+  try {
+    const { name, email, phone, password } = result.data;
+    
+    // Check if email is already taken by ANY user in the system (Students use studentId, not email)
+    const [admin, principal, accountant, teacher] = await Promise.all([
+      prisma.admin.findUnique({ where: { email } }),
+      prisma.principal.findUnique({ where: { email } }),
+      prisma.accountant.findUnique({ where: { email } }),
+      prisma.teacher.findUnique({ where: { email } })
+    ]);
+    if (admin || principal || accountant || teacher) {
+      return res.status(400).json({ error: 'Email already exists in the system' });
+    }
+    const hashedPassword = await bcrypt.hash(password, 10);
+    
+    const newPrincipal = await prisma.principal.create({
+      data: { 
+        name, 
+        email, 
+        phone,
+        password: hashedPassword,
+        schoolId: req.user.schoolId
+      }
+    });
+    return res.status(201).json({ success: true, principal: newPrincipal });
+  } catch (err) {
+    console.error('Error creating principal:', err);
+    return res.status(500).json({ error: 'Internal server error', details: err.message, stack: err.stack });
+  }
+});
+
+router.delete('/principals/:id', async (req, res) => {
+  try {
+    const principalId = parseInt(req.params.id);
+    const principal = await prisma.principal.findUnique({ where: { id: principalId } });
+    if (!principal) return res.status(404).json({ error: 'Principal not found' });
+    if (principal.schoolId !== req.user.schoolId) return res.status(403).json({ error: 'Forbidden' });
+    
+    await prisma.principal.delete({ where: { id: principalId } });
+    
+    return res.json({ success: true });
+  } catch (err) {
+    console.error('Error deleting principal:', err);
+    return res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// --- Accountants ---
+router.get('/accountants', async (req, res) => {
+  try {
+    const accountants = await prisma.accountant.findMany({ where: { schoolId: req.user.schoolId } });
+    return res.json({ success: true, accountants });
+  } catch (err) {
+    console.error('Error fetching accountants:', err);
+    return res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+router.post('/accountants', async (req, res) => {
+  const result = createAccountantSchema.safeParse(req.body);
+  if (!result.success) return res.status(400).json({ error: result.error.errors[0].message });
+  try {
+    const { name, email, phone, password } = result.data;
+    
+    // Check if email is already taken by ANY user in the system (Students use studentId, not email)
+    const [admin, principal, accountant, teacher] = await Promise.all([
+      prisma.admin.findUnique({ where: { email } }),
+      prisma.principal.findUnique({ where: { email } }),
+      prisma.accountant.findUnique({ where: { email } }),
+      prisma.teacher.findUnique({ where: { email } })
+    ]);
+    if (admin || principal || accountant || teacher) {
+      return res.status(400).json({ error: 'Email already exists in the system' });
+    }
+    const hashedPassword = await bcrypt.hash(password, 10);
+    
+    const newAccountant = await prisma.accountant.create({
+      data: { 
+        name, 
+        email, 
+        phone,
+        password: hashedPassword,
+        schoolId: req.user.schoolId
+      }
+    });
+    return res.status(201).json({ success: true, accountant: newAccountant });
+  } catch (err) {
+    console.error('Error creating accountant:', err);
+    return res.status(500).json({ error: 'Internal server error', details: err.message, stack: err.stack });
+  }
+});
+
+router.delete('/accountants/:id', async (req, res) => {
+  try {
+    const accountantId = parseInt(req.params.id);
+    const accountant = await prisma.accountant.findUnique({ where: { id: accountantId } });
+    if (!accountant) return res.status(404).json({ error: 'Accountant not found' });
+    if (accountant.schoolId !== req.user.schoolId) return res.status(403).json({ error: 'Forbidden' });
+    
+    await prisma.accountant.delete({ where: { id: accountantId } });
+    
+    return res.json({ success: true });
+  } catch (err) {
+    console.error('Error deleting accountant:', err);
     return res.status(500).json({ error: 'Internal server error' });
   }
 });
