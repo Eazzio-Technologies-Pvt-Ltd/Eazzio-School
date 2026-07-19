@@ -116,6 +116,307 @@ export default function AccountantStudents() {
     }, 4000);
   };
 
+  const downloadStudentPDF = (student, invoices) => {
+    const printWindow = window.open('', '_blank', 'width=850,height=950');
+    if (!printWindow) {
+      showToast('Please allow popups to download the PDF report.', 'error');
+      return;
+    }
+
+    const calculatedTotal = invoices.reduce((sum, inv) => sum + inv.amount, 0);
+    const calculatedPaid = invoices.reduce((sum, inv) => {
+      const invPaid = inv.payments ? inv.payments.reduce((acc, p) => acc + p.amount, 0) : 0;
+      return sum + invPaid;
+    }, 0);
+    const calculatedPending = Math.max(0, calculatedTotal - calculatedPaid);
+    const feeStatus = calculatedTotal === 0 ? 'NO FEES' : (calculatedPending === 0 ? 'PAID' : 'PENDING');
+
+    const htmlContent = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <title>Student Fee Statement - ${student.name}</title>
+        <style>
+          body {
+            font-family: 'Segoe UI', Arial, sans-serif;
+            color: #1f2937;
+            line-height: 1.5;
+            padding: 30px;
+            background-color: #fff;
+            margin: 0;
+          }
+          .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 3px solid #6366f1;
+            padding-bottom: 15px;
+            margin-bottom: 25px;
+          }
+          .header-left h1 {
+            margin: 0;
+            color: #4f46e5;
+            font-size: 24px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+          }
+          .header-left p {
+            margin: 4px 0 0 0;
+            color: #6b7280;
+            font-size: 13px;
+          }
+          .badge {
+            display: inline-block;
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 700;
+            text-transform: uppercase;
+          }
+          .badge-paid {
+            background-color: #ecfdf5;
+            color: #065f46;
+            border: 1px solid #a7f3d0;
+          }
+          .badge-pending {
+            background-color: #fef2f2;
+            color: #991b1b;
+            border: 1px solid #fca5a5;
+          }
+          .section-title {
+            font-size: 14px;
+            font-weight: 700;
+            color: #374151;
+            margin-top: 25px;
+            margin-bottom: 12px;
+            border-bottom: 1px solid #e5e7eb;
+            padding-bottom: 6px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+          }
+          .info-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+            margin-bottom: 25px;
+          }
+          .info-item {
+            font-size: 13px;
+            display: flex;
+          }
+          .info-label {
+            color: #4b5563;
+            font-weight: 600;
+            width: 140px;
+            flex-shrink: 0;
+          }
+          .info-value {
+            color: #1f2937;
+          }
+          .financial-cards {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+            margin-bottom: 25px;
+          }
+          .card {
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            padding: 15px;
+            text-align: center;
+            background-color: #f9fafb;
+          }
+          .card-title {
+            font-size: 11px;
+            color: #6b7280;
+            text-transform: uppercase;
+            font-weight: 700;
+            margin-bottom: 6px;
+            letter-spacing: 0.5px;
+          }
+          .card-value {
+            font-size: 20px;
+            font-weight: 800;
+            color: #111827;
+          }
+          .invoice-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+          }
+          .invoice-table th, .invoice-table td {
+            border: 1px solid #e5e7eb;
+            padding: 10px 12px;
+            text-align: left;
+            font-size: 12px;
+          }
+          .invoice-table th {
+            background-color: #f3f4f6;
+            color: #4b5563;
+            font-weight: 700;
+            text-transform: uppercase;
+            font-size: 11px;
+          }
+          .payment-history {
+            margin-top: 8px;
+            padding-left: 10px;
+            font-size: 11px;
+            color: #4b5563;
+          }
+          .payment-item {
+            margin-top: 4px;
+            padding: 4px 8px;
+            background: #f0fdf4;
+            border-left: 3px solid #10b981;
+            border-radius: 4px;
+            display: flex;
+            justify-content: space-between;
+          }
+          .footer {
+            margin-top: 50px;
+            text-align: center;
+            font-size: 11px;
+            color: #9ca3af;
+            border-top: 1px solid #e5e7eb;
+            padding-top: 15px;
+          }
+          @media print {
+            body {
+              padding: 0;
+            }
+          }
+        </style>
+      </head>
+      <body>
+        <div class="header">
+          <div class="header-left">
+            <h1>Student Fee Statement</h1>
+            <p>Generated on ${new Date().toLocaleDateString()} | Eazzio-School Portal</p>
+          </div>
+          <div>
+            <span class="badge ${feeStatus === 'PAID' ? 'badge-paid' : 'badge-pending'}">${feeStatus}</span>
+          </div>
+        </div>
+
+        <div class="section-title">👤 Student Information</div>
+        <div class="info-grid">
+          <div class="info-item">
+            <span class="info-label">Student Name:</span>
+            <span class="info-value">${student.name}</span>
+          </div>
+          <div class="info-item">
+            <span class="info-label">Student ID:</span>
+            <span class="info-value">${student.studentId}</span>
+          </div>
+          <div class="info-item">
+            <span class="info-label">Roll Number:</span>
+            <span class="info-value">${student.rollNumber || 'N/A'}</span>
+          </div>
+          <div class="info-item">
+            <span class="info-label">Class / Course:</span>
+            <span class="info-value">${student.className || 'N/A'}</span>
+          </div>
+          <div class="info-item">
+            <span class="info-label">Session:</span>
+            <span class="info-value">${student.academicYear || 'N/A'}</span>
+          </div>
+          <div class="info-item">
+            <span class="info-label">Admission Date:</span>
+            <span class="info-value">${student.admissionDate ? new Date(student.admissionDate).toLocaleDateString() : 'N/A'}</span>
+          </div>
+          <div class="info-item">
+            <span class="info-label">Father's Name:</span>
+            <span class="info-value">${student.fatherName || 'N/A'}</span>
+          </div>
+          <div class="info-item">
+            <span class="info-label">Phone Number:</span>
+            <span class="info-value">${student.phone || 'N/A'}</span>
+          </div>
+        </div>
+
+        <div class="section-title">💰 Financial Dues Summary</div>
+        <div class="financial-cards">
+          <div class="card">
+            <div class="card-title">Total Configured</div>
+            <div class="card-value">₹${calculatedTotal.toLocaleString()}</div>
+          </div>
+          <div class="card">
+            <div class="card-title">Total Paid</div>
+            <div class="card-value" style="color: #059669;">₹${calculatedPaid.toLocaleString()}</div>
+          </div>
+          <div class="card">
+            <div class="card-title">Outstanding Pending</div>
+            <div class="card-value" style="color: ${calculatedPending > 0 ? '#dc2626' : '#1f2937'};">₹${calculatedPending.toLocaleString()}</div>
+          </div>
+        </div>
+
+        <div class="section-title">📜 Invoice ledger & transaction log</div>
+        <table class="invoice-table">
+          <thead>
+            <tr>
+              <th>Fee Particulars</th>
+              <th>Due Date</th>
+              <th>Status</th>
+              <th>Total Amount</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${invoices.map(inv => {
+              const invPaid = inv.payments ? inv.payments.reduce((sum, p) => sum + p.amount, 0) : 0;
+              return `
+                <tr>
+                  <td style="font-weight: 600; vertical-align: top;">
+                    ${inv.feeType}
+                    ${inv.payments && inv.payments.length > 0 ? `
+                      <div class="payment-history">
+                        <div style="font-weight: bold; color: #4b5563; margin-bottom: 4px; font-size: 10px;">RECEIPTS HISTORY:</div>
+                        ${inv.payments.map((p, idx) => `
+                          <div class="payment-item">
+                            <div>
+                              <strong>Receipt #${idx + 1}:</strong> Paid <strong>₹${p.amount.toLocaleString()}</strong> (${p.paymentMethod} ${p.receiptNumber ? `| Ref: ${p.receiptNumber}` : ''})
+                            </div>
+                            <div style="color: #6b7280;">
+                              ${new Date(p.date || p.createdAt).toLocaleDateString()}
+                            </div>
+                          </div>
+                        `).join('')}
+                      </div>
+                    ` : ''}
+                  </td>
+                  <td style="vertical-align: top;">${new Date(inv.dueDate).toLocaleDateString()}</td>
+                  <td style="vertical-align: top;">
+                    <span style="font-weight: bold; color: ${inv.status === 'PAID' ? '#059669' : '#dc2626'};">
+                      ${inv.status}
+                    </span>
+                  </td>
+                  <td style="font-weight: 700; vertical-align: top;">₹${inv.amount.toLocaleString()}</td>
+                </tr>
+              `;
+            }).join('')}
+          </tbody>
+        </table>
+
+        <div class="footer">
+          <p>Eazzio-School Management System Portal Report. All calculations based on student fee Cycle preference preference configurations.</p>
+        </div>
+
+        <script>
+          window.onload = function() {
+            setTimeout(function() {
+              window.print();
+              window.close();
+            }, 600);
+          };
+        </script>
+      </body>
+      </html>
+    `;
+
+    printWindow.document.write(htmlContent);
+    printWindow.document.close();
+  };
+
   const loadData = async (showBlocker = true) => {
     try {
       if (showBlocker) setLoading(true);
@@ -834,34 +1135,78 @@ export default function AccountantStudents() {
                     marginTop: '8px',
                     marginBottom: '14px',
                   }}>
-                    <h4 style={{ margin: '0 0 10px 0', fontSize: '0.85rem', color: 'var(--primary)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <span>💰 Course Fees Configured ({selectedCourseForAdd.className})</span>
-                      <span style={{ fontSize: '0.8rem', fontWeight: 'bold', color: 'var(--text-primary)' }}>
-                        Total: ₹{selectedCourseForAdd.totalFees?.toLocaleString()}
-                      </span>
-                    </h4>
+                    {(() => {
+                      const calculatedTotal = selectedCourseForAdd.feesList ? selectedCourseForAdd.feesList.reduce((sum, fee) => {
+                        let calculatedAmount = fee.amount;
+                        if (fee.planType) {
+                          const cycle = formData.feeCycle || 'MONTHLY';
+                          if (cycle === 'MONTHLY') {
+                            calculatedAmount = feeBreakdownForAdd.tuition.monthly;
+                          } else if (cycle === 'QUARTERLY') {
+                            calculatedAmount = feeBreakdownForAdd.tuition.quarterly;
+                          } else if (cycle === 'HALF_YEARLY') {
+                            calculatedAmount = feeBreakdownForAdd.tuition.halfYearly;
+                          } else if (cycle === 'YEARLY') {
+                            calculatedAmount = feeBreakdownForAdd.tuition.yearly;
+                          } else if (cycle === 'ONE_TIME') {
+                            calculatedAmount = feeBreakdownForAdd.tuition.oneTime;
+                          }
+                        }
+                        return sum + calculatedAmount;
+                      }, 0) : 0;
 
-                    {/* List of individual fee structures */}
-                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginBottom: '14px' }}>
-                      {selectedCourseForAdd.feesList && selectedCourseForAdd.feesList.map(fee => (
-                        <div key={fee.id} style={{
-                          padding: '6px 12px',
-                          background: 'rgba(255, 255, 255, 0.05)',
-                          border: '1px solid var(--glass-border)',
-                          borderRadius: '6px',
-                          fontSize: '0.75rem',
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '6px'
-                        }}>
-                          <span style={{ color: 'var(--text-secondary)' }}>{fee.feeType}:</span>
-                          <strong style={{ color: 'var(--text-primary)' }}>₹{fee.amount.toLocaleString()}</strong>
-                          <span style={{ fontSize: '0.65rem', color: 'var(--text-secondary)', textTransform: 'capitalize' }}>
-                            ({fee.planType ? fee.planType.toLowerCase().replace('_', ' ') : 'one-time'})
-                          </span>
-                        </div>
-                      ))}
-                    </div>
+                      return (
+                        <>
+                          <h4 style={{ margin: '0 0 10px 0', fontSize: '0.85rem', color: 'var(--primary)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <span>💰 Course Fees Configured ({selectedCourseForAdd.className})</span>
+                            <span style={{ fontSize: '0.8rem', fontWeight: 'bold', color: 'var(--text-primary)' }}>
+                              Total: ₹{calculatedTotal.toLocaleString()}
+                            </span>
+                          </h4>
+
+                          {/* List of individual fee structures */}
+                          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginBottom: '14px' }}>
+                            {selectedCourseForAdd.feesList && selectedCourseForAdd.feesList.map(fee => {
+                              let calculatedAmount = fee.amount;
+                              let displayPlanType = fee.planType ? fee.planType.toLowerCase().replace('_', ' ') : 'one-time';
+                              if (fee.planType) {
+                                const cycle = formData.feeCycle || 'MONTHLY';
+                                if (cycle === 'MONTHLY') {
+                                  calculatedAmount = feeBreakdownForAdd.tuition.monthly;
+                                } else if (cycle === 'QUARTERLY') {
+                                  calculatedAmount = feeBreakdownForAdd.tuition.quarterly;
+                                } else if (cycle === 'HALF_YEARLY') {
+                                  calculatedAmount = feeBreakdownForAdd.tuition.halfYearly;
+                                } else if (cycle === 'YEARLY') {
+                                  calculatedAmount = feeBreakdownForAdd.tuition.yearly;
+                                } else if (cycle === 'ONE_TIME') {
+                                  calculatedAmount = feeBreakdownForAdd.tuition.oneTime;
+                                }
+                                displayPlanType = cycle.toLowerCase().replace('_', ' ');
+                              }
+                              return (
+                                <div key={fee.id} style={{
+                                  padding: '6px 12px',
+                                  background: 'rgba(255, 255, 255, 0.05)',
+                                  border: '1px solid var(--glass-border)',
+                                  borderRadius: '6px',
+                                  fontSize: '0.75rem',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  gap: '6px'
+                                }}>
+                                  <span style={{ color: 'var(--text-secondary)' }}>{fee.feeType}:</span>
+                                  <strong style={{ color: 'var(--text-primary)' }}>₹{calculatedAmount.toLocaleString()}</strong>
+                                  <span style={{ fontSize: '0.65rem', color: 'var(--text-secondary)', textTransform: 'capitalize' }}>
+                                    ({displayPlanType})
+                                  </span>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </>
+                      );
+                    })()}
 
                     {/* Fee cycle estimations */}
                     {feeBreakdownForAdd ? (
@@ -889,10 +1234,10 @@ export default function AccountantStudents() {
                                 transition: 'all 0.2s',
                                 boxShadow: isSelected ? '0 0 10px rgba(139, 92, 246, 0.2)' : 'none'
                               }}
-                              onClick={() => setFormData(prev => ({ ...prev, feeCycle: item.key }))}
+                              onClick={() => setFormData({ ...formData, feeCycle: item.key })}
                               >
-                                <span style={{ fontSize: '0.65rem', color: isSelected ? 'var(--primary)' : 'var(--text-secondary)', display: 'block', fontWeight: 'bold' }}>{item.label}</span>
-                                <span style={{ fontSize: '0.9rem', fontWeight: 'bold', color: 'var(--text-primary)', display: 'block', marginTop: '4px' }}>₹{item.value.toLocaleString()}</span>
+                                <span style={{ fontSize: '0.65rem', color: isSelected ? 'var(--primary)' : 'var(--text-secondary)', display: 'block', fontWeight: 'bold', pointerEvents: 'none' }}>{item.label}</span>
+                                <span style={{ fontSize: '0.9rem', fontWeight: 'bold', color: 'var(--text-primary)', display: 'block', marginTop: '4px', pointerEvents: 'none' }}>₹{item.value.toLocaleString()}</span>
                               </div>
                             );
                           })}
@@ -996,6 +1341,12 @@ export default function AccountantStudents() {
               <h3 style={{ margin: 0, color: 'var(--text-primary)' }}>👤 Student Profile Details</h3>
               <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
                 <button 
+                  style={{ ...styles.detailsLink, borderColor: '#059669', color: '#fff', background: '#059669', margin: 0 }} 
+                  onClick={() => downloadStudentPDF(viewingStudent, studentInvoices)}
+                >
+                  📄 Download PDF
+                </button>
+                <button 
                   style={{ ...styles.detailsLink, borderColor: 'var(--primary)', color: '#fff', background: 'var(--primary)', margin: 0 }} 
                   onClick={() => {
                     const studentToEdit = viewingStudent;
@@ -1063,6 +1414,133 @@ export default function AccountantStudents() {
                 </div>
               </div>
 
+              {(() => {
+                const selectedCourseForView = classes.find(c => c.id.toString() === (viewingStudent.classId || viewingStudent.courseId || '').toString());
+                const feeBreakdownForView = calculateFeeBreakdown(selectedCourseForView);
+                if (!selectedCourseForView) return null;
+                return (
+                  <div style={{
+                    background: 'rgba(255, 255, 255, 0.03)',
+                    border: '1px solid var(--glass-border)',
+                    borderRadius: '10px',
+                    padding: '14px',
+                    marginTop: '20px',
+                  }}>
+                    {(() => {
+                      const cycle = (viewingStudent.feeCycle || 'MONTHLY').toUpperCase();
+                      const calculatedTotal = selectedCourseForView.feesList ? selectedCourseForView.feesList.reduce((sum, fee) => {
+                        let calculatedAmount = fee.amount;
+                        if (fee.planType) {
+                          if (cycle === 'MONTHLY') {
+                            calculatedAmount = feeBreakdownForView.tuition.monthly;
+                          } else if (cycle === 'QUARTERLY') {
+                            calculatedAmount = feeBreakdownForView.tuition.quarterly;
+                          } else if (cycle === 'HALF_YEARLY') {
+                            calculatedAmount = feeBreakdownForView.tuition.halfYearly;
+                          } else if (cycle === 'YEARLY') {
+                            calculatedAmount = feeBreakdownForView.tuition.yearly;
+                          } else if (cycle === 'ONE_TIME') {
+                            calculatedAmount = feeBreakdownForView.tuition.oneTime;
+                          }
+                        }
+                        return sum + calculatedAmount;
+                      }, 0) : 0;
+
+                      return (
+                        <>
+                          <h4 style={{ margin: '0 0 10px 0', fontSize: '0.85rem', color: 'var(--primary)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <span>💰 Course Fees Configured ({selectedCourseForView.className})</span>
+                            <span style={{ fontSize: '0.8rem', fontWeight: 'bold', color: 'var(--text-primary)' }}>
+                              Total: ₹{calculatedTotal.toLocaleString()}
+                            </span>
+                          </h4>
+
+                          {/* List of individual fee structures */}
+                          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginBottom: '14px' }}>
+                            {selectedCourseForView.feesList && selectedCourseForView.feesList.map(fee => {
+                              let calculatedAmount = fee.amount;
+                              let displayPlanType = fee.planType ? fee.planType.toLowerCase().replace('_', ' ') : 'one-time';
+                              if (fee.planType) {
+                                if (cycle === 'MONTHLY') {
+                                  calculatedAmount = feeBreakdownForView.tuition.monthly;
+                                } else if (cycle === 'QUARTERLY') {
+                                  calculatedAmount = feeBreakdownForView.tuition.quarterly;
+                                } else if (cycle === 'HALF_YEARLY') {
+                                  calculatedAmount = feeBreakdownForView.tuition.halfYearly;
+                                } else if (cycle === 'YEARLY') {
+                                  calculatedAmount = feeBreakdownForView.tuition.yearly;
+                                } else if (cycle === 'ONE_TIME') {
+                                  calculatedAmount = feeBreakdownForView.tuition.oneTime;
+                                }
+                                displayPlanType = cycle.toLowerCase().replace('_', ' ');
+                              }
+                              return (
+                                <div key={fee.id} style={{
+                                  padding: '6px 12px',
+                                  background: 'rgba(255, 255, 255, 0.05)',
+                                  border: '1px solid var(--glass-border)',
+                                  borderRadius: '6px',
+                                  fontSize: '0.75rem',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  gap: '6px'
+                                }}>
+                                  <span style={{ color: 'var(--text-secondary)' }}>{fee.feeType}:</span>
+                                  <strong style={{ color: 'var(--text-primary)' }}>₹{calculatedAmount.toLocaleString()}</strong>
+                                  <span style={{ fontSize: '0.65rem', color: 'var(--text-secondary)', textTransform: 'capitalize' }}>
+                                    ({displayPlanType})
+                                  </span>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </>
+                      );
+                    })()}
+
+                    {/* Fee cycle preference estimation */}
+                    {feeBreakdownForView && (
+                      <div>
+                        <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', fontWeight: '600', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                          Preference cycle amount:
+                        </div>
+                        {(() => {
+                          const cycle = (viewingStudent.feeCycle || 'MONTHLY').toUpperCase();
+                          let cycleLabel = 'Monthly';
+                          let cycleVal = feeBreakdownForView.tuition.monthly;
+                          if (cycle === 'QUARTERLY') {
+                            cycleLabel = 'Quarterly';
+                            cycleVal = feeBreakdownForView.tuition.quarterly;
+                          } else if (cycle === 'HALF_YEARLY') {
+                            cycleLabel = 'Half-Yearly';
+                            cycleVal = feeBreakdownForView.tuition.halfYearly;
+                          } else if (cycle === 'YEARLY') {
+                            cycleLabel = 'Yearly';
+                            cycleVal = feeBreakdownForView.tuition.yearly;
+                          } else if (cycle === 'ONE_TIME') {
+                            cycleLabel = 'One-time';
+                            cycleVal = feeBreakdownForView.tuition.oneTime;
+                          }
+                          return (
+                            <div style={{
+                              padding: '10px 12px',
+                              background: 'rgba(139, 92, 246, 0.15)',
+                              border: '2px solid var(--primary)',
+                              borderRadius: '8px',
+                              display: 'inline-block',
+                              textAlign: 'center',
+                            }}>
+                              <span style={{ fontSize: '0.65rem', color: 'var(--primary)', display: 'block', fontWeight: 'bold' }}>{cycleLabel} installment</span>
+                              <span style={{ fontSize: '0.9rem', fontWeight: 'bold', color: 'var(--text-primary)', display: 'block', marginTop: '4px' }}>₹{cycleVal.toLocaleString()}</span>
+                            </div>
+                          );
+                        })()}
+                      </div>
+                    )}
+                  </div>
+                );
+              })()}
+
               <div style={{ marginTop: '24px', borderTop: '1px solid var(--glass-border)', paddingTop: '16px' }}>
                 <h4 style={{ margin: '0 0 14px 0', fontSize: '0.9rem', color: 'var(--text-primary)' }}>💳 Financial Overview</h4>
                 <div style={styles.detailsGrid}>
@@ -1114,62 +1592,103 @@ export default function AccountantStudents() {
                 ) : studentInvoices.length === 0 ? (
                   <p style={{ color: 'var(--text-secondary)', fontSize: '0.8rem', fontStyle: 'italic' }}>No invoices found for this student.</p>
                 ) : (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', maxHeight: '200px', overflowY: 'auto', paddingRight: '4px' }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', maxHeight: '320px', overflowY: 'auto', paddingRight: '4px' }}>
                     {studentInvoices.map((inv) => {
                       const paid = inv.payments.reduce((sum, p) => sum + p.amount, 0);
                       const pending = Math.max(0, inv.amount - paid);
                       return (
                         <div key={inv.id} style={{
                           display: 'flex',
-                          justifyContent: 'space-between',
-                          alignItems: 'center',
-                          padding: '10px 14px',
+                          flexDirection: 'column',
+                          gap: '8px',
+                          padding: '12px 14px',
                           backgroundColor: 'rgba(255, 255, 255, 0.02)',
                           border: '1px solid var(--glass-border)',
-                          borderRadius: '6px'
+                          borderRadius: '8px'
                         }}>
-                          <div>
-                            <span style={{ fontSize: '0.85rem', fontWeight: '600', color: 'var(--text-primary)', display: 'block' }}>
-                              {inv.feeType}
-                            </span>
-                            <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
-                              Total: ₹{inv.amount.toLocaleString()} | Paid: ₹{paid.toLocaleString()} | Due: {new Date(inv.dueDate).toLocaleDateString()}
-                            </span>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <div>
+                              <span style={{ fontSize: '0.85rem', fontWeight: '600', color: 'var(--text-primary)', display: 'block' }}>
+                                {inv.feeType}
+                              </span>
+                              <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
+                                Total: ₹{inv.amount.toLocaleString()} | Paid: ₹{paid.toLocaleString()} | Due: {new Date(inv.dueDate).toLocaleDateString()}
+                              </span>
+                            </div>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                              <span style={{
+                                ...styles.badge,
+                                color: inv.status === 'PAID' ? 'var(--success)' : 'var(--warning)',
+                                background: inv.status === 'PAID' ? 'var(--success-glow)' : 'var(--warning-glow)'
+                              }}>
+                                {inv.status}
+                              </span>
+                              {inv.status !== 'PAID' && (
+                                <button
+                                  style={{
+                                    ...styles.detailsLink,
+                                    borderColor: 'var(--success)',
+                                    color: 'var(--success)',
+                                    background: 'rgba(5, 150, 105, 0.1)',
+                                    padding: '4px 8px',
+                                    fontSize: '0.7rem'
+                                  }}
+                                  onClick={() => {
+                                    setRecordingPaymentForInvoice({
+                                      ...inv,
+                                      student: { name: viewingStudent.name }
+                                    });
+                                    setPaymentFormData({
+                                      amount: pending.toString(),
+                                      paymentMethod: 'CASH',
+                                      receiptNumber: ''
+                                    });
+                                  }}
+                                >
+                                  💵 Pay
+                                </button>
+                              )}
+                            </div>
                           </div>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                            <span style={{
-                              ...styles.badge,
-                              color: inv.status === 'PAID' ? 'var(--success)' : 'var(--warning)',
-                              background: inv.status === 'PAID' ? 'var(--success-glow)' : 'var(--warning-glow)'
+
+                          {/* Payment History Log (Sub-rows) */}
+                          {inv.payments && inv.payments.length > 0 && (
+                            <div style={{
+                              marginTop: '4px',
+                              paddingTop: '8px',
+                              borderTop: '1px dashed var(--glass-border)',
+                              display: 'flex',
+                              flexDirection: 'column',
+                              gap: '6px'
                             }}>
-                              {inv.status}
-                            </span>
-                            {inv.status !== 'PAID' && (
-                              <button
-                                style={{
-                                  ...styles.detailsLink,
-                                  borderColor: 'var(--success)',
-                                  color: 'var(--success)',
-                                  background: 'rgba(5, 150, 105, 0.1)',
+                              <div style={{ fontSize: '0.65rem', color: 'var(--text-secondary)', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                                📜 Payment History / Receipts:
+                              </div>
+                              {inv.payments.map((p, idx) => (
+                                <div key={p.id} style={{
+                                  display: 'flex',
+                                  justifyContent: 'space-between',
+                                  alignItems: 'center',
+                                  fontSize: '0.75rem',
                                   padding: '4px 8px',
-                                  fontSize: '0.7rem'
-                                }}
-                                onClick={() => {
-                                  setRecordingPaymentForInvoice({
-                                    ...inv,
-                                    student: { name: viewingStudent.name }
-                                  });
-                                  setPaymentFormData({
-                                    amount: pending.toString(),
-                                    paymentMethod: 'CASH',
-                                    receiptNumber: ''
-                                  });
-                                }}
-                              >
-                                💵 Pay
-                              </button>
-                            )}
-                          </div>
+                                  background: 'rgba(255, 255, 255, 0.01)',
+                                  borderRadius: '4px',
+                                  borderLeft: '2.5px solid var(--success)'
+                                }}>
+                                  <div style={{ color: 'var(--text-primary)' }}>
+                                    <span>Receipt #{idx + 1}: </span>
+                                    <strong style={{ color: 'var(--success)', marginRight: '6px' }}>₹{p.amount.toLocaleString()}</strong>
+                                    <span style={{ color: 'var(--text-secondary)' }}>
+                                      ({p.paymentMethod} {p.receiptNumber ? `| Ref: ${p.receiptNumber}` : ''})
+                                    </span>
+                                  </div>
+                                  <div style={{ color: 'var(--text-secondary)', fontSize: '0.7rem' }}>
+                                    {new Date(p.date || p.createdAt).toLocaleDateString()}
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          )}
                         </div>
                       );
                     })}
@@ -1264,34 +1783,78 @@ export default function AccountantStudents() {
                     marginTop: '8px',
                     marginBottom: '14px',
                   }}>
-                    <h4 style={{ margin: '0 0 10px 0', fontSize: '0.85rem', color: 'var(--primary)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <span>💰 Course Fees Configured ({selectedCourseForEdit.className})</span>
-                      <span style={{ fontSize: '0.8rem', fontWeight: 'bold', color: 'var(--text-primary)' }}>
-                        Total: ₹{selectedCourseForEdit.totalFees?.toLocaleString()}
-                      </span>
-                    </h4>
+                    {(() => {
+                      const calculatedTotal = selectedCourseForEdit.feesList ? selectedCourseForEdit.feesList.reduce((sum, fee) => {
+                        let calculatedAmount = fee.amount;
+                        if (fee.planType) {
+                          const cycle = editFormData.feeCycle || 'MONTHLY';
+                          if (cycle === 'MONTHLY') {
+                            calculatedAmount = feeBreakdownForEdit.tuition.monthly;
+                          } else if (cycle === 'QUARTERLY') {
+                            calculatedAmount = feeBreakdownForEdit.tuition.quarterly;
+                          } else if (cycle === 'HALF_YEARLY') {
+                            calculatedAmount = feeBreakdownForEdit.tuition.halfYearly;
+                          } else if (cycle === 'YEARLY') {
+                            calculatedAmount = feeBreakdownForEdit.tuition.yearly;
+                          } else if (cycle === 'ONE_TIME') {
+                            calculatedAmount = feeBreakdownForEdit.tuition.oneTime;
+                          }
+                        }
+                        return sum + calculatedAmount;
+                      }, 0) : 0;
 
-                    {/* List of individual fee structures */}
-                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginBottom: '14px' }}>
-                      {selectedCourseForEdit.feesList && selectedCourseForEdit.feesList.map(fee => (
-                        <div key={fee.id} style={{
-                          padding: '6px 12px',
-                          background: 'rgba(255, 255, 255, 0.05)',
-                          border: '1px solid var(--glass-border)',
-                          borderRadius: '6px',
-                          fontSize: '0.75rem',
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '6px'
-                        }}>
-                          <span style={{ color: 'var(--text-secondary)' }}>{fee.feeType}:</span>
-                          <strong style={{ color: 'var(--text-primary)' }}>₹{fee.amount.toLocaleString()}</strong>
-                          <span style={{ fontSize: '0.65rem', color: 'var(--text-secondary)', textTransform: 'capitalize' }}>
-                            ({fee.planType ? fee.planType.toLowerCase().replace('_', ' ') : 'one-time'})
-                          </span>
-                        </div>
-                      ))}
-                    </div>
+                      return (
+                        <>
+                          <h4 style={{ margin: '0 0 10px 0', fontSize: '0.85rem', color: 'var(--primary)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <span>💰 Course Fees Configured ({selectedCourseForEdit.className})</span>
+                            <span style={{ fontSize: '0.8rem', fontWeight: 'bold', color: 'var(--text-primary)' }}>
+                              Total: ₹{calculatedTotal.toLocaleString()}
+                            </span>
+                          </h4>
+
+                          {/* List of individual fee structures */}
+                          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginBottom: '14px' }}>
+                            {selectedCourseForEdit.feesList && selectedCourseForEdit.feesList.map(fee => {
+                              let calculatedAmount = fee.amount;
+                              let displayPlanType = fee.planType ? fee.planType.toLowerCase().replace('_', ' ') : 'one-time';
+                              if (fee.planType) {
+                                const cycle = editFormData.feeCycle || 'MONTHLY';
+                                if (cycle === 'MONTHLY') {
+                                  calculatedAmount = feeBreakdownForEdit.tuition.monthly;
+                                } else if (cycle === 'QUARTERLY') {
+                                  calculatedAmount = feeBreakdownForEdit.tuition.quarterly;
+                                } else if (cycle === 'HALF_YEARLY') {
+                                  calculatedAmount = feeBreakdownForEdit.tuition.halfYearly;
+                                } else if (cycle === 'YEARLY') {
+                                  calculatedAmount = feeBreakdownForEdit.tuition.yearly;
+                                } else if (cycle === 'ONE_TIME') {
+                                  calculatedAmount = feeBreakdownForEdit.tuition.oneTime;
+                                }
+                                displayPlanType = cycle.toLowerCase().replace('_', ' ');
+                              }
+                              return (
+                                <div key={fee.id} style={{
+                                  padding: '6px 12px',
+                                  background: 'rgba(255, 255, 255, 0.05)',
+                                  border: '1px solid var(--glass-border)',
+                                  borderRadius: '6px',
+                                  fontSize: '0.75rem',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  gap: '6px'
+                                }}>
+                                  <span style={{ color: 'var(--text-secondary)' }}>{fee.feeType}:</span>
+                                  <strong style={{ color: 'var(--text-primary)' }}>₹{calculatedAmount.toLocaleString()}</strong>
+                                  <span style={{ fontSize: '0.65rem', color: 'var(--text-secondary)', textTransform: 'capitalize' }}>
+                                    ({displayPlanType})
+                                  </span>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </>
+                      );
+                    })()}
 
                     {/* Fee cycle estimations */}
                     {feeBreakdownForEdit ? (
@@ -1319,10 +1882,10 @@ export default function AccountantStudents() {
                                 transition: 'all 0.2s',
                                 boxShadow: isSelected ? '0 0 10px rgba(139, 92, 246, 0.2)' : 'none'
                               }}
-                              onClick={() => setEditFormData(prev => ({ ...prev, feeCycle: item.key }))}
+                              onClick={() => setEditFormData({ ...editFormData, feeCycle: item.key })}
                               >
-                                <span style={{ fontSize: '0.65rem', color: isSelected ? 'var(--primary)' : 'var(--text-secondary)', display: 'block', fontWeight: 'bold' }}>{item.label}</span>
-                                <span style={{ fontSize: '0.9rem', fontWeight: 'bold', color: 'var(--text-primary)', display: 'block', marginTop: '4px' }}>₹{item.value.toLocaleString()}</span>
+                                <span style={{ fontSize: '0.65rem', color: isSelected ? 'var(--primary)' : 'var(--text-secondary)', display: 'block', fontWeight: 'bold', pointerEvents: 'none' }}>{item.label}</span>
+                                <span style={{ fontSize: '0.9rem', fontWeight: 'bold', color: 'var(--text-primary)', display: 'block', marginTop: '4px', pointerEvents: 'none' }}>₹{item.value.toLocaleString()}</span>
                               </div>
                             );
                           })}

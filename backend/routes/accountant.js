@@ -113,10 +113,39 @@ router.get('/dashboard-summary', async (req, res) => {
         phone: student.phone || 'N/A',
         address: student.address || 'N/A',
         admissionDate: student.admissionDate || null,
-        feeCycle: 'MONTHLY',
+        feeCycle: student.feeCycle || 'MONTHLY',
         totalFees: studentTotalFees,
         paid: studentPaid,
         pending: studentPending
+      };
+    });
+
+    const allPayments = payments.map(p => ({
+      id: p.id,
+      studentName: p.student.name,
+      rollNumber: p.student.rollNumber || 'N/A',
+      studentId: p.student.studentId,
+      amount: p.amount,
+      method: p.paymentMethod,
+      date: p.date,
+      receiptNumber: p.receiptNumber || 'N/A'
+    }));
+
+    const allInvoices = invoices.map(inv => {
+      const invPaid = inv.payments.reduce((acc, p) => acc + p.amount, 0);
+      const student = students.find(s => s.id === inv.studentId);
+      return {
+        id: inv.id,
+        invoiceNumber: inv.invoiceNumber || `INV-${inv.id}`,
+        studentName: student ? student.name : 'Unknown',
+        rollNumber: student ? (student.rollNumber || 'N/A') : 'N/A',
+        studentId: student ? student.studentId : 'N/A',
+        amount: inv.amount,
+        paid: invPaid,
+        pending: Math.max(0, inv.amount - invPaid),
+        dueDate: inv.dueDate,
+        createdAt: inv.createdAt,
+        status: invPaid >= inv.amount ? 'PAID' : (invPaid > 0 ? 'PARTIAL' : 'UNPAID')
       };
     });
 
@@ -129,7 +158,9 @@ router.get('/dashboard-summary', async (req, res) => {
         pendingFees,
         activeInvoices,
         recentPayments,
-        studentsFeesList
+        studentsFeesList,
+        allPayments,
+        allInvoices
       }
     });
   } catch (error) {
@@ -197,7 +228,8 @@ router.post('/students', async (req, res) => {
         motherName: motherName || null,
         phone: phone || null,
         address: address || null,
-        admissionDate: admissionDate ? new Date(admissionDate) : null
+        admissionDate: admissionDate ? new Date(admissionDate) : null,
+        feeCycle: feeCycle || 'MONTHLY'
       }
     });
 
@@ -242,7 +274,8 @@ router.put('/students/:id', async (req, res) => {
         motherName: motherName || null,
         phone: phone || null,
         address: address || null,
-        admissionDate: admissionDate ? new Date(admissionDate) : null
+        admissionDate: admissionDate ? new Date(admissionDate) : null,
+        feeCycle: feeCycle || 'MONTHLY'
       }
     });
 

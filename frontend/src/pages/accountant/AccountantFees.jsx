@@ -3,6 +3,42 @@ import { createPortal } from 'react-dom';
 import api from '../../api/axios';
 import Loader from '../../components/Loader';
 
+const calculateFeeBreakdown = (selectedCourse) => {
+  if (!selectedCourse || !selectedCourse.feesList || selectedCourse.feesList.length === 0) return null;
+  
+  const tuitionFee = selectedCourse.feesList.find(f => f.feeType === 'Tuition Fee') || selectedCourse.feesList[0];
+  const baseAmount = tuitionFee.amount;
+  const baseCycle = tuitionFee.planType || 'MONTHLY';
+
+  if (baseAmount <= 0) return null;
+
+  let yearlyAmount = 0;
+  if (baseCycle === 'MONTHLY') {
+    yearlyAmount = baseAmount * 12;
+  } else if (baseCycle === 'QUARTERLY') {
+    yearlyAmount = baseAmount * 4;
+  } else if (baseCycle === 'HALF_YEARLY') {
+    yearlyAmount = baseAmount * 2;
+  } else if (baseCycle === 'YEARLY' || baseCycle === 'ONE_TIME') {
+    yearlyAmount = baseAmount;
+  }
+
+  const otherFees = selectedCourse.feesList.filter(f => f.id !== tuitionFee.id);
+  const otherTotal = otherFees.reduce((sum, f) => sum + f.amount, 0);
+
+  return {
+    tuition: {
+      monthly: baseCycle === 'ONE_TIME' ? baseAmount : Math.round(yearlyAmount / 12),
+      quarterly: baseCycle === 'ONE_TIME' ? baseAmount : Math.round(yearlyAmount / 4),
+      halfYearly: baseCycle === 'ONE_TIME' ? baseAmount : Math.round(yearlyAmount / 2),
+      yearly: baseCycle === 'ONE_TIME' ? baseAmount : yearlyAmount,
+      oneTime: baseAmount
+    },
+    otherTotal,
+    otherFees
+  };
+};
+
 export default function AccountantFees() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -32,6 +68,8 @@ export default function AccountantFees() {
   const [processing, setProcessing] = useState(false);
   const [processingMessage, setProcessingMessage] = useState('');
   const [toast, setToast] = useState({ show: false, message: '', type: 'success' });
+  const [selectedCourseFilter, setSelectedCourseFilter] = useState('');
+  const [selectedSessionFilter, setSelectedSessionFilter] = useState('');
 
   const showToast = (message, type = 'success') => {
     setToast({ show: true, message, type });
@@ -181,6 +219,13 @@ export default function AccountantFees() {
     }
   };
 
+  const sessionsList = Array.from(new Set(classes.map(c => c.academicYear).filter(Boolean)));
+  const filteredStudents = studentsList.filter(s => {
+    const matchCourse = !selectedCourseFilter || s.courseId?.toString() === selectedCourseFilter.toString();
+    const matchSession = !selectedSessionFilter || s.academicYear === selectedSessionFilter;
+    return matchCourse && matchSession;
+  });
+
   if (loading) return <Loader message="Loading invoices & financial ledger..." />;
 
   return (
@@ -214,85 +259,137 @@ export default function AccountantFees() {
           <form onSubmit={handleCreateInvoice} style={styles.form}>
             <div style={styles.formRow}>
               <div style={styles.formGroup}>
-                <label style={styles.label}>Apply Invoice To *</label>
+                <label style={styles.label}>Select Student *</label>
+                <select
+                  required
+                  style={styles.input}
+                  value={invoiceFormData.studentId}
+                  onChange={(e) => {
+                    const studentId = e.target.value;
+                    let amount = '';
+                    let feeType = invoiceFormData.feeType || 'Tuition Fee';
+
+                    if (studentId) {
+                      const selStudent = studentsList.find(s => s.id.toString() === studentId.toString());
+                      if (selStudent) {
+                        const selCourse = classes.find(c => c.id.toString() === (selStudent.classId || selStudent.courseId || '').toString());
+                        if (selCourse && selCourse.feesList && selCourse.feesList.length > 0) {
+                          const tuitionFee = selCourse.feesList.find(f => f.feeType === 'Tuition Fee') || selCourse.feesList[0];
+                          if (tuitionFee) {
+                            feeType = tuitionFee.feeType;
+                            const feeBreakdown = calculateFeeBreakdown(selCourse);
+                            if (feeBreakdown) {
+                              const cycle = (selStudent.feeCycle || 'MONTHLY').toUpperCase();
+                              if (cycle === 'QUARTERLY') {
+                                amount = feeBreakdown.tuition.quarterly.toString();
+                              } else if (cycle === 'HALF_YEARLY') {
+                                amount = feeBreakdown.tuition.halfYearly.toString();
+                              } else if (cycle === 'YEARLY') {
+                                amount = feeBreakdown.tuition.yearly.toString();
+                              } else if (cycle === 'ONE_TIME') {
+                                amount = feeBreakdown.tuition.oneTime.toString();
+                              } else {
+                                amount = feeBreakdown.tuition.monthly.toString();
+                              }
+                            } else {
+                              amount = tuitionFee.amount.toString();
+                            }
+                          }
+                        }
+                      }
+                    }
+
+                    setInvoiceFormData(prev => ({
+                      ...prev,
+                      studentId,
+                      amount,
+                      feeType
+                    }));
+                  }}
+                >
+                  <option value="">-- Choose Student ({filteredStudents.length} available) --</option>
+                  {filteredStudents.map(s => (
+                    <option key={s.id} value={s.id}>
+                      {s.name} ({s.rollNumber && s.rollNumber !== 'N/A' ? `Roll No: ${s.rollNumber}` : 'No Roll'}) - {s.studentId}
+                    </option>
+                  ))}
+                </select>
+                {(() => {
+                  const selStudent = studentsList.find(s => s.id.toString() === invoiceFormData.studentId.toString());
+                  if (selStudent) {
+                    const cycleLabel = (selStudent.feeCycle || 'MONTHLY').toLowerCase().replace('_', ' ');
+                    return (
+                      <div style={{
+                        marginTop: '8px',
+                        fontSize: '0.8rem',
+                        color: 'var(--primary)',
+                        background: 'rgba(139, 92, 246, 0.1)',
+                        border: '1px dashed rgba(139, 92, 246, 0.3)',
+                        borderRadius: '6px',
+                        padding: '6px 12px',
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '6px'
+                      }}>
+                        <span>ℹ️ Preferred Fee Payment Cycle:</span>
+                        <strong style={{ textTransform: 'capitalize' }}>
+                          {cycleLabel}
+                        </strong>
+                      </div>
+                    );
+                  }
+                  return null;
+                })()}
+              </div>
+
+              <div style={styles.formGroup}>
+                <label style={styles.label}>Filter by Session</label>
                 <select
                   style={styles.input}
-                  value={invoiceFormData.targetType}
-                  onChange={(e) => setInvoiceFormData({ ...invoiceFormData, targetType: e.target.value, studentId: '', classId: '' })}
+                  value={selectedSessionFilter}
+                  onChange={(e) => {
+                    setSelectedSessionFilter(e.target.value);
+                    setInvoiceFormData(prev => ({ ...prev, studentId: '' }));
+                  }}
                 >
-                  <option value="student">Specific Student</option>
-                  <option value="class">Entire Class / Course</option>
+                  <option value="">All Sessions</option>
+                  {sessionsList.map(session => (
+                    <option key={session} value={session}>
+                      {session}
+                    </option>
+                  ))}
                 </select>
               </div>
 
-              {invoiceFormData.targetType === 'student' ? (
-                <div style={styles.formGroup}>
-                  <label style={styles.label}>Select Student *</label>
-                  <select
-                    required
-                    style={styles.input}
-                    value={invoiceFormData.studentId}
-                    onChange={(e) => setInvoiceFormData({ ...invoiceFormData, studentId: e.target.value })}
-                  >
-                    <option value="">-- Choose Student --</option>
-                    {studentsList.map(s => (
-                      <option key={s.id} value={s.id}>{s.name} ({s.studentId})</option>
-                    ))}
-                  </select>
-                  {(() => {
-                    const selStudent = studentsList.find(s => s.id.toString() === invoiceFormData.studentId.toString());
-                    if (selStudent) {
-                      return (
-                        <div style={{
-                          marginTop: '8px',
-                          fontSize: '0.8rem',
-                          color: 'var(--primary)',
-                          background: 'rgba(139, 92, 246, 0.1)',
-                          border: '1px dashed rgba(139, 92, 246, 0.3)',
-                          borderRadius: '6px',
-                          padding: '6px 12px',
-                          display: 'inline-flex',
-                          alignItems: 'center',
-                          gap: '6px'
-                        }}>
-                          <span>ℹ️ Preferred Fee Payment Cycle:</span>
-                          <strong style={{ textTransform: 'capitalize' }}>
-                            {(selStudent.feeCycle || 'MONTHLY').toLowerCase().replace('_', ' ')}
-                          </strong>
-                        </div>
-                      );
-                    }
-                    return null;
-                  })()}
-                </div>
-              ) : (
-                <div style={styles.formGroup}>
-                  <label style={styles.label}>Select Class / Course *</label>
-                  <select
-                    required
-                    style={styles.input}
-                    value={invoiceFormData.classId}
-                    onChange={(e) => setInvoiceFormData({ ...invoiceFormData, classId: e.target.value })}
-                  >
-                    <option value="">-- Choose Class / Course --</option>
-                    {classes.map(cls => (
-                      <option key={cls.id} value={cls.id}>{cls.className} - {cls.section} ({cls.academicYear})</option>
-                    ))}
-                  </select>
-                </div>
-              )}
+              <div style={styles.formGroup}>
+                <label style={styles.label}>Filter by Course</label>
+                <select
+                  style={styles.input}
+                  value={selectedCourseFilter}
+                  onChange={(e) => {
+                    setSelectedCourseFilter(e.target.value);
+                    setInvoiceFormData(prev => ({ ...prev, studentId: '' }));
+                  }}
+                >
+                  <option value="">All Courses</option>
+                  {classes.map(cls => (
+                    <option key={cls.id} value={cls.id}>
+                      {cls.courseName} - {cls.section}
+                    </option>
+                  ))}
+                </select>
+              </div>
             </div>
 
             <div style={styles.formRow}>
               <div style={styles.formGroup}>
-                <label style={styles.label}>Fee Type / Description *</label>
+                <label style={styles.label}>Due Date *</label>
                 <input
-                  type="text"
+                  type="date"
                   required
                   style={styles.input}
-                  placeholder="e.g. Admission Fee, Tuition Fee, Course Fee"
-                  value={invoiceFormData.feeType}
-                  onChange={(e) => setInvoiceFormData({ ...invoiceFormData, feeType: e.target.value })}
+                  value={invoiceFormData.dueDate}
+                  onChange={(e) => setInvoiceFormData({ ...invoiceFormData, dueDate: e.target.value })}
                 />
               </div>
 
@@ -311,13 +408,14 @@ export default function AccountantFees() {
               </div>
 
               <div style={styles.formGroup}>
-                <label style={styles.label}>Due Date *</label>
+                <label style={styles.label}>Fee Type / Description *</label>
                 <input
-                  type="date"
+                  type="text"
                   required
                   style={styles.input}
-                  value={invoiceFormData.dueDate}
-                  onChange={(e) => setInvoiceFormData({ ...invoiceFormData, dueDate: e.target.value })}
+                  placeholder="e.g. Admission Fee, Tuition Fee, Course Fee"
+                  value={invoiceFormData.feeType}
+                  onChange={(e) => setInvoiceFormData({ ...invoiceFormData, feeType: e.target.value })}
                 />
               </div>
             </div>
@@ -448,7 +546,7 @@ export default function AccountantFees() {
 
             <div style={{ marginBottom: '16px', padding: '12px', background: 'rgba(255,255,255,0.03)', borderRadius: '6px' }}>
               <p style={{ margin: '0 0 4px 0', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
-                Student: <strong style={{ color: 'var(--text-primary)' }}>{recordingPaymentForInvoice.student?.name}</strong>
+                Student: <strong style={{ color: 'var(--text-primary)' }}>{recordingPaymentForInvoice.student?.name} {recordingPaymentForInvoice.student?.rollNumber ? `(Roll No: ${recordingPaymentForInvoice.student.rollNumber})` : ''}</strong>
               </p>
               <p style={{ margin: '0 0 4px 0', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
                 Fee Type: <strong style={{ color: 'var(--text-primary)' }}>{recordingPaymentForInvoice.feeType}</strong>
