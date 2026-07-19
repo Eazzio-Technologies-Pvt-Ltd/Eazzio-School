@@ -1,0 +1,232 @@
+2026-07-19T17:43:31.371Z - [Cron Error] Failed to publish scheduled notices: PrismaClientValidationError: 
+Invalid `prisma.notice.updateMany()` invocation:
+
+{
+  where: {
+    status: "SCHEDULED",
+    scheduledAt: {
+      lte: new Date("2026-07-19T17:43:31.104Z")
+    }
+  },
+  data: {
+    status: "PUBLISHED",
+    ~~~~~~
+    date: new Date("2026-07-19T17:43:31.104Z"),
+    scheduledAt: null,
+?   title?: String | StringFieldUpdateOperationsInput,
+?   content?: String | StringFieldUpdateOperationsInput,
+?   audience?: NoticeAudience | EnumNoticeAudienceFieldUpdateOperationsInput,
+?   attachmentUrl?: String | NullableStringFieldUpdateOperationsInput | Null
+  }
+}
+
+Unknown argument `status`. Available options are marked with ?.
+    at wn (D:\Eazzio-School\backend\node_modules\@prisma\client\runtime\library.js:29:1363)
+    at $n.handleRequestError (D:\Eazzio-School\backend\node_modules\@prisma\client\runtime\library.js:121:6958)
+    at $n.handleAndLogRequestError (D:\Eazzio-School\backend\node_modules\@prisma\client\runtime\library.js:121:6623)
+    at $n.request (D:\Eazzio-School\backend\node_modules\@prisma\client\runtime\library.js:121:6307)
+    at async l (D:\Eazzio-School\backend\node_modules\@prisma\client\runtime\library.js:130:9633)
+    at async Timeout._onTimeout (file:///D:/Eazzio-School/backend/server.js:73:20)
+2026-07-19T17:44:31.372Z - [Cron Error] Failed to publish scheduled notices: PrismaClientValidationError: 
+Invalid `prisma.notice.updateMany()` invocation:
+
+{
+  where: {
+    status: "SCHEDULED",
+    scheduledAt: {
+      lte: new Date("2026-07-19T17:44:31.109Z")
+    }
+  },
+  data: {
+    status: "PUBLISHED",
+    ~~~~~~
+    date: new Date("2026-07-19T17:44:31.109Z"),
+    scheduledAt: null,
+?   title?: String | StringFieldUpdateOperationsInput,
+?   content?: String | StringFieldUpdateOperationsInput,
+?   audience?: NoticeAudience | EnumNoticeAudienceFieldUpdateOperationsInput,
+?   attachmentUrl?: String | NullableStringFieldUpdateOperationsInput | Null
+  }
+}
+
+Unknown argument `status`. Available options are marked with ?.
+    at wn (D:\Eazzio-School\backend\node_modules\@prisma\client\runtime\library.js:29:1363)
+    at $n.handleRequestError (D:\Eazzio-School\backend\node_modules\@prisma\client\runtime\library.js:121:6958)
+    at $n.handleAndLogRequestError (D:\Eazzio-School\backend\node_modules\@prisma\client\runtime\library.js:121:6623)
+    at $n.request (D:\Eazzio-School\backend\node_modules\@prisma\client\runtime\library.js:121:6307)
+    at async l (D:\Eazzio-School\backend\node_modules\@prisma\client\runtime\library.js:130:9633)
+    at async Timeout._onTimeout (file:///D:/Eazzio-School/backend/server.js:73:20)
+2026-07-19T17:45:31.382Z - [Cron Error] Failed to publish scheduled notices: PrismaClientValidationError: 
+Invalid `prisma.notice.updateMany()` invocation:
+
+{
+  where: {
+    status: "SCHEDULED",
+    scheduledAt: {
+      lte: new Date("2026-07-19T17:45:31.112Z")
+    }
+  },
+  data: {
+    status: "PUBLISHED",
+    ~~~~~~
+    date: new Date("2026-07-19T17:45:31.112Z"),
+    scheduledAt: null,
+?   title?: String | StringFieldUpdateOperationsInput,
+?   content?: String | StringFieldUpdateOperationsInput,
+?   audience?: NoticeAudience | EnumNoticeAudienceFieldUpdateOperationsInput,
+?   attachmentUrl?: String | NullableStringFieldUpdateOperationsInput | Null
+  }
+}
+
+Unknown argument `status`. Available options are marked with ?.
+    at wn (D:\Eazzio-School\backend\node_modules\@prisma\client\runtime\library.js:29:1363)
+    at $n.handleRequestError (D:\Eazzio-School\backend\node_modules\@prisma\client\runtime\library.js:121:6958)
+    at $n.handleAndLogRequestError (D:\Eazzio-School\backend\node_modules\@prisma\client\runtime\library.js:121:6623)
+    at $n.request (D:\Eazzio-School\backend\node_modules\@prisma\client\runtime\library.js:121:6307)
+    at async l (D:\Eazzio-School\backend\node_modules\@prisma\client\runtime\library.js:130:9633)
+    at async Timeout._onTimeout (file:///D:/Eazzio-School/backend/server.js:73:20)
+2026-07-19T17:46:31.379Z - [Cron Error] Failed to publish scheduled notices: PrismaClientValidationError: 
+Invalid `prisma.notice.updateMany()` invocation:
+
+{
+  where: {
+    status: "SCHEDULED",
+    scheduledAt: {
+      lte: new Date("2026-07-19T17:46:31.123Z")
+    }
+  },
+  data: {
+    status: "PUBLISHED",
+    ~~~~~~
+    date: new Date("2026-07-19T17:46:31.123Z"),
+    scheduledAt: null,
+?   title?: String | StringFieldUpdateOperationsInput,
+?   content?: String | StringFieldUpdateOperationsInput,
+?   audience?: NoticeAudience | EnumNoticeAudienceFieldUpdateOperationsInput,
+?   attachmentUrl?: String | NullableStringFieldUpdateOperationsInput | Null
+  }
+}
+
+Unknown argument `status`. Available options are marked with ?.
+    at wn (D:\Eazzio-School\backend\node_modules\@prisma\client\runtime\library.js:29:1363)
+    at $n.handleRequestError (D:\Eazzio-School\backend\node_modules\@prisma\client\runtime\library.js:121:6958)
+    at $n.handleAndLogRequestError (D:\Eazzio-School\backend\node_modules\@prisma\client\runtime\library.js:121:6623)
+    at $n.request (D:\Eazzio-School\backend\node_modules\@prisma\client\runtime\library.js:121:6307)
+    at async l (D:\Eazzio-School\backend\node_modules\@prisma\client\runtime\library.js:130:9633)
+    at async Timeout._onTimeout (file:///D:/Eazzio-School/backend/server.js:73:20)
+2026-07-19T17:47:33.561Z - [Cron Error] Failed to publish scheduled notices: PrismaClientValidationError: 
+Invalid `prisma.notice.updateMany()` invocation:
+
+{
+  where: {
+    status: "SCHEDULED",
+    scheduledAt: {
+      lte: new Date("2026-07-19T17:47:31.138Z")
+    }
+  },
+  data: {
+    status: "PUBLISHED",
+    ~~~~~~
+    date: new Date("2026-07-19T17:47:31.138Z"),
+    scheduledAt: null,
+?   title?: String | StringFieldUpdateOperationsInput,
+?   content?: String | StringFieldUpdateOperationsInput,
+?   audience?: NoticeAudience | EnumNoticeAudienceFieldUpdateOperationsInput,
+?   attachmentUrl?: String | NullableStringFieldUpdateOperationsInput | Null
+  }
+}
+
+Unknown argument `status`. Available options are marked with ?.
+    at wn (D:\Eazzio-School\backend\node_modules\@prisma\client\runtime\library.js:29:1363)
+    at $n.handleRequestError (D:\Eazzio-School\backend\node_modules\@prisma\client\runtime\library.js:121:6958)
+    at $n.handleAndLogRequestError (D:\Eazzio-School\backend\node_modules\@prisma\client\runtime\library.js:121:6623)
+    at $n.request (D:\Eazzio-School\backend\node_modules\@prisma\client\runtime\library.js:121:6307)
+    at async l (D:\Eazzio-School\backend\node_modules\@prisma\client\runtime\library.js:130:9633)
+    at async Timeout._onTimeout (file:///D:/Eazzio-School/backend/server.js:73:20)
+2026-07-19T17:48:31.527Z - [Cron Error] Failed to publish scheduled notices: PrismaClientValidationError: 
+Invalid `prisma.notice.updateMany()` invocation:
+
+{
+  where: {
+    status: "SCHEDULED",
+    scheduledAt: {
+      lte: new Date("2026-07-19T17:48:31.145Z")
+    }
+  },
+  data: {
+    status: "PUBLISHED",
+    ~~~~~~
+    date: new Date("2026-07-19T17:48:31.145Z"),
+    scheduledAt: null,
+?   title?: String | StringFieldUpdateOperationsInput,
+?   content?: String | StringFieldUpdateOperationsInput,
+?   audience?: NoticeAudience | EnumNoticeAudienceFieldUpdateOperationsInput,
+?   attachmentUrl?: String | NullableStringFieldUpdateOperationsInput | Null
+  }
+}
+
+Unknown argument `status`. Available options are marked with ?.
+    at wn (D:\Eazzio-School\backend\node_modules\@prisma\client\runtime\library.js:29:1363)
+    at $n.handleRequestError (D:\Eazzio-School\backend\node_modules\@prisma\client\runtime\library.js:121:6958)
+    at $n.handleAndLogRequestError (D:\Eazzio-School\backend\node_modules\@prisma\client\runtime\library.js:121:6623)
+    at $n.request (D:\Eazzio-School\backend\node_modules\@prisma\client\runtime\library.js:121:6307)
+    at async l (D:\Eazzio-School\backend\node_modules\@prisma\client\runtime\library.js:130:9633)
+    at async Timeout._onTimeout (file:///D:/Eazzio-School/backend/server.js:73:20)
+2026-07-19T17:49:31.406Z - [Cron Error] Failed to publish scheduled notices: PrismaClientValidationError: 
+Invalid `prisma.notice.updateMany()` invocation:
+
+{
+  where: {
+    status: "SCHEDULED",
+    scheduledAt: {
+      lte: new Date("2026-07-19T17:49:31.146Z")
+    }
+  },
+  data: {
+    status: "PUBLISHED",
+    ~~~~~~
+    date: new Date("2026-07-19T17:49:31.146Z"),
+    scheduledAt: null,
+?   title?: String | StringFieldUpdateOperationsInput,
+?   content?: String | StringFieldUpdateOperationsInput,
+?   audience?: NoticeAudience | EnumNoticeAudienceFieldUpdateOperationsInput,
+?   attachmentUrl?: String | NullableStringFieldUpdateOperationsInput | Null
+  }
+}
+
+Unknown argument `status`. Available options are marked with ?.
+    at wn (D:\Eazzio-School\backend\node_modules\@prisma\client\runtime\library.js:29:1363)
+    at $n.handleRequestError (D:\Eazzio-School\backend\node_modules\@prisma\client\runtime\library.js:121:6958)
+    at $n.handleAndLogRequestError (D:\Eazzio-School\backend\node_modules\@prisma\client\runtime\library.js:121:6623)
+    at $n.request (D:\Eazzio-School\backend\node_modules\@prisma\client\runtime\library.js:121:6307)
+    at async l (D:\Eazzio-School\backend\node_modules\@prisma\client\runtime\library.js:130:9633)
+    at async Timeout._onTimeout (file:///D:/Eazzio-School/backend/server.js:73:20)
+2026-07-19T17:50:31.532Z - [Cron Error] Failed to publish scheduled notices: PrismaClientValidationError: 
+Invalid `prisma.notice.updateMany()` invocation:
+
+{
+  where: {
+    status: "SCHEDULED",
+    scheduledAt: {
+      lte: new Date("2026-07-19T17:50:31.158Z")
+    }
+  },
+  data: {
+    status: "PUBLISHED",
+    ~~~~~~
+    date: new Date("2026-07-19T17:50:31.158Z"),
+    scheduledAt: null,
+?   title?: String | StringFieldUpdateOperationsInput,
+?   content?: String | StringFieldUpdateOperationsInput,
+?   audience?: NoticeAudience | EnumNoticeAudienceFieldUpdateOperationsInput,
+?   attachmentUrl?: String | NullableStringFieldUpdateOperationsInput | Null
+  }
+}
+
+Unknown argument `status`. Available options are marked with ?.
+    at wn (D:\Eazzio-School\backend\node_modules\@prisma\client\runtime\library.js:29:1363)
+    at $n.handleRequestError (D:\Eazzio-School\backend\node_modules\@prisma\client\runtime\library.js:121:6958)
+    at $n.handleAndLogRequestError (D:\Eazzio-School\backend\node_modules\@prisma\client\runtime\library.js:121:6623)
+    at $n.request (D:\Eazzio-School\backend\node_modules\@prisma\client\runtime\library.js:121:6307)
+    at async l (D:\Eazzio-School\backend\node_modules\@prisma\client\runtime\library.js:130:9633)
+    at async Timeout._onTimeout (file:///D:/Eazzio-School/backend/server.js:73:20)
