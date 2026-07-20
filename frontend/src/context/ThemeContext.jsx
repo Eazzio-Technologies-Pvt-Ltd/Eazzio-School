@@ -11,6 +11,7 @@ export default function ThemeProvider({ children }) {
     localStorage.setItem('theme', 'light');
   }, []);
 
+
   const toggleTheme = () => {
     // Theme is locked to light
   };

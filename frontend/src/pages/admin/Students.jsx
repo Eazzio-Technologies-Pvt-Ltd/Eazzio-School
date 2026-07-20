@@ -24,6 +24,9 @@ export default function Students() {
   
   // Credentials Modal
   const [credentialsModal, setCredentialsModal] = useState({ visible: false, studentId: '', password: '', name: '' });
+  
+  // Fee History Modal
+  const [selectedFeeStudent, setSelectedFeeStudent] = useState(null);
 
   // Filters State
   const [searchQuery, setSearchQuery] = useState('');
@@ -127,68 +130,8 @@ export default function Students() {
         <p style={styles.sub}>Register and manage academic profiles and admission details.</p>
       </div>
 
-      <div style={styles.mainLayoutGrid}>
-        {/* Left Form: Register */}
-        <div style={styles.pane}>
-          <h3 style={styles.paneTitle}>Add New Student</h3>
-          {error && <div style={styles.errorAlert}>{error}</div>}
-
-          <form onSubmit={handleRegister} style={styles.form}>
-            <div style={styles.inputGroup}>
-              <label>Student Full Name</label>
-              <input ref={nameInputRef} type="text" placeholder="e.g. Alex Johnson" value={name} onChange={(e) => setName(e.target.value)} required />
-            </div>
-
-            <div style={styles.grid2}>
-              <div style={styles.inputGroup}>
-                <label>Roll Number</label>
-                <input type="text" placeholder="e.g. 101" value={rollNumber} onChange={(e) => setRollNumber(e.target.value)} required />
-              </div>
-              <div style={styles.inputGroup}>
-                <label>Assign Course</label>
-                <select value={courseId} onChange={(e) => setCourseId(e.target.value)} required style={styles.select}>
-                  <option value="">Select Course</option>
-                  {coursesList.map(cls => (
-                    <option key={cls.id} value={cls.id}>{cls.courseName} - {cls.section}</option>
-                  ))}
-                </select>
-              </div>
-            </div>
-
-            <div style={styles.grid2}>
-              <div style={styles.inputGroup}>
-                <label>Father's Name</label>
-                <input type="text" value={fatherName} onChange={(e) => setFatherName(e.target.value)} />
-              </div>
-              <div style={styles.inputGroup}>
-                <label>Mother's Name</label>
-                <input type="text" value={motherName} onChange={(e) => setMotherName(e.target.value)} />
-              </div>
-            </div>
-
-            <div style={styles.grid2}>
-              <div style={styles.inputGroup}>
-                <label>Phone Number</label>
-                <input type="text" value={phone} onChange={(e) => setPhone(e.target.value)} />
-              </div>
-              <div style={styles.inputGroup}>
-                <label>Admission Date</label>
-                <input type="date" value={admissionDate} onChange={(e) => setAdmissionDate(e.target.value)} />
-              </div>
-            </div>
-
-            <div style={styles.inputGroup}>
-              <label>Address</label>
-              <textarea rows="2" value={address} onChange={(e) => setAddress(e.target.value)} style={styles.textarea} />
-            </div>
-
-            <button type="submit" className="btn-primary" disabled={submitting} style={styles.submitBtn}>
-              {submitting ? 'Registering...' : 'Add Student'}
-            </button>
-          </form>
-        </div>
-
-        {/* Right Section: Filtered Table */}
+      <div>
+        {/* Directory Section: Filtered Table */}
         <div style={styles.tablePane}>
           <div style={styles.tablePaneHeader}>
             <h3 style={styles.paneTitle}>Student Directory</h3>
@@ -216,40 +159,73 @@ export default function Students() {
                   <tr style={styles.thRow}>
                     <th style={styles.th}>Student ID</th>
                     <th style={styles.th}>Name</th>
-                    <th style={styles.th}>Roll</th>
+                    <th style={{ ...styles.th, textAlign: 'right' }}>Roll</th>
                     <th style={styles.th}>Course</th>
                     <th style={styles.th}>Phone</th>
-                    <th style={styles.th}>Admission Date</th>
-                    <th style={{ ...styles.th, textAlign: 'right' }}>Actions</th>
+                    <th style={styles.th}>Email</th>
+                    <th style={styles.th}>Admitted</th>
+                    <th style={styles.th}>Fee Record</th>
                   </tr>
                 </thead>
                 <tbody>
                   {filteredStudents.length === 0 ? (
                     <tr>
-                      <td colSpan="6" style={styles.noRecords}>No students found.</td>
+                      <td colSpan="8" style={styles.noRecords}>No students found.</td>
                     </tr>
                   ) : (
                     filteredStudents.map((student) => (
                       <tr key={student.id} style={styles.tr}>
-                        <td style={{...styles.td, fontWeight: 'bold'}}>{student.studentId}</td>
-                        <td style={styles.nameCell}>
-                          <div style={{ fontWeight: '600', color: 'var(--text-primary)' }}>{student.name}</div>
-                          <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{student.fatherName ? `Father: ${student.fatherName}` : ''}</div>
+                        <td style={{ ...styles.td, fontWeight: 'bold' }}>{student.studentId}</td>
+                        <td style={styles.td}>
+                          <div style={{ fontWeight: '700', color: 'var(--text-primary)' }}>{student.name}</div>
+                          {student.fatherName && <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Father: {student.fatherName}</div>}
                         </td>
-                        <td style={styles.td}>{student.rollNumber}</td>
-                        <td style={{ ...styles.td, color: 'var(--primary)', fontWeight: 'bold' }}>
-                          {student.course ? `${student.course.courseName}-${student.course.section}` : 'N/A'}
+                        <td style={{ ...styles.td, textAlign: 'right' }}>{student.rollNumber || '-'}</td>
+                        <td style={styles.td}>
+                          <span style={{ 
+                            background: 'rgba(16, 185, 129, 0.1)', 
+                            color: 'var(--success)', 
+                            padding: '4px 8px', 
+                            borderRadius: '4px', 
+                            fontSize: '0.8rem', 
+                            fontWeight: 'bold', 
+                            border: '1px solid rgba(16, 185, 129, 0.2)' 
+                          }}>
+                            {student.course ? `${student.course.courseName}-${student.course.section}` : 'N/A'}
+                          </span>
                         </td>
-                        <td style={styles.td}>{student.phone || '-'}</td>
+                        <td style={styles.td}>{student.phone ? `📞 ${student.phone}` : '-'}</td>
+                        <td style={styles.td}>
+                          {student.email ? (
+                            <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                              📧 {student.email}
+                            </span>
+                          ) : (
+                            <span style={{
+                              background: 'rgba(245, 158, 11, 0.1)',
+                              color: 'var(--warning)',
+                              padding: '2px 8px',
+                              borderRadius: '9999px',
+                              fontSize: '0.75rem',
+                              fontWeight: '600'
+                            }}>
+                              Not added
+                            </span>
+                          )}
+                        </td>
                         <td style={styles.td}>{student.admissionDate ? new Date(student.admissionDate).toLocaleDateString() : '-'}</td>
-                        <td style={{ ...styles.td, textAlign: 'right' }}>
-                          <button 
-                            onClick={() => handleDelete(student.id, student.name)}
-                            style={{ background: 'transparent', border: 'none', cursor: 'pointer', fontSize: '1.2rem', color: 'var(--danger)' }}
-                            title="Delete Student"
-                          >
-                            🗑️
-                          </button>
+                        <td style={{ ...styles.td, maxWidth: '250px' }}>
+                          {(!student.feeInvoices || student.feeInvoices.length === 0) ? (
+                            <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>No fee records</span>
+                          ) : (
+                            <button 
+                              className="btn-secondary" 
+                              style={{ fontSize: '0.8rem', padding: '6px 12px', display: 'flex', alignItems: 'center', gap: '6px', background: 'var(--bg-card-hover)', border: '1px solid var(--glass-border)' }}
+                              onClick={(e) => { e.stopPropagation(); setSelectedFeeStudent(student); }}
+                            >
+                              <span>👁️</span> View Fees ({student.feeInvoices.length})
+                            </button>
+                          )}
                         </td>
                       </tr>
                     ))
@@ -280,6 +256,81 @@ export default function Students() {
           </div>
         </div>
       )}
+
+      {/* Fee History Modal */}
+      {selectedFeeStudent && (
+        <div style={styles.modalOverlay} onClick={() => setSelectedFeeStudent(null)}>
+          <div style={{ ...styles.modalCard, width: '550px', maxWidth: '95%', maxHeight: '90vh', overflowY: 'auto' }} onClick={e => e.stopPropagation()}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--glass-border)', paddingBottom: '15px', marginBottom: '15px' }}>
+              <div>
+                <h2 style={{ fontSize: '1.4rem' }}>Fee History</h2>
+                <div style={{ fontSize: '0.9rem', color: 'var(--text-muted)' }}>{selectedFeeStudent.name} ({selectedFeeStudent.studentId})</div>
+              </div>
+              <button 
+                onClick={() => setSelectedFeeStudent(null)} 
+                style={{ background: 'transparent', border: 'none', fontSize: '1.5rem', cursor: 'pointer', color: 'var(--text-muted)' }}
+              >
+                &times;
+              </button>
+            </div>
+            
+            {(!selectedFeeStudent.feeInvoices || selectedFeeStudent.feeInvoices.length === 0) ? (
+              <div style={{ padding: '15px', background: 'rgba(255,255,255,0.05)', borderRadius: '8px', color: 'var(--text-muted)' }}>
+                No fee records found for this student.
+              </div>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                {selectedFeeStudent.feeInvoices.map(invoice => (
+                  <div key={invoice.id} style={{ 
+                    padding: '16px', 
+                    background: 'var(--input-bg)', 
+                    borderRadius: '8px', 
+                    borderLeft: `4px solid ${invoice.status === 'PAID' ? 'var(--success)' : invoice.status === 'OVERDUE' ? 'var(--danger)' : 'var(--warning)'}`,
+                    boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
+                  }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '8px' }}>
+                      <div>
+                        <div style={{ fontWeight: 'bold', fontSize: '1.1rem' }}>{invoice.feeType}</div>
+                        <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>
+                          Due Date: {new Date(invoice.dueDate).toLocaleDateString()}
+                        </div>
+                      </div>
+                      <div style={{ textAlign: 'right' }}>
+                        <div style={{ fontWeight: 'bold', fontSize: '1.2rem', color: 'var(--text-primary)' }}>₹{invoice.amount.toLocaleString()}</div>
+                        <div style={{ 
+                          fontSize: '0.85rem', 
+                          fontWeight: 'bold',
+                          padding: '2px 8px',
+                          borderRadius: '12px',
+                          display: 'inline-block',
+                          marginTop: '4px',
+                          background: invoice.status === 'PAID' ? 'rgba(16, 185, 129, 0.1)' : 'rgba(239, 68, 68, 0.1)',
+                          color: invoice.status === 'PAID' ? 'var(--success)' : invoice.status === 'OVERDUE' ? 'var(--danger)' : 'var(--warning)' 
+                        }}>
+                          {invoice.status}
+                        </div>
+                      </div>
+                    </div>
+                    
+                    {/* Payments related to this invoice */}
+                    {invoice.payments && invoice.payments.length > 0 && (
+                      <div style={{ marginTop: '12px', paddingTop: '12px', borderTop: '1px solid var(--glass-border)' }}>
+                        <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: '6px' }}>Payments:</div>
+                        {invoice.payments.map(payment => (
+                          <div key={payment.id} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', padding: '4px 0' }}>
+                            <span style={{ color: 'var(--text-muted)' }}>{new Date(payment.date).toLocaleDateString()} via {payment.paymentMethod}</span>
+                            <span style={{ color: 'var(--success)', fontWeight: '600' }}>+ ₹{payment.amount.toLocaleString()}</span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -294,16 +345,16 @@ const styles = {
   form: { display: 'flex', flexDirection: 'column', gap: '14px' },
   inputGroup: { display: 'flex', flexDirection: 'column', gap: '6px' },
   grid2: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' },
-  select: { padding: '10px', borderRadius: 'var(--radius-sm)', border: '1px solid var(--glass-border)', background: 'rgba(255,255,255,0.05)', color: 'var(--text-primary)', width: '100%' },
-  textarea: { padding: '10px', borderRadius: 'var(--radius-sm)', border: '1px solid var(--glass-border)', background: 'rgba(255,255,255,0.05)', color: 'var(--text-primary)', width: '100%', resize: 'vertical' },
+  select: { padding: '10px', borderRadius: 'var(--radius-sm)', border: '1px solid var(--glass-border)', background: 'var(--input-bg)', color: 'var(--text-primary)', width: '100%' },
+  textarea: { padding: '10px', borderRadius: 'var(--radius-sm)', border: '1px solid var(--glass-border)', background: 'var(--input-bg)', color: 'var(--text-primary)', width: '100%', resize: 'vertical' },
   submitBtn: { padding: '12px', fontSize: '0.9rem', marginTop: '10px' },
   errorAlert: { padding: '10px', background: 'var(--danger-glow)', border: '1px solid var(--danger)', color: '#fca5a5', borderRadius: '4px', marginBottom: '10px' },
   tablePane: { background: 'var(--bg-card)', border: '1px solid var(--glass-border)', borderRadius: 'var(--radius-md)', padding: '24px', boxShadow: '0 8px 32px rgba(0, 0, 0, 0.2)', overflow: 'hidden' },
   tablePaneHeader: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' },
   recordsCount: { fontSize: '0.8rem', color: 'var(--text-muted)', fontWeight: '600' },
   filterGrid: { display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '12px', marginBottom: '20px' },
-  searchBar: { background: 'rgba(11, 13, 25, 0.8)', padding: '10px', borderRadius: 'var(--radius-sm)', border: '1px solid var(--glass-border)', color: 'var(--text-primary)' },
-  filterDropdown: { background: 'rgba(11, 13, 25, 0.8)', padding: '10px', borderRadius: 'var(--radius-sm)', border: '1px solid var(--glass-border)', color: 'var(--text-primary)' },
+  searchBar: { background: 'var(--input-bg)', padding: '10px', borderRadius: 'var(--radius-sm)', border: '1px solid var(--glass-border)', color: 'var(--text-primary)' },
+  filterDropdown: { background: 'var(--input-bg)', padding: '10px', borderRadius: 'var(--radius-sm)', border: '1px solid var(--glass-border)', color: 'var(--text-primary)' },
   tableContainer: { overflowX: 'auto' },
   table: { width: '100%', borderCollapse: 'collapse', textAlign: 'left' },
   thRow: { borderBottom: '2px solid var(--glass-border)' },

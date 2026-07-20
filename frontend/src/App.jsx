@@ -55,6 +55,7 @@ import StudentSettings from './pages/student/StudentSettings';
 
 // Accountant Pages
 import AccountantDashboard from './pages/accountant/AccountantDashboard';
+import AccountantNotices from './pages/accountant/Notices';
 import AccountantClasses from './pages/accountant/AccountantClasses';
 import AccountantStudents from './pages/accountant/AccountantStudents';
 import AccountantFees from './pages/accountant/AccountantFees';
@@ -198,6 +199,7 @@ export default function App() {
             <Route path="students" element={<AccountantStudents />} />
             <Route path="fees" element={<AccountantFees />} />
             <Route path="fee-structure" element={<AccountantFeeStructure />} />
+            <Route path="notices" element={<AccountantNotices />} />
           </Route>
 
           {/* Fallback routes */}

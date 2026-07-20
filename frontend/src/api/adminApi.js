@@ -32,6 +32,16 @@ export const createCourse = async (payload) => {
   return response.data;
 };
 
+export const updateCourse = async (id, payload) => {
+  const response = await api.put(`/admin/courses/${id}`, payload);
+  return response.data;
+};
+
+export const deleteCourse = async (id) => {
+  const response = await api.delete(`/admin/courses/${id}`);
+  return response.data;
+};
+
 export const assignCourseTeacher = async (courseId, teacherId) => {
   const response = await api.put(`/admin/courses/${courseId}/assign-teacher`, { teacherId });
   return response.data;

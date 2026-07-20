@@ -41,6 +41,12 @@ export const createClassSchema = z.object({
   courseName: z.string().min(1, 'Course name is required'),
   section: z.string().min(1, 'Section is required'),
   academicYear: z.string().min(1, 'Academic year is required'),
+  feeAmount: z.coerce.number().min(0).optional().nullable(),
+  classTeacherId: z.coerce.number().min(1).optional().nullable(),
+  subjectTeachers: z.array(z.object({
+    subject: z.string().min(1, 'Subject is required'),
+    teacherId: z.coerce.number().min(1, 'Teacher ID is required')
+  })).optional()
 });
 
 export const createStudentSchema = z.object({
@@ -58,7 +64,7 @@ export const noticeSchema = z.object({
   schoolId: z.coerce.number(),
   title: z.string().min(1, 'Title is required'),
   content: z.string().min(1, 'Content is required'),
-  audience: z.enum(['SCHOOL', 'COURSE', 'TEACHERS', 'STUDENTS']),
+  audience: z.enum(['SCHOOL', 'STAFF', 'COURSE', 'TEACHERS', 'STUDENTS']),
   courseId: z.coerce.number().optional().nullable(),
   scheduledAt: z.string().optional().nullable(),
 });

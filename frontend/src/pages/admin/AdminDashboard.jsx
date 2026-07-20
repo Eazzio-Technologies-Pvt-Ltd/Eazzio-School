@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { getSummary, getAIInsights } from '../../api/adminApi';
+import { getSummary } from '../../api/adminApi';
 import StatCard from '../../components/StatCard';
 import ChartCard from '../../components/ChartCard';
 import Loader from '../../components/Loader';
@@ -16,9 +16,9 @@ export default function AdminDashboard() {
     try {
       setLoading(true);
       setError('');
-      const [sumData, insData] = await Promise.all([getSummary(), getAIInsights()]);
+      const sumData = await getSummary();
       setSummary(sumData);
-      setInsights(insData);
+      setInsights(null);
     } catch (err) {
       console.error(err);
       setError('Failed to load administrative analytics. Check connection.');
@@ -46,33 +46,27 @@ export default function AdminDashboard() {
         </button>
       </div>
 
-      {/* 6 Metric Cards Grid */}
-      <div style={styles.metricsGrid}>
+      {/* Metric Cards Grid */}
+      <div style={{ ...styles.metricsGrid, gridTemplateColumns: 'repeat(4, 1fr)' }}>
         <StatCard
           label="Total Students"
-          value={summary?.studentCount || 0}
+          value={
+            <>
+              {summary?.presentToday || 0} <span style={{ fontSize: '1.2rem', color: 'var(--text-muted)' }}>/ {summary?.studentCount || 0}</span>
+            </>
+          }
           icon="🎒"
-          trend="Enrolled active learners"
+          trend="Present / Total Enrolled"
         />
         <StatCard
           label="Total Teachers"
-          value={summary?.teacherCount || 0}
+          value={
+            <>
+              {summary?.teacherCount || 0} <span style={{ fontSize: '1.2rem', color: 'var(--text-muted)' }}>/ {summary?.teacherCount || 0}</span>
+            </>
+          }
           icon="👩‍🏫"
-          trend="Staff faculty size"
-        />
-        <StatCard
-          label="Present Today"
-          value={summary?.presentToday || 0}
-          icon="✅"
-          trend="Present at last roll"
-          trendColor="var(--success)"
-        />
-        <StatCard
-          label="Absent Today"
-          value={summary?.absentToday || 0}
-          icon="❌"
-          trend="Absent at last roll"
-          trendColor="var(--danger)"
+          trend="Present / Total Staff"
         />
         <StatCard
           label="Pending Fees"
@@ -90,199 +84,56 @@ export default function AdminDashboard() {
         />
       </div>
 
-      {/* Main Layout Grid */}
-      <div style={styles.mainLayoutGrid}>
-        {/* Left Column: AI & Activities */}
-        <div style={styles.leftCol}>
-          {/* AI Insights Card */}
-          <div style={styles.panel} className="card-ai">
-            <div style={styles.panelHeader}>
-              <span style={styles.aiIcon}>🤖</span>
-              <div>
-                <h3>AI-Assisted Operational Insights</h3>
-                <p style={styles.panelDesc}>Real-time alerts flagged by predictive rule engines.</p>
-              </div>
-            </div>
-
-            <div style={styles.insightsList}>
-              <div style={styles.insightSection}>
-                <h4 style={styles.insightHeader}>📈 Attendance Pattern Trends</h4>
-                <p style={styles.insightBody}>{insights?.absentTrend}</p>
-              </div>
-
-              <div style={styles.insightSection}>
-                <h4 style={styles.insightHeader}>⚠️ Critical Low Attendance (Below 75%)</h4>
-                {insights?.lowAttendance?.length === 0 ? (
-                  <p style={styles.emptyText}>All students have attendance rates above 75%.</p>
-                ) : (
-                  <ul style={styles.alertList}>
-                    {insights?.lowAttendance?.map((student, idx) => (
-                      <li key={idx} style={styles.alertItem}>
-                        <span>{student.name} ({student.rollNumber})</span>
-                        <span style={{ color: 'var(--danger)', fontWeight: '700' }}>{student.percentage}% attendance</span>
-                      </li>
-                    ))}
-                  </ul>
-                )}
-              </div>
-
-              <div style={styles.insightSection}>
-                <h4 style={styles.insightHeader}>💳 Outstanding Balances (Pending Fees)</h4>
-                {insights?.pendingFees?.length === 0 ? (
-                  <p style={styles.emptyText}>All tuition payments have been processed successfully.</p>
-                ) : (
-                  <ul style={styles.alertList}>
-                    {insights?.pendingFees?.slice(0, 3).map((student, idx) => (
-                      <li key={idx} style={styles.alertItem}>
-                        <span>{student.name} ({student.rollNumber})</span>
-                        <span style={{ color: 'var(--warning)', fontWeight: '700' }}>₹${student.totalFees.toLocaleString()} due</span>
-                      </li>
-                    ))}
-                    {insights?.pendingFees?.length > 3 && (
-                      <li style={{ ...styles.emptyText, textAlign: 'right', marginTop: '6px' }}>
-                        + {insights.pendingFees.length - 3} more outstanding accounts
-                      </li>
-                    )}
-                  </ul>
-                )}
-              </div>
-            </div>
-          </div>
-
-          {/* Recent Activities Section */}
-          <div style={styles.panel}>
-            <h3 style={styles.sectionTitle}>📅 Recent Activities Log</h3>
-            <p style={styles.panelDesc}>Live database records and log triggers.</p>
-            <div style={styles.activityFeed}>
-              {summary?.recentActivities?.length === 0 ? (
-                <p style={styles.emptyText}>No recent activity logs available.</p>
-              ) : (
-                summary?.recentActivities?.map((activity) => (
-                  <div key={activity.id} style={styles.activityItem}>
-                    <div style={styles.activityDot}></div>
-                    <div style={styles.activityContent}>
-                      <span style={styles.activityText}>{activity.text}</span>
-                      <span style={styles.activityTime}>
-                        {new Date(activity.time).toLocaleString()}
-                      </span>
-                    </div>
-                  </div>
-                ))
-              )}
-            </div>
-          </div>
-        </div>
-
-        {/* Right Column: Quick Actions & Charts */}
-        <div style={styles.rightCol}>
-          {/* Quick Actions Panel */}
-          <div style={styles.panel}>
-            <h3 style={styles.sectionTitle}>⚡ Quick Actions</h3>
-            <p style={styles.panelDesc}>Access administrative panels instantly.</p>
-            <div style={styles.quickActionsGrid}>
-              <button
-                onClick={() => navigate('/admin/students?focus=form')}
-                style={styles.actionCard}
-              >
-                <span style={styles.actionIcon}>🎒</span>
-                <span style={styles.actionLabel}>Add Student</span>
-              </button>
-              <button
-                onClick={() => navigate('/admin/teachers?focus=form')}
-                style={styles.actionCard}
-              >
-                <span style={styles.actionIcon}>👩‍🏫</span>
-                <span style={styles.actionLabel}>Add Teacher</span>
-              </button>
-              <button
-                onClick={() => navigate('/admin/courses')}
-                style={styles.actionCard}
-              >
-                <span style={styles.actionIcon}>🏫</span>
-                <span style={styles.actionLabel}>Manage Courses</span>
-              </button>
-              <button
-                onClick={() => navigate('/admin/attendance')}
-                style={styles.actionCard}
-              >
-                <span style={styles.actionIcon}>📅</span>
-                <span style={styles.actionLabel}>View Attendance</span>
-              </button>
-              <button
-                onClick={() => navigate('/admin/fees')}
-                style={styles.actionCard}
-              >
-                <span style={styles.actionIcon}>💳</span>
-                <span style={styles.actionLabel}>Manage Fees</span>
-              </button>
-              <button
-                onClick={() => navigate('/admin/reports')}
-                style={styles.actionCard}
-              >
-                <span style={styles.actionIcon}>📄</span>
-                <span style={styles.actionLabel}>Reports</span>
-              </button>
-              <button
-                onClick={() => navigate('/admin/settings')}
-                style={{ ...styles.actionCard, gridColumn: 'span 2' }}
-              >
-                <span style={styles.actionIcon}>⚙️</span>
-                <span style={styles.actionLabel}>System Settings</span>
-              </button>
-            </div>
-          </div>
-
-          {/* Attendance Overview Target */}
-          <div style={styles.panel}>
-            <ChartCard
-              title="School Attendance Rate Goal"
-              value={summary?.globalAttendanceRate || 100}
-              subtitle="Institutional Goal: Maintain average student attendance rates above 90% each term."
-              color="var(--success)"
-            />
-          </div>
-
-          {/* Fee Collection Overview Card */}
-          <div style={styles.panel}>
-            <h3 style={styles.sectionTitle}>💰 Institutional Fees Breakdown</h3>
-            <p style={styles.panelDesc}>Current collection balances.</p>
-            <div style={styles.feeBreakdown}>
-              <div style={styles.breakdownRow}>
-                <span>Collected Fees:</span>
-                <span style={{ color: 'var(--success)', fontWeight: '700' }}>
-                  ₹${summary?.paidFees?.toLocaleString() || '0'}
-                </span>
-              </div>
-              <div style={styles.breakdownRow}>
-                <span>Outstanding Dues:</span>
-                <span style={{ color: 'var(--warning)', fontWeight: '700' }}>
-                  ₹${summary?.pendingFees?.toLocaleString() || '0'}
-                </span>
-              </div>
-              <div style={styles.progressBarBg}>
-                <div
-                  style={{
-                    ...styles.progressBarFill,
-                    width: `${
-                      summary?.paidFees + summary?.pendingFees > 0
-                        ? Math.round(
-                            (summary.paidFees / (summary.paidFees + summary.pendingFees)) * 100
-                          )
-                        : 0
-                    }%`,
-                  }}
-                ></div>
-              </div>
-              <p style={{ ...styles.emptyText, marginTop: '8px', fontSize: '0.8rem' }}>
-                Payment completion rate:{' '}
-                {summary?.paidFees + summary?.pendingFees > 0
-                  ? Math.round(
-                      (summary.paidFees / (summary.paidFees + summary.pendingFees)) * 100
-                    )
-                  : 100}
-                %
-              </p>
-            </div>
+      {/* Main Layout Grid (Now just Quick Actions) */}
+      <div>
+        {/* Quick Actions Panel */}
+        <div style={styles.panel}>
+          <h3 style={styles.sectionTitle}>⚡ Quick Actions</h3>
+          <p style={styles.panelDesc}>Access administrative panels instantly.</p>
+          <div style={styles.quickActionsGrid}>
+            {/* Add Student button removed as admin no longer has authority */}
+            <button
+              onClick={() => navigate('/admin/teachers?focus=form')}
+              style={styles.actionCard}
+            >
+              <span style={styles.actionIcon}>👩‍🏫</span>
+              <span style={styles.actionLabel}>Add Teacher</span>
+            </button>
+            <button
+              onClick={() => navigate('/admin/courses')}
+              style={styles.actionCard}
+            >
+              <span style={styles.actionIcon}>🏫</span>
+              <span style={styles.actionLabel}>Manage Courses</span>
+            </button>
+            <button
+              onClick={() => navigate('/admin/attendance')}
+              style={styles.actionCard}
+            >
+              <span style={styles.actionIcon}>📅</span>
+              <span style={styles.actionLabel}>View Attendance</span>
+            </button>
+            <button
+              onClick={() => navigate('/admin/fees')}
+              style={styles.actionCard}
+            >
+              <span style={styles.actionIcon}>💳</span>
+              <span style={styles.actionLabel}>Manage Fees</span>
+            </button>
+            <button
+              onClick={() => navigate('/admin/reports')}
+              style={styles.actionCard}
+            >
+              <span style={styles.actionIcon}>📄</span>
+              <span style={styles.actionLabel}>Reports</span>
+            </button>
+            <button
+              onClick={() => navigate('/admin/settings')}
+              style={{ ...styles.actionCard, gridColumn: 'span 2' }}
+            >
+              <span style={styles.actionIcon}>⚙️</span>
+              <span style={styles.actionLabel}>System Settings</span>
+            </button>
           </div>
         </div>
       </div>
