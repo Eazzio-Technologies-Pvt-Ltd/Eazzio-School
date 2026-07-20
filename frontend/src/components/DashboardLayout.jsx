@@ -14,11 +14,18 @@ export default function DashboardLayout() {
   const { theme, toggleTheme } = useContext(ThemeContext);
   const navigate = useNavigate();
   const location = useLocation();
-  
+
   // Responsive States
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [isMobile, setIsMobile] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [openSubmenus, setOpenSubmenus] = useState({
+    feeStructure: true
+  });
+
+  const toggleSubmenu = (key) => {
+    setOpenSubmenus(prev => ({ ...prev, [key]: !prev[key] }));
+  };
 
   // Resize listener
   useEffect(() => {
@@ -89,27 +96,40 @@ export default function DashboardLayout() {
     ],
     ACCOUNTANT: [
       { path: '/accountant/dashboard', label: 'Dashboard', icon: <LayoutDashboard size={20} /> },
+      { path: '/accountant/classes', label: 'Courses', icon: <GraduationCap size={20} /> },
       { path: '/accountant/students', label: 'Students', icon: <Users size={20} /> },
       { path: '/accountant/fees', label: 'Fees Overview', icon: <CreditCard size={20} /> },
-      { path: '/accountant/notices', label: 'Notice Board', icon: <Megaphone size={20} /> },
+      {
+        key: 'feeStructure',
+        label: 'Fee Structure',
+        icon: <FileText size={20} />,
+        children: [
+          { path: '/accountant/fee-structure?plan=add', label: 'Add Fee Plan' },
+          { path: '/accountant/fee-structure?plan=monthly', label: 'Monthly' },
+          { path: '/accountant/fee-structure?plan=quarterly', label: 'Quarterly' },
+          { path: '/accountant/fee-structure?plan=half-yearly', label: 'Half-Yearly' },
+          { path: '/accountant/fee-structure?plan=yearly', label: 'Yearly' },
+        ]
+      },
+      { path: '/accountant/notices', label: 'Notice Board', icon: <Megaphone size={20} /> }
     ],
   };
 
   const menuItems = menuConfig[user.role] || [];
-  
+
   const sidebarWidthClass = sidebarOpen ? 'w-64' : 'w-20';
-  
+
   return (
     <div className="flex h-screen bg-gray-50 overflow-hidden font-sans">
-      
+
       {isMobile && mobileOpen && (
-        <div 
-          className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40" 
-          onClick={() => setMobileOpen(false)} 
+        <div
+          className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40"
+          onClick={() => setMobileOpen(false)}
         />
       )}
 
-      <aside 
+      <aside
         className={`fixed inset-y-0 left-0 z-50 flex flex-col bg-emerald-800 text-emerald-50 transition-all duration-300 ease-in-out shadow-xl
           ${isMobile ? (mobileOpen ? 'translate-x-0 w-64' : '-translate-x-full w-64') : `translate-x-0 ${sidebarWidthClass}`}
         `}
@@ -122,9 +142,9 @@ export default function DashboardLayout() {
               </div>
             ) : (
               <div className="flex items-center justify-center w-full">
-                <img 
-                  src="/favicon.png" 
-                  alt="E" 
+                <img
+                  src="/favicon.png"
+                  alt="E"
                   className="h-10 w-10 object-contain"
                   onError={(e) => {
                     e.target.style.display = 'none';
@@ -135,9 +155,9 @@ export default function DashboardLayout() {
               </div>
             )}
           </div>
-          
+
           {!isMobile && (
-            <button 
+            <button
               onClick={() => setSidebarOpen(!sidebarOpen)}
               className="p-1 rounded-md text-emerald-300 hover:text-white hover:bg-emerald-700/50 transition-colors"
             >
@@ -148,15 +168,69 @@ export default function DashboardLayout() {
 
         <nav className="flex-1 overflow-y-auto py-4 px-3 flex flex-col gap-1 custom-scrollbar-emerald">
           {menuItems.map((item) => {
-            const isActive = location.pathname.startsWith(item.path);
+            const hasChildren = !!item.children;
+            const isSubmenuOpen = openSubmenus[item.key] !== false;
+            const isActive = item.path ? location.pathname.startsWith(item.path) : false;
+
+            if (hasChildren) {
+              return (
+                <div key={item.label} className="flex flex-col gap-1">
+                  <button
+                    onClick={() => {
+                      if (!sidebarOpen) setSidebarOpen(true);
+                      toggleSubmenu(item.key);
+                    }}
+                    className={`flex items-center justify-between w-full px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 text-emerald-100 hover:bg-emerald-700 hover:text-white`}
+                    title={!sidebarOpen && !isMobile ? item.label : ''}
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="text-emerald-200 shrink-0">{item.icon}</div>
+                      {(sidebarOpen || isMobile) && <span className="truncate">{item.label}</span>}
+                    </div>
+                    {(sidebarOpen || isMobile) && (
+                      <span className="text-xs transition-transform duration-200" style={{ transform: isSubmenuOpen ? 'rotate(90deg)' : 'rotate(0deg)' }}>
+                        ▶
+                      </span>
+                    )}
+                  </button>
+                  {isSubmenuOpen && (sidebarOpen || isMobile) && (
+                    <div className="flex flex-col pl-4 border-l border-emerald-700/60 ml-5 gap-1 mt-1 transition-all">
+                      {item.children.map((child, index) => {
+                        const isChildActive = (location.pathname + location.search) === child.path;
+                        const isLast = index === item.children.length - 1;
+                        return (
+                          <Link
+                            key={child.path}
+                            to={child.path}
+                            onClick={() => isMobile && setMobileOpen(false)}
+                            className={`flex items-center gap-2 px-3 py-1.5 rounded-md text-xs font-medium transition-all duration-200
+                              ${isChildActive
+                                ? 'bg-emerald-50 text-emerald-800 shadow-sm font-semibold'
+                                : 'text-emerald-200 hover:bg-emerald-700 hover:text-white'
+                              }
+                            `}
+                          >
+                            <span className="text-emerald-300/70 font-mono text-[10px] mr-1 shrink-0 select-none">
+                              {isLast ? '└──' : '├──'}
+                            </span>
+                            <span className="truncate">{child.label}</span>
+                          </Link>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              );
+            }
+
             return (
               <Link
                 key={item.path}
                 to={item.path}
                 onClick={() => isMobile && setMobileOpen(false)}
                 className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200
-                  ${isActive 
-                    ? 'bg-emerald-50 text-emerald-800 shadow-sm' 
+                  ${isActive
+                    ? 'bg-emerald-50 text-emerald-800 shadow-sm'
                     : 'text-emerald-100 hover:bg-emerald-700 hover:text-white'
                   }
                   ${!sidebarOpen && !isMobile ? 'justify-center' : 'justify-start'}
@@ -188,7 +262,7 @@ export default function DashboardLayout() {
         </div>
       </aside>
 
-      <div 
+      <div
         className={`flex-1 flex flex-col min-h-screen transition-all duration-300 ease-in-out
           ${isMobile ? 'ml-0' : (sidebarOpen ? 'ml-64' : 'ml-20')}
         `}

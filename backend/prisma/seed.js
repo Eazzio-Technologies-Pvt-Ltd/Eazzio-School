@@ -3,170 +3,185 @@ import bcrypt from 'bcryptjs';
 
 const prisma = new PrismaClient();
 
-function getLast10Weekdays() {
-  const dates = [];
-  const today = new Date();
-  let curr = new Date(Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), today.getUTCDate()));
-
-  while (dates.length < 10) {
-    curr.setUTCDate(curr.getUTCDate() - 1);
-    const day = curr.getUTCDay();
-    if (day !== 0 && day !== 6) { // 0 = Sunday, 6 = Saturday
-      dates.push(new Date(curr));
-    }
-  }
-  return dates;
-}
-
 async function main() {
-  console.log('🧹 Purging database records...');
+  console.log('🧹 Purging old database records...');
+  // Delete in reverse order of dependencies
+  await prisma.feePayment.deleteMany({});
+  await prisma.feeInvoice.deleteMany({});
+  await prisma.feeStructure.deleteMany({});
   await prisma.attendance.deleteMany({});
-  await prisma.studentProfile.deleteMany({});
-  await prisma.teacherProfile.deleteMany({});
-  await prisma.user.deleteMany({});
+  await prisma.timetable.deleteMany({});
+  await prisma.notice.deleteMany({});
+  await prisma.student.deleteMany({});
+  await prisma.teacher.deleteMany({});
+  await prisma.accountant.deleteMany({});
+  await prisma.principal.deleteMany({});
+  await prisma.admin.deleteMany({});
+  await prisma.course.deleteMany({});
+  await prisma.school.deleteMany({});
 
   console.log('🔑 Hashing passwords...');
-  const legacyHash = await bcrypt.hash('adminpassword', 10);
-  const demoHash = await bcrypt.hash('123456', 10);
+  const passwordHash = await bcrypt.hash('password123', 10);
 
-  // 1. Seed Principal/Admin Accounts
-  console.log('👤 Seeding Principal accounts...');
-  await prisma.user.create({
+  console.log('🏫 Seeding School...');
+  const school = await prisma.school.create({
     data: {
-      name: 'Master Principal',
-      email: 'principal@school.com',
-      passwordHash: legacyHash,
-      role: 'PRINCIPAL',
-    },
+      schoolName: 'Greenwood High School',
+      email: 'contact@greenwood.edu',
+      phone: '1234567890',
+      address: '123 Academic Way, Education City',
+      schoolCode: 'SCH001',
+      subscriptionStatus: 'ACTIVE',
+      maxStudents: 500,
+    }
   });
 
-  await prisma.user.create({
+  console.log('👤 Seeding Admin...');
+  await prisma.admin.create({
     data: {
-      name: 'School Principal (Demo)',
+      schoolId: school.id,
+      name: 'Master Admin',
+      email: 'admin@demo.com',
+      password: passwordHash,
+      phone: '9999999999',
+    }
+  });
+
+  console.log('👤 Seeding Principal...');
+  await prisma.principal.create({
+    data: {
+      schoolId: school.id,
+      name: 'Dr. Sarah Smith',
       email: 'principal@demo.com',
-      passwordHash: demoHash,
-      role: 'PRINCIPAL',
-    },
+      password: passwordHash,
+      phone: '8888888888',
+    }
   });
 
-  // 2. Seed 3 Teachers
-  console.log('👩‍🏫 Seeding Teacher accounts...');
-  const teachersData = [
-    { name: 'Emily Davis', email: 'teacher1@demo.com', assignedClass: 'Grade 10-A' },
-    { name: 'Marcus Stone', email: 'teacher2@demo.com', assignedClass: 'Grade 10-B' },
-    { name: 'Sarah Jenkins', email: 'teacher3@demo.com', assignedClass: 'Grade 9-A' },
-  ];
+  console.log('👤 Seeding Accountant...');
+  await prisma.accountant.create({
+    data: {
+      schoolId: school.id,
+      name: 'John Accountant',
+      email: 'accountant@demo.com',
+      password: passwordHash,
+      phone: '7777777777',
+    }
+  });
 
+  console.log('👩‍🏫 Seeding Teachers...');
+  const teacherNames = ['Emily Davis', 'Marcus Stone', 'Sarah Jenkins'];
   const teachers = [];
-  for (const t of teachersData) {
-    const user = await prisma.user.create({
+  for (let i = 0; i < teacherNames.length; i++) {
+    const teacher = await prisma.teacher.create({
       data: {
-        name: t.name,
-        email: t.email,
-        passwordHash: demoHash,
-        role: 'TEACHER',
-      },
+        schoolId: school.id,
+        name: teacherNames[i],
+        email: `teacher${i + 1}@demo.com`,
+        password: passwordHash,
+        employeeId: `TCH${(i + 1).toString().padStart(3, '0')}`,
+        phone: `666666666${i}`,
+      }
     });
-
-    const profile = await prisma.teacherProfile.create({
-      data: {
-        userId: user.id,
-        assignedClass: t.assignedClass,
-      },
-    });
-    teachers.push({ user, profile });
+    teachers.push(teacher);
   }
 
-  // 3. Seed 25 Students
-  console.log('🎒 Seeding 25 Student accounts...');
-  const studentClasses = [
-    ...Array(10).fill('Grade 10-A'), // 1 to 10
-    ...Array(8).fill('Grade 10-B'),  // 11 to 18
-    ...Array(7).fill('Grade 9-A'),   // 19 to 25
+  console.log('🏫 Seeding Courses...');
+  const coursesData = [
+    { courseName: 'Grade 10', section: 'A', academicYear: '2025-2026', teacherId: teachers[0].id },
+    { courseName: 'Grade 10', section: 'B', academicYear: '2025-2026', teacherId: teachers[1].id },
+    { courseName: 'Grade 9', section: 'A', academicYear: '2025-2026', teacherId: teachers[2].id },
   ];
 
+  const courses = [];
+  for (const c of coursesData) {
+    const course = await prisma.course.create({
+      data: {
+        schoolId: school.id,
+        courseName: c.courseName,
+        section: c.section,
+        academicYear: c.academicYear,
+        teacherId: c.teacherId,
+      }
+    });
+    courses.push(course);
+  }
+
+  console.log('🎒 Seeding Students...');
   const students = [];
-  for (let i = 1; i <= 25; i++) {
-    const name = `Student ${i}`;
-    const email = `student${i}@demo.com`;
-    const rollNumber = `ROLL-${String(i).padStart(3, '0')}`;
-    const gradeClass = studentClasses[i - 1];
-    
-    // Distribute fees (17 Paid, 8 Pending)
-    const feeStatus = i % 3 === 0 ? 'PENDING' : 'PAID';
-    const totalFees = 3500;
-
-    const user = await prisma.user.create({
+  // Seed 15 students
+  for (let i = 1; i <= 15; i++) {
+    const course = courses[(i - 1) % courses.length];
+    const student = await prisma.student.create({
       data: {
-        name,
-        email,
-        passwordHash: demoHash,
-        role: 'STUDENT',
-      },
+        schoolId: school.id,
+        studentId: `STU${String(i).padStart(3, '0')}`,
+        password: passwordHash,
+        name: `Student ${i}`,
+        fatherName: `Father of Student ${i}`,
+        motherName: `Mother of Student ${i}`,
+        phone: `55555555${String(i).padStart(2, '0')}`,
+        address: `${i} Green Park Avenue`,
+        courseId: course.id,
+        rollNumber: `ROLL-${String(i).padStart(3, '0')}`,
+        admissionDate: new Date(),
+      }
     });
-
-    const profile = await prisma.studentProfile.create({
-      data: {
-        userId: user.id,
-        rollNumber,
-        gradeClass,
-        feeStatus,
-        totalFees,
-      },
-    });
-    students.push({ user, profile, index: i });
+    students.push(student);
   }
 
-  // 4. Seed Attendance Logs for the last 10 school days
-  console.log('📅 Seeding 10-day attendance roll records...');
-  const schoolDays = getLast10Weekdays();
+  console.log('📋 Seeding Fee Structures...');
+  const feeStructuresData = [
+    { courseId: courses[0].id, feeType: 'Tuition Fee', amount: 2500, planType: 'MONTHLY' },
+    { courseId: courses[0].id, feeType: 'Exam Fee', amount: 1500, planType: 'QUARTERLY' },
+    { courseId: courses[1].id, feeType: 'Tuition Fee', amount: 2400, planType: 'MONTHLY' },
+    { courseId: courses[2].id, feeType: 'Tuition Fee', amount: 2200, planType: 'MONTHLY' },
+    { courseId: null, feeType: 'Annual Sport Fee', amount: 1000, planType: 'YEARLY' },
+    { courseId: null, feeType: 'Library Fund', amount: 500, planType: 'HALF_YEARLY' },
+  ];
 
-  for (const date of schoolDays) {
-    await prisma.$transaction(
-      students.map(({ profile, index }) => {
-        let status = 'PRESENT';
-
-        // Student 3 and 7: absent on 4 specific days to yield 60% attendance rate (risk alert)
-        if ((index === 3 || index === 7) && [0, 2, 5, 8].includes(schoolDays.indexOf(date))) {
-          status = 'ABSENT';
-        }
-        // Student 12: absent on 3 days to yield 70% rate
-        else if (index === 12 && [1, 4, 7].includes(schoolDays.indexOf(date))) {
-          status = 'ABSENT';
-        }
-        // Other students: randomly absent on at most 1 day
-        else if (index !== 3 && index !== 7 && index !== 12 && index % 11 === 0 && schoolDays.indexOf(date) === 3) {
-          status = 'ABSENT';
-        }
-
-        return prisma.attendance.create({
-          data: {
-            studentId: profile.id,
-            date,
-            status,
-          },
-        });
-      })
-    );
+  for (const f of feeStructuresData) {
+    await prisma.feeStructure.create({
+      data: {
+        schoolId: school.id,
+        courseId: f.courseId,
+        feeType: f.feeType,
+        amount: f.amount,
+        planType: f.planType,
+      }
+    });
   }
 
-  console.log('🎉 Demo Seeding Completed Successfully!');
-  console.log('\n--- Seeding Summary ---');
-  console.log('Admins/Principals:');
-  console.log('- principal@school.com / adminpassword (legacy)');
-  console.log('- principal@demo.com / 123456');
-  console.log('\nTeachers (password: 123456):');
-  teachers.forEach(t => {
-    console.log(`- ${t.user.email} (${t.profile.assignedClass})`);
-  });
-  console.log('\nStudents (password: 123456):');
-  console.log('- student1@demo.com through student25@demo.com');
-  console.log('- Attendance Logs: Past 10 weekdays generated with risk flags.');
+  console.log('📅 Seeding Attendance Statuses...');
+  const dates = [
+    new Date(Date.now() - 24 * 60 * 60 * 1000), // yesterday
+    new Date(), // today
+  ];
+
+  for (const date of dates) {
+    for (const student of students) {
+      await prisma.attendance.create({
+        data: {
+          schoolId: school.id,
+          studentId: student.id,
+          courseId: student.courseId,
+          date,
+          status: Math.random() > 0.1 ? 'PRESENT' : 'ABSENT',
+        }
+      });
+    }
+  }
+
+  console.log('🎉 Seeding completed successfully!');
+  console.log('\nLogin Credentials (password: password123):');
+  console.log('- Admin: admin@demo.com');
+  console.log('- Principal: principal@demo.com');
+  console.log('- Accountant: accountant@demo.com');
 }
 
 main()
   .catch((e) => {
-    console.error('❌ Seeding failed:', e);
+    console.error(e);
     process.exit(1);
   })
   .finally(async () => {

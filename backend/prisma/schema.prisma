@@ -70,14 +70,14 @@ model Principal {
 }
 
 model Teacher {
-  id             Int          @id @default(autoincrement())
-  schoolId       Int
-  name           String
-  email          String       @unique
-  password       String
-  phone          String?
-  employeeId     String       @unique
-  createdAt      DateTime     @default(now())
+  id            Int          @id @default(autoincrement())
+  schoolId      Int
+  name          String
+  email         String       @unique
+  password      String
+  phone         String?
+  employeeId    String       @unique
+  createdAt     DateTime     @default(now())
   attendance     Attendance[]
   assignedCourse Course?
   school         School       @relation(fields: [schoolId], references: [id], onDelete: Cascade)
@@ -99,6 +99,7 @@ model Student {
   address       String?
   rollNumber    String?
   admissionDate DateTime?
+  feeCycle      String       @default("MONTHLY")
   createdAt     DateTime     @default(now())
   courseId      Int?
   attendance    Attendance[]

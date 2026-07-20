@@ -58,8 +58,8 @@ export const noticeSchema = z.object({
   schoolId: z.coerce.number(),
   title: z.string().min(1, 'Title is required'),
   content: z.string().min(1, 'Content is required'),
-  audience: z.enum(['SCHOOL', 'STAFF', 'TEACHERS', 'STUDENTS', 'COURSE']),
-  classId: z.coerce.number().optional().nullable(),
+  audience: z.enum(['SCHOOL', 'STAFF', 'COURSE', 'TEACHERS', 'STUDENTS']),
+  courseId: z.coerce.number().optional().nullable(),
   scheduledAt: z.string().optional().nullable(),
 });
 

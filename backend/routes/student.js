@@ -84,7 +84,7 @@ router.get('/dashboard-summary', async (req, res) => {
         schoolId,
         OR: [
           { audience: 'SCHOOL' },
-          { audience: 'CLASS', courseId: student.courseId }
+          { audience: 'COURSE', courseId: student.courseId }
         ]
       },
       orderBy: { date: 'desc' },
@@ -286,7 +286,7 @@ router.get('/notices', async (req, res) => {
         schoolId: req.user.schoolId,
         OR: [
           { audience: 'SCHOOL' },
-          { audience: 'CLASS', courseId: student.courseId }
+          { audience: 'COURSE', courseId: student.courseId }
         ]
       },
       orderBy: { date: 'desc' },
