@@ -256,7 +256,7 @@ const styles = {
   tablePaneHeader: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' },
   recordsCount: { fontSize: '0.8rem', color: 'var(--text-muted)', fontWeight: '600' },
   filterGrid: { display: 'flex', gap: '12px', marginBottom: '20px' },
-  searchBar: { flex: 1, background: 'rgba(11, 13, 25, 0.8)', padding: '10px', borderRadius: 'var(--radius-sm)', border: '1px solid var(--glass-border)', color: 'var(--text-primary)' },
+  searchBar: { flex: 1, background: 'var(--input-bg)', padding: '10px', borderRadius: 'var(--radius-sm)', border: '1px solid var(--glass-border)', color: 'var(--text-primary)' },
   tableContainer: { overflowX: 'auto' },
   table: { width: '100%', borderCollapse: 'collapse', textAlign: 'left' },
   thRow: { borderBottom: '2px solid var(--glass-border)' },

@@ -408,7 +408,7 @@ const styles = {
     marginBottom: '20px',
   },
   searchBar: {
-    background: 'rgba(11, 13, 25, 0.8)',
+    background: 'var(--input-bg)',
   },
   filterDropdown: {
     background: 'var(--input-bg)',

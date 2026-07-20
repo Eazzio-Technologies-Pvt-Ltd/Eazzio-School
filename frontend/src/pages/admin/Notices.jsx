@@ -133,7 +133,8 @@ export default function PrincipalNotices() {
               value={formData.audience}
               onChange={handleInputChange}
             >
-              <option value="SCHOOL">Entire School (Everyone)</option>
+              <option value="SCHOOL">General Notice (Everyone)</option>
+              <option value="STAFF">Administrative Notice (Staff Only)</option>
               <option value="TEACHERS">Teachers Only</option>
               <option value="STUDENTS">Students Only</option>
               <option value="COURSE">Specific Course</option>
@@ -197,7 +198,7 @@ export default function PrincipalNotices() {
                   <span style={styles.badge(note.audience)}>
                     {note.audience === 'COURSE' 
                       ? `Course: ${note.course?.courseName || 'N/A'}` 
-                      : note.audience}
+                      : note.audience === 'STAFF' ? 'ADMINISTRATIVE (STAFF)' : note.audience}
                   </span>
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
@@ -334,8 +335,8 @@ const styles = {
     fontSize: '0.7rem',
     fontWeight: '700',
     textTransform: 'uppercase',
-    background: audience === 'SCHOOL' ? 'rgba(139, 92, 246, 0.1)' : 'rgba(16, 185, 129, 0.1)',
-    color: audience === 'SCHOOL' ? 'var(--primary)' : 'var(--success)',
+    background: audience === 'SCHOOL' ? 'rgba(139, 92, 246, 0.1)' : audience === 'STAFF' ? 'rgba(239, 68, 68, 0.1)' : 'rgba(16, 185, 129, 0.1)',
+    color: audience === 'SCHOOL' ? 'var(--primary)' : audience === 'STAFF' ? 'var(--danger)' : 'var(--success)',
   }),
   deleteBtn: {
     background: 'transparent',

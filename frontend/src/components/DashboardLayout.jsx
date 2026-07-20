@@ -91,6 +91,7 @@ export default function DashboardLayout() {
       { path: '/accountant/dashboard', label: 'Dashboard', icon: <LayoutDashboard size={20} /> },
       { path: '/accountant/students', label: 'Students', icon: <Users size={20} /> },
       { path: '/accountant/fees', label: 'Fees Overview', icon: <CreditCard size={20} /> },
+      { path: '/accountant/notices', label: 'Notice Board', icon: <Megaphone size={20} /> },
     ],
   };
 

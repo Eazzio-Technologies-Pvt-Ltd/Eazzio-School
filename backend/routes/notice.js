@@ -183,16 +183,18 @@ router.get('/', async (req, res) => {
     let audienceFilter = ['SCHOOL'];
 
     if (role === 'TEACHER') {
-      audienceFilter.push('TEACHERS');
+      audienceFilter.push('TEACHERS', 'STAFF');
     } else if (role === 'STUDENT') {
       audienceFilter.push('STUDENTS');
+    } else if (role === 'ACCOUNTANT') {
+      audienceFilter.push('STAFF');
     }
 
     let whereClause = {
       schoolId: parseInt(schoolId),
     };
 
-    if (role === 'PRINCIPAL') {
+    if (role === 'PRINCIPAL' || role === 'ADMIN') {
       // Principal sees everything in their school
       // whereClause remains just schoolId
     } else {
