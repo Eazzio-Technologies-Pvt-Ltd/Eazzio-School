@@ -52,6 +52,7 @@ model Course {
   students      Student[]
   timetables    Timetable[]
   exams         Exam[]
+  courseSubjects CourseSubject[]
 
   @@unique([schoolId, courseName, section, academicYear])
   @@index([schoolId])
@@ -83,6 +84,7 @@ model Teacher {
   school         School       @relation(fields: [schoolId], references: [id], onDelete: Cascade)
   timetables     Timetable[]
   subjects       String[]     @default([])
+  courseSubjects CourseSubject[]
 
   @@index([schoolId])
 }
@@ -289,4 +291,17 @@ model Result {
 
   @@unique([studentId, examId, subject])
   @@index([schoolId])
+}
+
+model CourseSubject {
+  id        Int      @id @default(autoincrement())
+  courseId  Int
+  subject   String
+  teacherId Int
+  course    Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  teacher   Teacher  @relation(fields: [teacherId], references: [id], onDelete: Cascade)
+
+  @@unique([courseId, subject])
+  @@index([courseId])
+  @@index([teacherId])
 }

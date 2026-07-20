@@ -132,8 +132,23 @@ router.post('/teachers', validate(createTeacherSchema), async (req, res) => {
     const school = await prisma.school.findUnique({ where: { id: schoolId } });
     
     // Generate employeeId: SCH001-TCH001
-    const teacherCount = await prisma.teacher.count({ where: { schoolId } });
-    const employeeId = `${school.schoolCode}-TCH${(teacherCount + 1).toString().padStart(3, '0')}`;
+    const latestTeacher = await prisma.teacher.findFirst({
+      where: { schoolId },
+      orderBy: { id: 'desc' }
+    });
+    
+    let nextIdNum = 1;
+    if (latestTeacher && latestTeacher.employeeId) {
+      const parts = latestTeacher.employeeId.split('TCH');
+      if (parts.length === 2) {
+        const lastNum = parseInt(parts[1], 10);
+        if (!isNaN(lastNum)) {
+          nextIdNum = lastNum + 1;
+        }
+      }
+    }
+    
+    const employeeId = `${school.schoolCode}-TCH${nextIdNum.toString().padStart(3, '0')}`;
 
     const passwordHash = await bcrypt.hash(password, 10);
     const newTeacher = await prisma.teacher.create({
@@ -172,22 +187,58 @@ router.get('/teachers', async (req, res) => {
 
 // 2. Create New Class
 router.post('/courses', validate(createClassSchema), async (req, res) => {
-  const { courseName, section, academicYear } = req.body;
+  const { courseName, section, academicYear, feeAmount, feePlanType, classTeacherId, subjectTeachers } = req.body;
   const schoolId = req.user.schoolId;
 
   try {
     const existingClass = await prisma.course.findUnique({
       where: { schoolId_courseName_section_academicYear: { schoolId, courseName, section, academicYear } }
     });
-    if (existingClass) return res.status(400).json({ success: false, error: 'Class already exists' });
+    if (existingClass) return res.status(400).json({ success: false, error: 'Course already exists' });
 
-    const newClass = await prisma.course.create({
-      data: { schoolId, courseName, section, academicYear }
+    // Use a transaction to ensure all related records are created together
+    const newClass = await prisma.$transaction(async (prisma) => {
+      const course = await prisma.course.create({
+        data: { 
+          schoolId, 
+          courseName, 
+          section, 
+          academicYear,
+          teacherId: classTeacherId || null
+        }
+      });
+
+      if (feeAmount && feeAmount > 0) {
+        await prisma.feeStructure.create({
+          data: {
+            schoolId,
+            feeType: "Tuition Fee",
+            amount: feeAmount,
+            courseId: course.id,
+            planType: feePlanType || "MONTHLY"
+          }
+        });
+      }
+
+      if (subjectTeachers && subjectTeachers.length > 0) {
+        await prisma.courseSubject.createMany({
+          data: subjectTeachers.map(st => ({
+            courseId: course.id,
+            subject: st.subject,
+            teacherId: st.teacherId
+          }))
+        });
+      }
+
+      return course;
     });
 
-    return res.status(201).json({ success: true, message: 'Class created successfully', data: newClass });
+    return res.status(201).json({ success: true, message: 'Course created successfully', data: newClass });
   } catch (err) {
     console.error('Error creating class:', err);
+    if (err.code === 'P2002' && err.meta?.target?.includes('teacherId')) {
+      return res.status(400).json({ success: false, error: 'This teacher is already a class teacher for another course.' });
+    }
     return res.status(500).json({ success: false, error: 'Internal server error' });
   }
 });
@@ -200,13 +251,117 @@ router.get('/courses', async (req, res) => {
       where: { schoolId },
       include: {
         teacher: { select: { id: true, name: true } },
+        courseSubjects: {
+          include: { teacher: { select: { id: true, name: true } } }
+        },
+        feeStructures: true,
         _count: { select: { students: true } }
       },
       orderBy: [{ academicYear: 'desc' }, { courseName: 'asc' }, { section: 'asc' }]
     });
     return res.json({ success: true, data: classes });
   } catch (err) {
-    console.error('Error fetching classes:', err);
+    return res.status(500).json({ success: false, error: 'Internal server error' });
+  }
+});
+
+// UPDATE /courses/:id
+router.put('/courses/:id', async (req, res) => {
+  const courseId = parseInt(req.params.id);
+  const { courseName, section, academicYear, feeAmount, feePlanType, classTeacherId, subjectTeachers } = req.body;
+  const schoolId = req.user.schoolId;
+
+  try {
+    const existingClass = await prisma.course.findUnique({ where: { id: courseId } });
+    if (!existingClass || existingClass.schoolId !== schoolId) {
+      return res.status(404).json({ success: false, error: 'Course not found' });
+    }
+
+    const updatedCourse = await prisma.$transaction(async (prisma) => {
+      const course = await prisma.course.update({
+        where: { id: courseId },
+        data: {
+          courseName,
+          section,
+          academicYear,
+          teacherId: classTeacherId || null
+        }
+      });
+
+      // Update Subject Teachers (Delete old, create new)
+      await prisma.courseSubject.deleteMany({ where: { courseId } });
+      if (subjectTeachers && subjectTeachers.length > 0) {
+        await prisma.courseSubject.createMany({
+          data: subjectTeachers.map(st => ({
+            courseId: course.id,
+            subject: st.subject,
+            teacherId: st.teacherId
+          }))
+        });
+      }
+
+      // Update Fee Amount if provided
+      if (feeAmount !== undefined && feeAmount !== null) {
+        const existingFee = await prisma.feeStructure.findFirst({
+          where: { courseId, feeType: 'Tuition Fee' }
+        });
+        
+        if (existingFee) {
+          if (feeAmount > 0) {
+            await prisma.feeStructure.update({
+              where: { id: existingFee.id },
+              data: { amount: parseInt(feeAmount), planType: feePlanType || existingFee.planType }
+            });
+          } else {
+            await prisma.feeStructure.delete({ where: { id: existingFee.id } });
+          }
+        } else if (feeAmount > 0) {
+          await prisma.feeStructure.create({
+            data: {
+              schoolId,
+              feeType: 'Tuition Fee',
+              amount: parseInt(feeAmount),
+              courseId: course.id,
+              planType: feePlanType || 'MONTHLY'
+            }
+          });
+        }
+      }
+
+      return course;
+    });
+
+    return res.json({ success: true, message: 'Course updated successfully', data: updatedCourse });
+  } catch (err) {
+    console.error('Error updating course:', err);
+    if (err.code === 'P2002' && err.meta?.target?.includes('teacherId')) {
+      return res.status(400).json({ success: false, error: 'This teacher is already a class teacher for another course.' });
+    }
+    return res.status(500).json({ success: false, error: 'Internal server error' });
+  }
+});
+
+// DELETE /courses/:id
+router.delete('/courses/:id', async (req, res) => {
+  const courseId = parseInt(req.params.id);
+  const schoolId = req.user.schoolId;
+
+  try {
+    const course = await prisma.course.findUnique({ where: { id: courseId } });
+    if (!course || course.schoolId !== schoolId) {
+      return res.status(404).json({ success: false, error: 'Course not found' });
+    }
+
+    // Block if students are enrolled
+    const studentCount = await prisma.student.count({ where: { courseId } });
+    if (studentCount > 0) {
+      return res.status(400).json({ success: false, error: `Cannot delete course: ${studentCount} students are currently enrolled in it.` });
+    }
+
+    await prisma.course.delete({ where: { id: courseId } });
+    return res.json({ success: true, message: 'Course deleted successfully' });
+  } catch (err) {
+    console.error('Error deleting course:', err);
     return res.status(500).json({ success: false, error: 'Internal server error' });
   }
 });
@@ -306,7 +461,12 @@ router.get('/students', async (req, res) => {
   try {
     const students = await prisma.student.findMany({
       where: { schoolId },
-      include: { course: true },
+      include: { 
+        course: true,
+        feeInvoices: {
+          include: { payments: true }
+        }
+      },
       orderBy: { name: 'asc' }
     });
     return res.json({ success: true, data: students });
