@@ -55,14 +55,11 @@ import StudentSettings from './pages/student/StudentSettings';
 
 // Accountant Pages
 import AccountantDashboard from './pages/accountant/AccountantDashboard';
-<<<<<<< HEAD
 import AccountantNotices from './pages/accountant/Notices';
-=======
 import AccountantClasses from './pages/accountant/AccountantClasses';
 import AccountantStudents from './pages/accountant/AccountantStudents';
 import AccountantFees from './pages/accountant/AccountantFees';
 import AccountantFeeStructure from './pages/accountant/AccountantFeeStructure';
->>>>>>> e92e30eb4d23e3fdd25a03db3eff7e9771959178
 
 import Unauthorized from './pages/Unauthorized';
 import NotFound from './pages/NotFound';
@@ -198,16 +195,11 @@ export default function App() {
             }
           >
             <Route path="dashboard" element={<AccountantDashboard />} />
-<<<<<<< HEAD
-            <Route path="students" element={<Students />} />
-            <Route path="fees" element={<FeesOverview />} />
-            <Route path="notices" element={<AccountantNotices />} />
-=======
             <Route path="classes" element={<AccountantClasses />} />
             <Route path="students" element={<AccountantStudents />} />
             <Route path="fees" element={<AccountantFees />} />
             <Route path="fee-structure" element={<AccountantFeeStructure />} />
->>>>>>> e92e30eb4d23e3fdd25a03db3eff7e9771959178
+            <Route path="notices" element={<AccountantNotices />} />
           </Route>
 
           {/* Fallback routes */}
