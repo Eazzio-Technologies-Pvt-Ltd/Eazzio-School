@@ -121,13 +121,6 @@ export default function AdminDashboard() {
               <span style={styles.actionLabel}>Manage Fees</span>
             </button>
             <button
-              onClick={() => navigate('/admin/reports')}
-              style={styles.actionCard}
-            >
-              <span style={styles.actionIcon}>📄</span>
-              <span style={styles.actionLabel}>Reports</span>
-            </button>
-            <button
               onClick={() => navigate('/admin/settings')}
               style={{ ...styles.actionCard, gridColumn: 'span 2' }}
             >

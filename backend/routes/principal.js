@@ -1088,6 +1088,77 @@ router.delete('/timetables/:id', async (req, res) => {
   }
 });
 
+router.post('/timetables/auto-generate', async (req, res) => {
+  const schoolId = req.user.schoolId;
+  const { days, periods, clearExisting } = req.body;
+
+  if (!days || !periods || days.length === 0 || periods <= 0) {
+    return res.status(400).json({ error: 'Valid days array and periods count are required' });
+  }
+
+  try {
+    if (clearExisting) {
+      await prisma.timetable.deleteMany({ where: { schoolId } });
+    }
+
+    const courses = await prisma.course.findMany({
+      where: { schoolId },
+      include: {
+        courseSubjects: true
+      }
+    });
+
+    const newEntries = [];
+    const teacherBusyMap = {};
+    
+    for (const course of courses) {
+      const subjects = course.courseSubjects;
+      if (subjects.length === 0) continue;
+
+      let subjectIndex = 0;
+      
+      for (const day of days) {
+        for (let p = 1; p <= periods; p++) {
+          const periodStr = `Period ${p}`;
+          
+          let assigned = false;
+          let attempts = 0;
+          
+          while (!assigned && attempts < subjects.length) {
+            const sub = subjects[subjectIndex % subjects.length];
+            const teacherKey = `${sub.teacherId}-${day}-${periodStr}`;
+            
+            if (!teacherBusyMap[teacherKey]) {
+              teacherBusyMap[teacherKey] = true;
+              newEntries.push({
+                schoolId,
+                teacherId: sub.teacherId,
+                dayOfWeek: day,
+                period: periodStr,
+                subject: sub.subject,
+                courseId: course.id
+              });
+              assigned = true;
+            }
+            
+            subjectIndex++;
+            attempts++;
+          }
+        }
+      }
+    }
+
+    if (newEntries.length > 0) {
+      await prisma.timetable.createMany({ data: newEntries });
+    }
+
+    res.json({ message: 'Timetable generated successfully', generatedSlots: newEntries.length });
+  } catch (err) {
+    console.error('Error auto generating timetable:', err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
 // 8. Manage Notices
 router.post('/notices', async (req, res) => {
   const { title, content, audience, courseId } = req.body;

@@ -495,6 +495,39 @@ router.delete('/students/:id', async (req, res) => {
   }
 });
 
+// GET /students/:id/full-record - Download complete student record
+router.get('/students/:id/full-record', async (req, res) => {
+  const schoolId = req.user.schoolId;
+  const id = parseInt(req.params.id);
+
+  try {
+    const student = await prisma.student.findUnique({
+      where: { id },
+      include: {
+        course: true,
+        attendance: {
+          orderBy: { date: 'desc' }
+        },
+        feeInvoices: {
+          include: {
+            payments: { where: { status: 'SUCCESS' }, orderBy: { date: 'desc' } }
+          },
+          orderBy: { dueDate: 'desc' }
+        }
+      }
+    });
+
+    if (!student || student.schoolId !== schoolId) {
+      return res.status(404).json({ error: 'Student not found' });
+    }
+
+    return res.json({ success: true, student });
+  } catch (err) {
+    console.error('Error fetching student full record:', err);
+    return res.status(500).json({ success: false, error: 'Internal server error' });
+  }
+});
+
 // 5. View Attendance
 router.get('/attendance-summary', async (req, res) => {
   const schoolId = req.user.schoolId;
@@ -691,6 +724,77 @@ router.delete('/timetables/:id', async (req, res) => {
   } catch (err) {
     console.error('Error deleting timetable:', err);
     return res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+router.post('/timetables/auto-generate', async (req, res) => {
+  const schoolId = req.user.schoolId;
+  const { days, periods, clearExisting } = req.body;
+
+  if (!days || !periods || days.length === 0 || periods <= 0) {
+    return res.status(400).json({ error: 'Valid days array and periods count are required' });
+  }
+
+  try {
+    if (clearExisting) {
+      await prisma.timetable.deleteMany({ where: { schoolId } });
+    }
+
+    const courses = await prisma.course.findMany({
+      where: { schoolId },
+      include: {
+        courseSubjects: true
+      }
+    });
+
+    const newEntries = [];
+    const teacherBusyMap = {};
+    
+    for (const course of courses) {
+      const subjects = course.courseSubjects;
+      if (subjects.length === 0) continue;
+
+      let subjectIndex = 0;
+      
+      for (const day of days) {
+        for (let p = 1; p <= periods; p++) {
+          const periodStr = `Period ${p}`;
+          
+          let assigned = false;
+          let attempts = 0;
+          
+          while (!assigned && attempts < subjects.length) {
+            const sub = subjects[subjectIndex % subjects.length];
+            const teacherKey = `${sub.teacherId}-${day}-${periodStr}`;
+            
+            if (!teacherBusyMap[teacherKey]) {
+              teacherBusyMap[teacherKey] = true;
+              newEntries.push({
+                schoolId,
+                teacherId: sub.teacherId,
+                dayOfWeek: day,
+                period: periodStr,
+                subject: sub.subject,
+                courseId: course.id
+              });
+              assigned = true;
+            }
+            
+            subjectIndex++;
+            attempts++;
+          }
+        }
+      }
+    }
+
+    if (newEntries.length > 0) {
+      await prisma.timetable.createMany({ data: newEntries });
+    }
+
+    res.json({ message: 'Timetable generated successfully', generatedSlots: newEntries.length });
+  } catch (err) {
+    console.error('Error auto generating timetable:', err);
+    res.status(500).json({ error: 'Internal server error' });
   }
 });
 
@@ -921,6 +1025,25 @@ router.post('/principals', async (req, res) => {
   }
 });
 
+router.put('/principals/:id', async (req, res) => {
+  try {
+    const principalId = parseInt(req.params.id);
+    const principal = await prisma.principal.findUnique({ where: { id: principalId } });
+    if (!principal) return res.status(404).json({ error: 'Principal not found' });
+    if (principal.schoolId !== req.user.schoolId) return res.status(403).json({ error: 'Forbidden' });
+
+    const { name, email, phone } = req.body;
+    const updated = await prisma.principal.update({
+      where: { id: principalId },
+      data: { name, email, phone: phone || null },
+    });
+    return res.json({ success: true, principal: updated });
+  } catch (err) {
+    console.error('Error updating principal:', err);
+    return res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
 router.delete('/principals/:id', async (req, res) => {
   try {
     const principalId = parseInt(req.params.id);
@@ -979,6 +1102,25 @@ router.post('/accountants', async (req, res) => {
   } catch (err) {
     console.error('Error creating accountant:', err);
     return res.status(500).json({ error: 'Internal server error', details: err.message, stack: err.stack });
+  }
+});
+
+router.put('/accountants/:id', async (req, res) => {
+  try {
+    const accountantId = parseInt(req.params.id);
+    const accountant = await prisma.accountant.findUnique({ where: { id: accountantId } });
+    if (!accountant) return res.status(404).json({ error: 'Accountant not found' });
+    if (accountant.schoolId !== req.user.schoolId) return res.status(403).json({ error: 'Forbidden' });
+
+    const { name, email, phone } = req.body;
+    const updated = await prisma.accountant.update({
+      where: { id: accountantId },
+      data: { name, email, phone: phone || null },
+    });
+    return res.json({ success: true, accountant: updated });
+  } catch (err) {
+    console.error('Error updating accountant:', err);
+    return res.status(500).json({ error: 'Internal server error' });
   }
 });
 
