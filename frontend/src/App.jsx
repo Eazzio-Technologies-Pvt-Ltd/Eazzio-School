@@ -28,7 +28,6 @@ import AdminTeachers from './pages/admin/Teachers';
 import AdminStaff from './pages/admin/Staff';
 import AdminAttendanceOverview from './pages/admin/AttendanceOverview';
 import AdminFeesOverview from './pages/admin/FeesOverview';
-import AdminReports from './pages/admin/Reports';
 import AdminSettings from './pages/admin/Settings';
 import AdminCourses from './pages/admin/Courses';
 import AdminTimetable from './pages/admin/Timetable';
@@ -60,6 +59,9 @@ import AccountantClasses from './pages/accountant/AccountantClasses';
 import AccountantStudents from './pages/accountant/AccountantStudents';
 import AccountantFees from './pages/accountant/AccountantFees';
 import AccountantFeeStructure from './pages/accountant/AccountantFeeStructure';
+
+// Shared Pages
+import Feedback from './pages/shared/Feedback';
 
 import Unauthorized from './pages/Unauthorized';
 import NotFound from './pages/NotFound';
@@ -124,6 +126,7 @@ export default function App() {
             <Route path="courses/:id" element={<CourseDetails />} />
             <Route path="timetable" element={<Timetable />} />
             <Route path="notices" element={<PrincipalNotices />} />
+            <Route path="feedback" element={<Feedback />} />
           </Route>
 
           {/* Admin Workspace Routes */}
@@ -141,11 +144,11 @@ export default function App() {
             <Route path="staff" element={<AdminStaff />} />
             <Route path="attendance" element={<AdminAttendanceOverview />} />
             <Route path="fees" element={<AdminFeesOverview />} />
-            <Route path="reports" element={<AdminReports />} />
             <Route path="settings" element={<AdminSettings />} />
             <Route path="courses" element={<AdminCourses />} />
             <Route path="timetable" element={<AdminTimetable />} />
             <Route path="notices" element={<AdminNotices />} />
+            <Route path="feedback" element={<Feedback />} />
           </Route>
 
           {/* Teacher Workspace Routes */}
@@ -165,6 +168,7 @@ export default function App() {
             <Route path="profile" element={<TeacherProfile />} />
             <Route path="routine" element={<TeacherRoutine />} />
             <Route path="notices" element={<TeacherNotices />} />
+            <Route path="feedback" element={<Feedback />} />
           </Route>
 
           {/* Student Workspace Routes */}

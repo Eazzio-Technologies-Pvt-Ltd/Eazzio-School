@@ -6,7 +6,7 @@ export const getSummary = async () => {
 };
 
 export const getCourseDetails = async () => {
-  const response = await api.get('/teacher/course-details');
+  const response = await api.get('/teacher/class-details');
   return response.data;
 };
 

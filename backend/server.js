@@ -8,6 +8,7 @@ import teacherRoutes from './routes/teacher.js';
 import studentRoutes from './routes/student.js';
 import noticeRoutes from './routes/notice.js';
 import accountantRoutes from './routes/accountant.js';
+import feedbackRoutes from './routes/feedback.js';
 import prisma from './prismaClient.js';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -49,6 +50,7 @@ app.use('/api/teacher', teacherRoutes);
 app.use('/api/student', studentRoutes);
 app.use('/api/notices', noticeRoutes);
 app.use('/api/accountant', accountantRoutes);
+app.use('/api/feedback', feedbackRoutes);
 
 // Simple health check endpoint
 app.get('/health', (req, res) => {

@@ -34,6 +34,7 @@ model School {
   timetables         Timetable[]
   exams              Exam[]
   results            Result[]
+  feedbacks          Feedback[]
 }
 
 model Course {
@@ -66,6 +67,7 @@ model Principal {
   password String
   phone    String?
   school   School  @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  authoredFeedbacks Feedback[] @relation("PrincipalAuthoredFeedbacks")
 
   @@index([schoolId])
 }
@@ -85,6 +87,8 @@ model Teacher {
   timetables     Timetable[]
   subjects       String[]     @default([])
   courseSubjects CourseSubject[]
+  authoredFeedbacks Feedback[] @relation("TeacherAuthoredFeedbacks")
+  receivedFeedbacks Feedback[] @relation("TeacherTargetFeedbacks")
 
   @@index([schoolId])
 }
@@ -111,6 +115,7 @@ model Student {
   course        Course?      @relation(fields: [courseId], references: [id])
   school        School       @relation(fields: [schoolId], references: [id], onDelete: Cascade)
   mustChangePassword Boolean @default(true)
+  receivedFeedbacks Feedback[] @relation("StudentTargetFeedbacks")
 
   @@index([schoolId])
 }
@@ -304,4 +309,25 @@ model CourseSubject {
   @@unique([courseId, subject])
   @@index([courseId])
   @@index([teacherId])
+}
+
+model Feedback {
+  id        Int      @id @default(autoincrement())
+  schoolId  Int
+  content   String
+  createdAt DateTime @default(now())
+
+  authorPrincipalId Int?
+  authorTeacherId   Int?
+
+  targetTeacherId Int?
+  targetStudentId Int?
+
+  school            School     @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  authorPrincipal   Principal? @relation("PrincipalAuthoredFeedbacks", fields: [authorPrincipalId], references: [id], onDelete: SetNull)
+  authorTeacher     Teacher?   @relation("TeacherAuthoredFeedbacks", fields: [authorTeacherId], references: [id], onDelete: SetNull)
+  targetTeacher     Teacher?   @relation("TeacherTargetFeedbacks", fields: [targetTeacherId], references: [id], onDelete: Cascade)
+  targetStudent     Student?   @relation("StudentTargetFeedbacks", fields: [targetStudentId], references: [id], onDelete: Cascade)
+
+  @@index([schoolId])
 }

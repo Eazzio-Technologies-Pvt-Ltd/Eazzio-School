@@ -153,6 +153,8 @@ export const deleteTimetable = async (id) => {
   return response.data;
 };
 
+
+
 // --- Settings ---
 export const getPrincipalSettings = async () => {
   const response = await api.get('/principal/settings');

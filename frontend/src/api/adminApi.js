@@ -63,6 +63,11 @@ export const deleteStudent = async (id) => {
   return response.data;
 };
 
+export const getStudentFullRecord = async (id) => {
+  const response = await api.get(`/admin/students/${id}/full-record`);
+  return response.data;
+};
+
 // --- Attendance & Fees ---
 export const getAttendanceSummary = async () => {
   const response = await api.get('/admin/attendance-summary');
@@ -124,6 +129,11 @@ export const deleteTimetable = async (id) => {
   return response.data;
 };
 
+export const autoGenerateTimetable = async (payload) => {
+  const response = await api.post('/admin/timetables/auto-generate', payload);
+  return response.data;
+};
+
 // --- Staff Management ---
 export const getPrincipals = async () => {
   const response = await api.get('/admin/principals');
@@ -132,6 +142,11 @@ export const getPrincipals = async () => {
 
 export const createPrincipal = async (payload) => {
   const response = await api.post('/admin/principals', payload);
+  return response.data;
+};
+
+export const updatePrincipal = async (id, payload) => {
+  const response = await api.put(`/admin/principals/${id}`, payload);
   return response.data;
 };
 
@@ -147,6 +162,11 @@ export const getAccountants = async () => {
 
 export const createAccountant = async (payload) => {
   const response = await api.post('/admin/accountants', payload);
+  return response.data;
+};
+
+export const updateAccountant = async (id, payload) => {
+  const response = await api.put(`/admin/accountants/${id}`, payload);
   return response.data;
 };
 

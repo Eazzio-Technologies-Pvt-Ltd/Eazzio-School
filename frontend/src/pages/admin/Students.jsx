@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { getStudents, registerStudent, getCourses, deleteStudent } from '../../api/adminApi';
+import { getStudents, registerStudent, getCourses, deleteStudent, getStudentFullRecord } from '../../api/adminApi';
 import Loader from '../../components/Loader';
+import { jsPDF } from 'jspdf';
 
 export default function Students() {
   const nameInputRef = useRef(null);
@@ -27,6 +28,11 @@ export default function Students() {
   
   // Fee History Modal
   const [selectedFeeStudent, setSelectedFeeStudent] = useState(null);
+
+  // Download Modal
+  const [downloadModal, setDownloadModal] = useState(null); // student object
+  const [dlLoading, setDlLoading] = useState(false);
+  const [dlOptions, setDlOptions] = useState({ profile: true, fees: true, attendance: true });
 
   // Filters State
   const [searchQuery, setSearchQuery] = useState('');
@@ -111,17 +117,184 @@ export default function Students() {
 
   // Filter students dynamically on the client
   const filteredStudents = studentsList.filter(student => {
-    // Search query matching
     const matchesSearch =
       student.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       (student.rollNumber || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
       (student.studentId || '').toLowerCase().includes(searchQuery.toLowerCase());
-
-    // Course filter matching
     const matchesCourse = !courseFilter || student.courseId?.toString() === courseFilter;
-
     return matchesSearch && matchesCourse;
   });
+
+  // ── Download Helpers ────────────────────────────────────────────────────────
+
+  const handleDownloadCSV = (student) => {
+    const rows = [];
+    if (dlOptions.profile) {
+      rows.push(['=== PROFILE ===']);
+      rows.push(['Name', student.name]);
+      rows.push(['Student ID', student.studentId]);
+      rows.push(['Roll Number', student.rollNumber || '-']);
+      rows.push(['Course', student.course ? `${student.course.courseName} - ${student.course.section}` : '-']);
+      rows.push(['Father Name', student.fatherName || '-']);
+      rows.push(['Mother Name', student.motherName || '-']);
+      rows.push(['Phone', student.phone || '-']);
+      rows.push(['Address', student.address || '-']);
+      rows.push(['Admission Date', student.admissionDate ? new Date(student.admissionDate).toLocaleDateString() : '-']);
+      rows.push([]);
+    }
+    if (dlOptions.fees && student.feeInvoices?.length) {
+      rows.push(['=== FEE RECORDS ===']);
+      rows.push(['Fee Type', 'Amount (Rs)', 'Due Date', 'Status', 'Paid On']);
+      student.feeInvoices.forEach(inv => {
+        const paidOn = inv.payments?.length ? new Date(inv.payments[0].date).toLocaleDateString() : '-';
+        rows.push([inv.feeType, inv.amount, new Date(inv.dueDate).toLocaleDateString(), inv.status, paidOn]);
+      });
+      rows.push([]);
+    }
+    if (dlOptions.attendance && student.attendance?.length) {
+      rows.push(['=== ATTENDANCE RECORDS ===']);
+      rows.push(['Date', 'Status']);
+      student.attendance.forEach(a => {
+        rows.push([new Date(a.date).toLocaleDateString(), a.status]);
+      });
+    }
+    const csv = rows.map(r => r.map(c => `"${c}"`).join(',')).join('\n');
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `${student.name.replace(/ /g, '_')}_record.csv`;
+    link.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const handleDownloadPDF = (student) => {
+    const doc = new jsPDF();
+    const pageW = doc.internal.pageSize.getWidth();
+    let y = 20;
+    const lineH = 7;
+    const col1 = 14;
+    const col2 = 80;
+
+    // Title
+    doc.setFontSize(18);
+    doc.setTextColor(5, 150, 105);
+    doc.text('Student Complete Record', pageW / 2, y, { align: 'center' });
+    y += 8;
+    doc.setFontSize(10);
+    doc.setTextColor(100);
+    doc.text(`Generated: ${new Date().toLocaleString()}`, pageW / 2, y, { align: 'center' });
+    y += 12;
+
+    const section = (title) => {
+      if (y > 270) { doc.addPage(); y = 20; }
+      doc.setFillColor(5, 150, 105);
+      doc.rect(col1, y - 4, pageW - 28, 8, 'F');
+      doc.setTextColor(255, 255, 255);
+      doc.setFontSize(11);
+      doc.text(title, col1 + 2, y + 1);
+      doc.setTextColor(30, 30, 30);
+      y += 10;
+    };
+
+    const row = (label, value) => {
+      if (y > 275) { doc.addPage(); y = 20; }
+      doc.setFontSize(9);
+      doc.setTextColor(100);
+      doc.text(label, col1, y);
+      doc.setTextColor(20);
+      doc.text(String(value), col2, y);
+      y += lineH;
+    };
+
+    if (dlOptions.profile) {
+      section('STUDENT PROFILE');
+      row('Name:', student.name);
+      row('Student ID:', student.studentId || '-');
+      row('Roll Number:', student.rollNumber || '-');
+      row('Course:', student.course ? `${student.course.courseName} - ${student.course.section}` : '-');
+      row('Father Name:', student.fatherName || '-');
+      row('Mother Name:', student.motherName || '-');
+      row('Phone:', student.phone || '-');
+      row('Address:', student.address || '-');
+      row('Admission Date:', student.admissionDate ? new Date(student.admissionDate).toLocaleDateString() : '-');
+      y += 4;
+    }
+
+    if (dlOptions.fees) {
+      section('FEE RECORDS');
+      if (!student.feeInvoices?.length) {
+        doc.setFontSize(9); doc.setTextColor(150);
+        doc.text('No fee records found.', col1, y); y += lineH;
+      } else {
+        // Table header
+        doc.setFontSize(8); doc.setTextColor(80);
+        ['Fee Type', 'Amount', 'Due Date', 'Status'].forEach((h, i) => {
+          doc.text(h, col1 + i * 42, y);
+        });
+        y += 5;
+        doc.setDrawColor(200); doc.line(col1, y, pageW - 14, y); y += 3;
+        student.feeInvoices.forEach(inv => {
+          if (y > 275) { doc.addPage(); y = 20; }
+          doc.setFontSize(8); doc.setTextColor(20);
+          doc.text(inv.feeType, col1, y);
+          doc.text(`Rs ${inv.amount}`, col1 + 42, y);
+          doc.text(new Date(inv.dueDate).toLocaleDateString(), col1 + 84, y);
+          const statusColor = inv.status === 'PAID' ? [5,150,105] : inv.status === 'OVERDUE' ? [220,38,38] : [217,119,6];
+          doc.setTextColor(...statusColor);
+          doc.text(inv.status, col1 + 126, y);
+          doc.setTextColor(20);
+          y += lineH;
+        });
+      }
+      y += 4;
+    }
+
+    if (dlOptions.attendance) {
+      section('ATTENDANCE RECORDS');
+      if (!student.attendance?.length) {
+        doc.setFontSize(9); doc.setTextColor(150);
+        doc.text('No attendance records found.', col1, y); y += lineH;
+      } else {
+        const present = student.attendance.filter(a => a.status === 'PRESENT').length;
+        const late = student.attendance.filter(a => a.status === 'LATE').length;
+        const total = student.attendance.length;
+        const pct = total > 0 ? Math.round(((present + late) / total) * 100) : 100;
+        doc.setFontSize(9); doc.setTextColor(5, 150, 105);
+        doc.text(`Attendance: ${pct}%  (Present: ${present}, Late: ${late}, Total Days: ${total})`, col1, y);
+        y += 8;
+        // Table header
+        doc.setFontSize(8); doc.setTextColor(80);
+        doc.text('Date', col1, y); doc.text('Status', col1 + 60, y);
+        y += 5;
+        doc.setDrawColor(200); doc.line(col1, y, col1 + 120, y); y += 3;
+        student.attendance.forEach(a => {
+          if (y > 275) { doc.addPage(); y = 20; }
+          doc.setFontSize(8);
+          doc.setTextColor(20); doc.text(new Date(a.date).toLocaleDateString(), col1, y);
+          const sc = a.status === 'PRESENT' ? [5,150,105] : a.status === 'LATE' ? [217,119,6] : [220,38,38];
+          doc.setTextColor(...sc); doc.text(a.status, col1 + 60, y);
+          y += lineH;
+        });
+      }
+    }
+
+    doc.save(`${student.name.replace(/ /g, '_')}_record.pdf`);
+  };
+
+  const handleDownload = async (format) => {
+    setDlLoading(true);
+    try {
+      const { student } = await getStudentFullRecord(downloadModal.id);
+      if (format === 'csv') handleDownloadCSV(student);
+      else handleDownloadPDF(student);
+      setDownloadModal(null);
+    } catch (err) {
+      alert('Failed to fetch student record. Please try again.');
+    } finally {
+      setDlLoading(false);
+    }
+  };
 
   return (
     <div style={styles.container} className="animate-fade-in">
@@ -165,6 +338,7 @@ export default function Students() {
                     <th style={styles.th}>Email</th>
                     <th style={styles.th}>Admitted</th>
                     <th style={styles.th}>Fee Record</th>
+                    <th style={{ ...styles.th, textAlign: 'center' }}>Download</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -227,6 +401,14 @@ export default function Students() {
                             </button>
                           )}
                         </td>
+                        <td style={{ ...styles.td, textAlign: 'center' }}>
+                          <button
+                            onClick={(e) => { e.stopPropagation(); setDlOptions({ profile: true, fees: true, attendance: true }); setDownloadModal(student); }}
+                            style={dlBtnStyle}
+                          >
+                            ⬇ Record
+                          </button>
+                        </td>
                       </tr>
                     ))
                   )}
@@ -253,6 +435,64 @@ export default function Students() {
             <button className="btn-primary" onClick={() => setCredentialsModal({visible: false, studentId: '', password: '', name: ''})}>
               Close
             </button>
+          </div>
+        </div>
+      )}
+
+      {/* ── DOWNLOAD MODAL ── */}
+      {downloadModal && (
+        <div style={styles.modalOverlay} onClick={() => !dlLoading && setDownloadModal(null)}>
+          <div style={dlModalStyle} onClick={e => e.stopPropagation()}>
+            {/* Header */}
+            <div style={dlHeaderStyle}>
+              <div>
+                <h3 style={{ margin: 0, fontSize: '1.1rem', color: '#111827' }}>📥 Download Record</h3>
+                <p style={{ margin: '4px 0 0', fontSize: '0.82rem', color: '#6b7280' }}>{downloadModal.name} ({downloadModal.studentId})</p>
+              </div>
+              <button style={{ background: 'none', border: 'none', fontSize: '1.1rem', cursor: 'pointer', color: '#9ca3af' }} onClick={() => setDownloadModal(null)}>✕</button>
+            </div>
+
+            {/* Checkboxes */}
+            <div style={{ padding: '20px 24px' }}>
+              <p style={{ margin: '0 0 14px', fontWeight: '600', fontSize: '0.85rem', color: '#374151' }}>Select sections to include:</p>
+              {[
+                { key: 'profile', label: '👤 Basic Profile Info', desc: 'Name, roll, course, parents, contact' },
+                { key: 'fees', label: '💰 Fee Records', desc: 'All invoices with payment status' },
+                { key: 'attendance', label: '📅 Attendance Logs', desc: 'Day-wise present / absent / late' },
+              ].map(({ key, label, desc }) => (
+                <label key={key} style={dlCheckRowStyle}>
+                  <input
+                    type="checkbox"
+                    checked={dlOptions[key]}
+                    onChange={() => setDlOptions(p => ({ ...p, [key]: !p[key] }))}
+                    style={{ width: '16px', height: '16px', accentColor: '#059669', flexShrink: 0 }}
+                  />
+                  <div>
+                    <div style={{ fontWeight: '600', fontSize: '0.88rem', color: '#111827' }}>{label}</div>
+                    <div style={{ fontSize: '0.78rem', color: '#6b7280' }}>{desc}</div>
+                  </div>
+                </label>
+              ))}
+            </div>
+
+            {/* Buttons */}
+            <div style={dlFooterStyle}>
+              <button style={dlCancelBtnStyle} onClick={() => setDownloadModal(null)} disabled={dlLoading}>Cancel</button>
+              <button
+                style={{ ...dlFormatBtnStyle, background: '#f0fdf4', color: '#059669', border: '1.5px solid #059669' }}
+                onClick={() => handleDownload('csv')}
+                disabled={dlLoading || !Object.values(dlOptions).some(Boolean)}
+              >
+                {dlLoading ? '...' : '📊 Download CSV'}
+              </button>
+              <button
+                style={{ ...dlFormatBtnStyle, background: '#059669', color: '#fff' }}
+                onClick={() => handleDownload('pdf')}
+                disabled={dlLoading || !Object.values(dlOptions).some(Boolean)}
+              >
+                {dlLoading ? 'Generating...' : '📄 Download PDF'}
+              </button>
+            </div>
           </div>
         </div>
       )}
@@ -367,4 +607,76 @@ const styles = {
   modalCard: { background: 'var(--bg-card)', padding: '32px', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border-glow)', width: '400px', maxWidth: '90%', display: 'flex', flexDirection: 'column', gap: '20px' },
   credentialsBox: { background: 'rgba(0,0,0,0.2)', padding: '16px', borderRadius: 'var(--radius-sm)', border: '1px dashed var(--primary)', display: 'flex', flexDirection: 'column', gap: '10px' },
   highlight: { color: 'var(--primary)', fontWeight: 'bold', fontSize: '1.1rem', background: 'rgba(139, 92, 246, 0.1)', padding: '2px 6px', borderRadius: '4px' }
+};
+
+// Download modal styles (outside main styles to keep clean)
+const dlBtnStyle = {
+  padding: '5px 12px',
+  background: 'rgba(5,150,105,0.1)',
+  color: '#059669',
+  border: '1px solid rgba(5,150,105,0.3)',
+  borderRadius: '6px',
+  fontSize: '0.78rem',
+  fontWeight: '700',
+  cursor: 'pointer',
+  whiteSpace: 'nowrap',
+};
+
+const dlModalStyle = {
+  background: '#ffffff',
+  borderRadius: '18px',
+  border: '1px solid #e5e7eb',
+  width: '100%',
+  maxWidth: '460px',
+  boxShadow: '0 28px 72px rgba(0,0,0,0.25)',
+  overflow: 'hidden',
+};
+
+const dlHeaderStyle = {
+  display: 'flex',
+  justifyContent: 'space-between',
+  alignItems: 'flex-start',
+  padding: '20px 24px',
+  borderBottom: '1px solid #e5e7eb',
+};
+
+const dlCheckRowStyle = {
+  display: 'flex',
+  alignItems: 'flex-start',
+  gap: '12px',
+  padding: '12px 14px',
+  borderRadius: '10px',
+  border: '1px solid #e5e7eb',
+  marginBottom: '10px',
+  cursor: 'pointer',
+  background: '#f9fafb',
+};
+
+const dlFooterStyle = {
+  display: 'flex',
+  justifyContent: 'flex-end',
+  gap: '8px',
+  padding: '16px 24px',
+  borderTop: '1px solid #e5e7eb',
+  background: '#f9fafb',
+};
+
+const dlCancelBtnStyle = {
+  padding: '9px 18px',
+  background: 'transparent',
+  border: '1px solid #d1d5db',
+  borderRadius: '8px',
+  color: '#6b7280',
+  cursor: 'pointer',
+  fontWeight: '600',
+  fontSize: '0.88rem',
+};
+
+const dlFormatBtnStyle = {
+  padding: '9px 18px',
+  borderRadius: '8px',
+  cursor: 'pointer',
+  fontWeight: '700',
+  fontSize: '0.88rem',
+  border: 'none',
 };

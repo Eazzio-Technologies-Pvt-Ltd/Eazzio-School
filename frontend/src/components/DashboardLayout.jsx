@@ -6,7 +6,7 @@ import logo from '../assets/logo.png';
 import {
   LayoutDashboard, GraduationCap, Users, UsersRound, Calendar,
   CreditCard, Megaphone, Clock, FileText, Settings,
-  LogOut, Menu, ChevronLeft, ChevronRight, Briefcase
+  LogOut, Menu, ChevronLeft, ChevronRight, Briefcase, MessageSquare
 } from 'lucide-react';
 
 export default function DashboardLayout() {
@@ -59,6 +59,7 @@ export default function DashboardLayout() {
       { path: '/principal/attendance', label: 'Attendance', icon: <Calendar size={20} /> },
       { path: '/principal/fees', label: 'Fees Overview', icon: <CreditCard size={20} /> },
       { path: '/principal/notices', label: 'Notice Board', icon: <Megaphone size={20} /> },
+      { path: '/principal/feedback', label: 'Feedback', icon: <MessageSquare size={20} /> },
       { path: '/principal/timetable', label: 'Timetables', icon: <Clock size={20} /> },
       { path: '/principal/settings', label: 'Settings', icon: <Settings size={20} /> },
     ],
@@ -71,8 +72,8 @@ export default function DashboardLayout() {
       { path: '/admin/attendance', label: 'Attendance', icon: <Calendar size={20} /> },
       { path: '/admin/fees', label: 'Fees Overview', icon: <CreditCard size={20} /> },
       { path: '/admin/notices', label: 'Notice Board', icon: <Megaphone size={20} /> },
+      { path: '/admin/feedback', label: 'Feedback', icon: <MessageSquare size={20} /> },
       { path: '/admin/timetable', label: 'Timetables', icon: <Clock size={20} /> },
-      { path: '/admin/reports', label: 'Reports', icon: <FileText size={20} /> },
       { path: '/admin/settings', label: 'Settings', icon: <Settings size={20} /> },
     ],
     TEACHER: [
@@ -82,6 +83,7 @@ export default function DashboardLayout() {
       { path: '/teacher/history', label: 'Roster History', icon: <Clock size={20} /> },
       { path: '/teacher/fees', label: 'Course Fees', icon: <CreditCard size={20} /> },
       { path: '/teacher/notices', label: 'Notice Board', icon: <Megaphone size={20} /> },
+      { path: '/teacher/feedback', label: 'Feedback', icon: <MessageSquare size={20} /> },
       { path: '/teacher/routine', label: 'My Routine', icon: <Clock size={20} /> },
       { path: '/teacher/profile', label: 'My Profile', icon: <Users size={20} /> },
     ],
@@ -263,7 +265,7 @@ export default function DashboardLayout() {
       </aside>
 
       <div
-        className={`flex-1 flex flex-col min-h-screen transition-all duration-300 ease-in-out
+        className={`flex-1 min-w-0 flex flex-col min-h-screen transition-all duration-300 ease-in-out
           ${isMobile ? 'ml-0' : (sidebarOpen ? 'ml-64' : 'ml-20')}
         `}
       >
@@ -295,7 +297,7 @@ export default function DashboardLayout() {
           </div>
         </header>
 
-        <main className="flex-1 overflow-y-auto p-4 md:p-6 lg:p-8 relative">
+        <main className="flex-1 overflow-y-auto overflow-x-hidden p-4 md:p-6 lg:p-8 relative">
           <div className="max-w-7xl mx-auto h-full">
             <Outlet />
           </div>
