@@ -57,8 +57,33 @@ export default function AccountantFees() {
     dueDate: ''
   });
 
+  const [settings, setSettings] = useState({
+    feeDueDay: 10,
+    collectFeeAnyDay: true,
+    allowPartPayment: false
+  });
+
+  const isInvoiceOverdue = (inv) => {
+    if (!inv || inv.status === 'PAID') return false;
+    const now = new Date();
+    const dueDate = new Date(inv.dueDate);
+    
+    // If it's a previous month/year, it's overdue
+    if (now.getFullYear() > dueDate.getFullYear()) return true;
+    if (now.getFullYear() === dueDate.getFullYear() && now.getMonth() > dueDate.getMonth()) return true;
+    
+    // If it's the current month, check if the current day of month is past the due day
+    if (now.getFullYear() === dueDate.getFullYear() && now.getMonth() === dueDate.getMonth()) {
+      return now.getDate() > settings.feeDueDay;
+    }
+    
+    return false;
+  };
+
   // Record Payment States
   const [recordingPaymentForInvoice, setRecordingPaymentForInvoice] = useState(null);
+  const [viewingFeeBookForStudent, setViewingFeeBookForStudent] = useState(null);
+  const [payingFeeForInvoice, setPayingFeeForInvoice] = useState(null);
   const [paymentFormData, setPaymentFormData] = useState({
     amount: '',
     paymentMethod: 'CASH',
@@ -99,6 +124,16 @@ export default function AccountantFees() {
         setClasses(classesResponse.data);
       }
 
+      // Fetch settings
+      try {
+        const settingsResponse = await api.get('/accountant/settings');
+        if (settingsResponse.data) {
+          setSettings(settingsResponse.data);
+        }
+      } catch (err) {
+        console.error('Failed to load settings:', err);
+      }
+
       // Fetch invoices
       await loadInvoices();
 
@@ -129,7 +164,7 @@ export default function AccountantFees() {
   }, []);
 
   useEffect(() => {
-    if (recordingPaymentForInvoice) {
+    if (recordingPaymentForInvoice || viewingFeeBookForStudent || payingFeeForInvoice) {
       document.body.style.overflow = 'hidden';
     } else {
       document.body.style.overflow = '';
@@ -137,7 +172,7 @@ export default function AccountantFees() {
     return () => {
       document.body.style.overflow = '';
     };
-  }, [recordingPaymentForInvoice]);
+  }, [recordingPaymentForInvoice, viewingFeeBookForStudent, payingFeeForInvoice]);
 
   const handleCreateInvoice = async (e) => {
     e.preventDefault();
@@ -225,7 +260,49 @@ export default function AccountantFees() {
     const matchSession = !selectedSessionFilter || s.academicYear === selectedSessionFilter;
     return matchCourse && matchSession;
   });
-
+  const getCourseOrClassInfo = (student) => {
+    if (!student) return { label: 'Class / Course', value: 'N/A' };
+    
+    // 1. Try to find student in the global studentsList first
+    const matched = studentsList.find(s => s.id === student.id || s.studentId === student.studentId);
+    
+    // 2. Resolve target student object to read from
+    const targetStudent = matched || student;
+    
+    // 3. Check course relation
+    if (targetStudent.course) {
+      const name = (targetStudent.course.courseName || '').trim();
+      const isNumeric = !isNaN(name);
+      const isSchoolClass = isNumeric && parseInt(name, 10) >= 1 && parseInt(name, 10) <= 12;
+      const containsClassWord = /class|grade|std|std\.|standard/i.test(name);
+      const isClass = isSchoolClass || containsClassWord || name.toLowerCase().startsWith('class') || isNumeric;
+      
+      const displayVal = `${name}${targetStudent.course.section ? ` - ${targetStudent.course.section}` : ''}`;
+      return {
+        label: isClass ? 'Class' : 'Course',
+        value: displayVal
+      };
+    }
+    
+    // 4. Check string courseName / className properties
+    const rawCourseName = targetStudent.courseName || targetStudent.className || '';
+    if (rawCourseName && rawCourseName !== 'N/A') {
+      const name = rawCourseName.trim();
+      // Remove any trailing section if it was already formatted like "Btech - A"
+      const cleanName = name.split('-')[0].trim();
+      const isNumeric = !isNaN(cleanName);
+      const isSchoolClass = isNumeric && parseInt(cleanName, 10) >= 1 && parseInt(cleanName, 10) <= 12;
+      const containsClassWord = /class|grade|std|std\.|standard/i.test(cleanName);
+      const isClass = isSchoolClass || containsClassWord || cleanName.toLowerCase().startsWith('class') || isNumeric;
+      
+      return {
+        label: isClass ? 'Class' : 'Course',
+        value: name
+      };
+    }
+    
+    return { label: 'Class / Course', value: 'N/A' };
+  };
   if (loading) return <Loader message="Loading invoices & financial ledger..." />;
 
   return (
@@ -272,7 +349,14 @@ export default function AccountantFees() {
                     if (studentId) {
                       const selStudent = studentsList.find(s => s.id.toString() === studentId.toString());
                       if (selStudent) {
-                        const selCourse = classes.find(c => c.id.toString() === (selStudent.classId || selStudent.courseId || '').toString());
+                        if (selStudent.academicYear) {
+                          setSelectedSessionFilter(selStudent.academicYear);
+                        }
+                        const targetClassId = selStudent.classId || selStudent.courseId;
+                        if (targetClassId) {
+                          setSelectedCourseFilter(targetClassId.toString());
+                        }
+                        const selCourse = classes.find(c => c.id.toString() === (targetClassId || '').toString());
                         if (selCourse && selCourse.feesList && selCourse.feesList.length > 0) {
                           const tuitionFee = selCourse.feesList.find(f => f.feeType === 'Tuition Fee') || selCourse.feesList[0];
                           if (tuitionFee) {
@@ -502,28 +586,56 @@ export default function AccountantFees() {
                           </span>
                         </td>
                         <td style={{ ...styles.td, textAlign: 'center' }}>
-                          {inv.status !== 'PAID' ? (
+                          <div style={{ display: 'flex', gap: '8px', justifyContent: 'center' }}>
                             <button
                               style={{
                                 ...styles.detailsLink,
-                                borderColor: 'var(--success)',
-                                color: 'var(--success)',
-                                background: 'rgba(5, 150, 105, 0.1)',
+                                borderColor: 'var(--primary)',
+                                color: 'var(--primary)',
+                                background: 'rgba(139, 92, 246, 0.1)',
                               }}
                               onClick={() => {
-                                setRecordingPaymentForInvoice(inv);
-                                setPaymentFormData({
-                                  amount: pendingAmount.toString(),
-                                  paymentMethod: 'CASH',
-                                  receiptNumber: ''
-                                });
+                                setViewingFeeBookForStudent(inv.student);
                               }}
                             >
-                              💵 Pay
+                              📖 Fee Book
                             </button>
-                          ) : (
-                            <span style={{ color: 'var(--text-muted)', fontSize: '0.8rem' }}>Settled</span>
-                          )}
+                            {inv.status !== 'PAID' ? (
+                              <button
+                                disabled={!(settings.collectFeeAnyDay || new Date().getDate() <= settings.feeDueDay)}
+                                style={{
+                                  ...styles.detailsLink,
+                                  borderColor: (settings.collectFeeAnyDay || new Date().getDate() <= settings.feeDueDay) ? 'var(--success)' : 'var(--text-muted)',
+                                  color: (settings.collectFeeAnyDay || new Date().getDate() <= settings.feeDueDay) ? 'var(--success)' : 'var(--text-muted)',
+                                  background: (settings.collectFeeAnyDay || new Date().getDate() <= settings.feeDueDay) ? 'rgba(5, 150, 105, 0.1)' : 'rgba(128, 128, 128, 0.05)',
+                                  cursor: (settings.collectFeeAnyDay || new Date().getDate() <= settings.feeDueDay) ? 'pointer' : 'not-allowed',
+                                  opacity: (settings.collectFeeAnyDay || new Date().getDate() <= settings.feeDueDay) ? 1 : 0.6
+                                }}
+                                title={!(settings.collectFeeAnyDay || new Date().getDate() <= settings.feeDueDay) ? "Fee collection is disabled past the monthly due date" : ""}
+                                onClick={() => {
+                                  const isOverdue = isInvoiceOverdue(inv);
+                                  const lateFine = isOverdue ? 150 : 0;
+                                  const prevInvoices = invoices.filter(other => other.studentId === inv.studentId && other.id !== inv.id && other.status !== 'PAID');
+                                  const prevDues = prevInvoices.reduce((sum, other) => {
+                                    const paid = other.payments ? other.payments.reduce((s, p) => s + p.amount, 0) : 0;
+                                    return sum + Math.max(0, other.amount - paid);
+                                  }, 0);
+                                  const currentPending = Math.max(0, inv.amount - paidAmount);
+
+                                  setPayingFeeForInvoice(inv);
+                                  setPaymentFormData({
+                                    amount: (currentPending + lateFine + prevDues).toString(),
+                                    paymentMethod: 'CASH',
+                                    receiptNumber: ''
+                                  });
+                                }}
+                              >
+                                💵 Pay Fee
+                              </button>
+                            ) : (
+                              <span style={{ color: 'var(--text-muted)', fontSize: '0.8rem', alignSelf: 'center' }}>Settled</span>
+                            )}
+                          </div>
                         </td>
                       </tr>
                     );
@@ -662,6 +774,349 @@ export default function AccountantFees() {
         }}>
           <span style={{ fontSize: '1.25rem' }}>{toast.type === 'success' ? '✅' : '⚠️'}</span>
           <span style={{ fontSize: '0.9rem', fontWeight: '600' }}>{toast.message}</span>
+        </div>,
+        document.body
+      )}
+
+      {/* Student Fee Book Modal */}
+      {viewingFeeBookForStudent && createPortal(
+        <div style={styles.modalOverlay}>
+          <div style={{
+            ...styles.modalContent,
+            maxWidth: '900px',
+            boxShadow: '0 20px 50px rgba(0, 0, 0, 0.15)',
+          }} className="animate-scale-up">
+            <div style={styles.modalHeader}>
+              <h3 style={{ margin: 0, color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                📖 Student Fee Book
+              </h3>
+              <button style={styles.closeBtn} onClick={() => setViewingFeeBookForStudent(null)}>✕</button>
+            </div>
+
+            {/* Student Profile Header */}
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '20px',
+              background: 'rgba(139, 92, 246, 0.05)',
+              border: '1px solid var(--glass-border)',
+              borderRadius: '8px',
+              padding: '16px',
+              marginBottom: '24px'
+            }}>
+              {/* Photo Box */}
+              <div style={{
+                width: '70px',
+                height: '70px',
+                borderRadius: '50%',
+                background: 'linear-gradient(135deg, var(--primary) 0%, #a78bfa 100%)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                boxShadow: '0 4px 10px rgba(139, 92, 246, 0.3)',
+                color: '#fff',
+                fontSize: '1.5rem',
+                fontWeight: 'bold'
+              }}>
+                {viewingFeeBookForStudent.name ? viewingFeeBookForStudent.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) : 'ST'}
+              </div>
+              <div style={{ flex: 1 }}>
+                <h4 style={{ margin: '0 0 4px 0', fontSize: '1.2rem', color: 'var(--text-primary)' }}>
+                  {viewingFeeBookForStudent.name}
+                </h4>
+                <div style={{ display: 'flex', gap: '16px', flexWrap: 'wrap', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
+                  {(() => {
+                    const info = getCourseOrClassInfo(viewingFeeBookForStudent);
+                    return (
+                      <span>{info.label}: <strong style={{ color: 'var(--text-primary)' }}>{info.value}</strong></span>
+                    );
+                  })()}
+                  <span>Roll No: <strong style={{ color: 'var(--text-primary)' }}>{viewingFeeBookForStudent.rollNumber && viewingFeeBookForStudent.rollNumber !== 'N/A' ? viewingFeeBookForStudent.rollNumber : 'N/A'}</strong></span>
+                  <span>ID: <strong style={{ color: 'var(--text-primary)' }}>{viewingFeeBookForStudent.studentId}</strong></span>
+                </div>
+              </div>
+            </div>
+
+            {/* 12-Month Table */}
+            <div style={styles.tableContainer}>
+              <table style={styles.table}>
+                <thead>
+                  <tr style={styles.thRow}>
+                    <th style={styles.th}>Month</th>
+                    <th style={styles.th}>Fee Type</th>
+                    <th style={styles.th}>Amount</th>
+                    <th style={styles.th}>Late Fine</th>
+                    <th style={styles.th}>Method</th>
+                    <th style={{ ...styles.th, textAlign: 'center' }}>Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {(() => {
+                    const academicMonths = [
+                      { name: 'April', index: 3 },
+                      { name: 'May', index: 4 },
+                      { name: 'June', index: 5 },
+                      { name: 'July', index: 6 },
+                      { name: 'August', index: 7 },
+                      { name: 'September', index: 8 },
+                      { name: 'October', index: 9 },
+                      { name: 'November', index: 10 },
+                      { name: 'December', index: 11 },
+                      { name: 'January', index: 0 },
+                      { name: 'February', index: 1 },
+                      { name: 'March', index: 2 }
+                    ];
+
+                    const rows = [];
+                    academicMonths.forEach(m => {
+                      const studentInvoices = invoices.filter(inv => inv.studentId === viewingFeeBookForStudent.id);
+                      const monthInvoices = studentInvoices.filter(inv => {
+                        const date = new Date(inv.dueDate);
+                        return date.getMonth() === m.index;
+                      });
+
+                      if (monthInvoices.length > 0) {
+                        monthInvoices.forEach((inv, idx) => {
+                          const paidAmount = inv.payments ? inv.payments.reduce((sum, p) => sum + p.amount, 0) : 0;
+                          const isOverdue = isInvoiceOverdue(inv);
+                          const lateFine = isOverdue ? 150 : 0;
+                          const methods = inv.payments && inv.payments.length > 0 
+                            ? Array.from(new Set(inv.payments.map(p => p.paymentMethod))).map(method => {
+                                if (method === 'BANK_TRANSFER') return 'Card/Bank';
+                                return method;
+                              }).join(', ') 
+                            : '-';
+
+                          rows.push(
+                            <tr key={`${inv.id}-${idx}`} style={styles.tr}>
+                              <td style={{ ...styles.td, fontWeight: 'bold', color: 'var(--text-primary)' }}>
+                                {idx === 0 ? m.name : ''}
+                              </td>
+                              <td style={styles.td}>{inv.feeType}</td>
+                              <td style={styles.td}>₹{inv.amount.toLocaleString()}</td>
+                              <td style={{ ...styles.td, color: lateFine > 0 ? 'var(--danger)' : 'var(--text-secondary)' }}>
+                                {lateFine > 0 ? `₹${lateFine}` : '₹0'}
+                              </td>
+                              <td style={styles.td}>{methods}</td>
+                              <td style={{ ...styles.td, textAlign: 'center', fontSize: '1.2rem' }}>
+                                {inv.status === 'PAID' ? '✅' : '❌'}
+                              </td>
+                            </tr>
+                          );
+                        });
+                      } else {
+                        rows.push(
+                          <tr key={m.name} style={styles.tr}>
+                            <td style={{ ...styles.td, fontWeight: 'bold', color: 'var(--text-primary)' }}>{m.name}</td>
+                            <td style={{ ...styles.td, color: 'var(--text-muted)' }}>-</td>
+                            <td style={{ ...styles.td, color: 'var(--text-muted)' }}>-</td>
+                            <td style={{ ...styles.td, color: 'var(--text-muted)' }}>-</td>
+                            <td style={{ ...styles.td, color: 'var(--text-muted)' }}>-</td>
+                            <td style={{ ...styles.td, textAlign: 'center', color: 'var(--text-muted)' }}>-</td>
+                          </tr>
+                        );
+                      }
+                    });
+                    return rows;
+                  })()}
+                </tbody>
+              </table>
+            </div>
+
+            <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '20px' }}>
+              <button style={styles.cancelBtn} onClick={() => setViewingFeeBookForStudent(null)}>
+                Close
+              </button>
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
+
+      {/* Pay Fee Modal */}
+      {payingFeeForInvoice && createPortal(
+        <div style={styles.modalOverlay}>
+          <div style={{
+            ...styles.modalContent,
+            maxWidth: '500px',
+            boxShadow: '0 20px 50px rgba(0, 0, 0, 0.15)',
+          }} className="animate-scale-up">
+            <div style={styles.modalHeader}>
+              <h3 style={{ margin: 0, color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                💵 Pay Student Fee
+              </h3>
+              <button style={styles.closeBtn} onClick={() => setPayingFeeForInvoice(null)}>✕</button>
+            </div>
+
+            <div style={{ marginBottom: '20px', padding: '16px', background: 'rgba(139, 92, 246, 0.03)', border: '1px solid var(--glass-border)', borderRadius: '8px' }}>
+              <p style={{ margin: '0 0 8px 0', fontSize: '0.9rem', color: 'var(--text-secondary)' }}>
+                Student: <strong style={{ color: 'var(--text-primary)' }}>{payingFeeForInvoice.student?.name} {payingFeeForInvoice.student?.rollNumber ? `(Roll No: ${payingFeeForInvoice.student.rollNumber})` : ''}</strong>
+              </p>
+              {(() => {
+                const info = getCourseOrClassInfo(payingFeeForInvoice.student);
+                return (
+                  <p style={{ margin: '0 0 8px 0', fontSize: '0.9rem', color: 'var(--text-secondary)' }}>
+                    {info.label}: <strong style={{ color: 'var(--text-primary)' }}>{info.value}</strong>
+                  </p>
+                );
+              })()}
+              <p style={{ margin: '0 0 8px 0', fontSize: '0.9rem', color: 'var(--text-secondary)' }}>
+                Fee Cycle: <strong style={{ color: 'var(--text-primary)', textTransform: 'capitalize' }}>{(payingFeeForInvoice.student?.feeCycle || 'MONTHLY').toLowerCase().replace('_', ' ')}</strong>
+              </p>
+              <p style={{ margin: '0 0 8px 0', fontSize: '0.9rem', color: 'var(--text-secondary)' }}>
+                Current Month: <strong style={{ color: 'var(--text-primary)' }}>{new Date(payingFeeForInvoice.dueDate).toLocaleString('default', { month: 'long' })}</strong>
+              </p>
+            </div>
+
+            {/* Calculations Breakdown */}
+            {(() => {
+              const paidAmount = payingFeeForInvoice.payments ? payingFeeForInvoice.payments.reduce((sum, p) => sum + p.amount, 0) : 0;
+              const pendingAmount = Math.max(0, payingFeeForInvoice.amount - paidAmount);
+              const isOverdue = isInvoiceOverdue(payingFeeForInvoice);
+              const lateFine = isOverdue ? 150 : 0;
+
+              const prevInvoices = invoices.filter(other => other.studentId === payingFeeForInvoice.studentId && other.id !== payingFeeForInvoice.id && other.status !== 'PAID');
+              const prevDues = prevInvoices.reduce((sum, other) => {
+                const paid = other.payments ? other.payments.reduce((s, p) => s + p.amount, 0) : 0;
+                return sum + Math.max(0, other.amount - paid);
+              }, 0);
+
+              const totalToPay = pendingAmount + lateFine + prevDues;
+
+              return (
+                <form onSubmit={async (e) => {
+                  e.preventDefault();
+                  try {
+                    setError('');
+                    setProcessing(true);
+                    setProcessingMessage('Recording fee payment...');
+                    const response = await api.post('/accountant/payments', {
+                      feeInvoiceId: payingFeeForInvoice.id,
+                      amount: Number(paymentFormData.amount),
+                      paymentMethod: paymentFormData.paymentMethod,
+                      receiptNumber: paymentFormData.receiptNumber
+                    });
+
+                    if (response.data) {
+                      showToast('Payment recorded successfully!');
+                      setPayingFeeForInvoice(null);
+                      setPaymentFormData({ amount: '', paymentMethod: 'CASH', receiptNumber: '' });
+                      await loadInvoices();
+                    }
+                  } catch (err) {
+                    console.error(err);
+                    setError(err.response?.data?.error || 'Failed to record payment.');
+                  } finally {
+                    setProcessing(false);
+                  }
+                }} style={styles.form}>
+
+                  {/* Detailed breakdown list */}
+                  <div style={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '10px',
+                    padding: '14px',
+                    background: 'rgba(0, 0, 0, 0.02)',
+                    border: '1px solid var(--glass-border)',
+                    borderRadius: '8px',
+                    marginBottom: '20px'
+                  }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.9rem' }}>
+                      <span style={{ color: 'var(--text-secondary)' }}>Total Fee Amount ({new Date(payingFeeForInvoice.dueDate).toLocaleString('default', { month: 'long' })}):</span>
+                      <span style={{ color: 'var(--text-primary)', fontWeight: '600' }}>₹{payingFeeForInvoice.amount.toLocaleString()}</span>
+                    </div>
+                    {paidAmount > 0 && (
+                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.9rem', color: 'var(--success)' }}>
+                        <span>Partially Paid Amount:</span>
+                        <span style={{ fontWeight: '600' }}>- ₹{paidAmount.toLocaleString()}</span>
+                      </div>
+                    )}
+                    {paidAmount > 0 && (
+                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.9rem' }}>
+                        <span style={{ color: 'var(--text-secondary)' }}>Remaining Fee Amount:</span>
+                        <span style={{ color: 'var(--text-primary)', fontWeight: '600' }}>₹{pendingAmount.toLocaleString()}</span>
+                      </div>
+                    )}
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.9rem' }}>
+                      <span style={{ color: 'var(--text-secondary)' }}>Late Fine:</span>
+                      <span style={{ color: lateFine > 0 ? 'var(--danger)' : 'var(--text-primary)', fontWeight: '600' }}>₹{lateFine.toLocaleString()}</span>
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.9rem' }}>
+                      <span style={{ color: 'var(--text-secondary)' }}>Previous Month Dues:</span>
+                      <span style={{ color: prevDues > 0 ? 'var(--warning)' : 'var(--text-primary)', fontWeight: '600' }}>₹{prevDues.toLocaleString()}</span>
+                    </div>
+                    <div style={{ borderTop: '1px solid var(--glass-border)', paddingTop: '10px', marginTop: '4px', display: 'flex', justifyContent: 'space-between', fontSize: '1.05rem' }}>
+                      <strong style={{ color: 'var(--text-primary)' }}>Total Amount:</strong>
+                      <strong style={{ color: 'var(--success)' }}>₹{totalToPay.toLocaleString()}</strong>
+                    </div>
+                  </div>
+
+                  <div style={styles.formGroup}>
+                    <label style={styles.label}>Payment Method *</label>
+                    <select
+                      style={styles.input}
+                      value={paymentFormData.paymentMethod}
+                      onChange={(e) => setPaymentFormData({ ...paymentFormData, paymentMethod: e.target.value })}
+                    >
+                      <option value="CASH">Cash</option>
+                      <option value="UPI">UPI / QR Code</option>
+                      <option value="BANK_TRANSFER">Bank Transfer / NetBanking</option>
+                      <option value="CHEQUE">Cheque</option>
+                    </select>
+                  </div>
+
+                  {settings.allowPartPayment ? (
+                    <div style={styles.formGroup}>
+                      <label style={styles.label}>Amount to Pay (₹) *</label>
+                      <input
+                        type="number"
+                        min="1"
+                        max={totalToPay}
+                        style={styles.input}
+                        required
+                        value={paymentFormData.amount}
+                        onChange={(e) => setPaymentFormData({ ...paymentFormData, amount: e.target.value })}
+                      />
+                      <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
+                        Enter a custom partial payment amount (maximum outstanding is ₹{totalToPay.toLocaleString()}).
+                      </span>
+                    </div>
+                  ) : (
+                    <div style={styles.formGroup}>
+                      <label style={styles.label}>Amount to Pay (₹) (Fixed)</label>
+                      <input
+                        type="text"
+                        style={{ ...styles.input, background: 'rgba(255, 255, 255, 0.05)', color: 'var(--text-muted)' }}
+                        disabled
+                        value={`₹${totalToPay.toLocaleString()}`}
+                      />
+                    </div>
+                  )}
+
+                  <div style={styles.formGroup}>
+                    <label style={styles.label}>Receipt Number / Transaction ID</label>
+                    <input
+                      type="text"
+                      style={styles.input}
+                      placeholder="Optional reference number"
+                      value={paymentFormData.receiptNumber}
+                      onChange={(e) => setPaymentFormData({ ...paymentFormData, receiptNumber: e.target.value })}
+                    />
+                  </div>
+
+                  <div style={styles.formActions}>
+                    <button type="button" style={styles.cancelBtn} onClick={() => setPayingFeeForInvoice(null)}>
+                      Cancel Fee
+                    </button>
+                    <button type="submit" style={styles.submitBtn}>
+                      Pay Fee
+                    </button>
+                  </div>
+                </form>
+              );
+            })()}
+          </div>
         </div>,
         document.body
       )}
