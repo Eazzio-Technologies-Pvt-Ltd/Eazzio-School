@@ -187,14 +187,52 @@ export default function AccountantClasses() {
             <div style={styles.formRow}>
               <div style={styles.formGroup}>
                 <label style={styles.label}>Course Name *</label>
-                <input
-                  type="text"
+                <select
                   required
                   style={styles.input}
-                  placeholder="e.g. 6, Fitter, Mechanical"
                   value={classFormData.className}
-                  onChange={(e) => setClassFormData({ ...classFormData, className: e.target.value })}
-                />
+                  onChange={(e) => {
+                    const selectedVal = e.target.value;
+                    const matchingClass = classes.find(c => (c.className || c.courseName) === selectedVal);
+                    let fees = '';
+                    let feeType = 'Tuition Fee';
+                    let planType = 'MONTHLY';
+                    let oneTimeFee = '';
+                    let section = classFormData.section;
+                    let academicYear = classFormData.academicYear;
+
+                    if (matchingClass) {
+                      const mainFee = matchingClass.feesList?.find(f => f.planType !== 'ONE_TIME');
+                      const oneTime = matchingClass.feesList?.find(f => f.planType === 'ONE_TIME');
+                      if (mainFee) {
+                        fees = mainFee.amount.toString();
+                        feeType = mainFee.feeType;
+                        planType = mainFee.planType;
+                      }
+                      if (oneTime) {
+                        oneTimeFee = oneTime.amount.toString();
+                      }
+                      section = matchingClass.section || '';
+                      academicYear = matchingClass.academicYear || '';
+                    }
+
+                    setClassFormData({
+                      ...classFormData,
+                      className: selectedVal,
+                      fees,
+                      feeType,
+                      planType,
+                      oneTimeFee,
+                      section,
+                      academicYear
+                    });
+                  }}
+                >
+                  <option value="">-- Select Course --</option>
+                  {Array.from(new Set(classes.map(c => c.className || c.courseName).filter(Boolean))).map((name, index) => (
+                    <option key={index} value={name}>{name}</option>
+                  ))}
+                </select>
               </div>
               <div style={styles.formGroup}>
                 <label style={styles.label}>Section / Batch *</label>
@@ -410,13 +448,52 @@ export default function AccountantClasses() {
             <form onSubmit={handleEditClass} style={styles.form}>
               <div style={styles.formGroup}>
                 <label style={styles.label}>Course Name *</label>
-                <input
-                  type="text"
+                <select
                   required
                   style={styles.input}
                   value={editClassFormData.className}
-                  onChange={(e) => setEditClassFormData({ ...editClassFormData, className: e.target.value })}
-                />
+                  onChange={(e) => {
+                    const selectedVal = e.target.value;
+                    const matchingClass = classes.find(c => (c.className || c.courseName) === selectedVal);
+                    let fees = '';
+                    let feeType = 'Tuition Fee';
+                    let planType = 'MONTHLY';
+                    let oneTimeFee = '';
+                    let section = editClassFormData.section;
+                    let academicYear = editClassFormData.academicYear;
+
+                    if (matchingClass) {
+                      const mainFee = matchingClass.feesList?.find(f => f.planType !== 'ONE_TIME');
+                      const oneTime = matchingClass.feesList?.find(f => f.planType === 'ONE_TIME');
+                      if (mainFee) {
+                        fees = mainFee.amount.toString();
+                        feeType = mainFee.feeType;
+                        planType = mainFee.planType;
+                      }
+                      if (oneTime) {
+                        oneTimeFee = oneTime.amount.toString();
+                      }
+                      section = matchingClass.section || '';
+                      academicYear = matchingClass.academicYear || '';
+                    }
+
+                    setEditClassFormData({
+                      ...editClassFormData,
+                      className: selectedVal,
+                      fees,
+                      feeType,
+                      planType,
+                      oneTimeFee,
+                      section,
+                      academicYear
+                    });
+                  }}
+                >
+                  <option value="">-- Select Course --</option>
+                  {Array.from(new Set(classes.map(c => c.className || c.courseName).filter(Boolean))).map((name, index) => (
+                    <option key={index} value={name}>{name}</option>
+                  ))}
+                </select>
               </div>
 
               <div style={styles.formGroup}>

@@ -668,7 +668,11 @@ router.get('/invoices', async (req, res) => {
     const invoices = await prisma.feeInvoice.findMany({
       where: whereClause,
       include: {
-        student: true,
+        student: {
+          include: {
+            course: true
+          }
+        },
         payments: {
           where: { status: 'SUCCESS' }
         }
@@ -1071,6 +1075,57 @@ router.delete('/fee-structures/:id', async (req, res) => {
     return res.json({ success: true, message: 'Fee structure deleted successfully' });
   } catch (error) {
     console.error('Error deleting fee structure:', error);
+    return res.status(500).json({ success: false, error: 'Internal server error' });
+  }
+});
+
+// GET /api/accountant/settings - Get accountant settings
+router.get('/settings', async (req, res) => {
+  const schoolId = parseInt(req.user.schoolId, 10);
+  try {
+    const school = await prisma.school.findUnique({
+      where: { id: schoolId },
+      select: {
+        feeDueDay: true,
+        collectFeeAnyDay: true,
+        allowPartPayment: true
+      }
+    });
+
+    if (!school) {
+      return res.status(404).json({ success: false, error: 'School not found' });
+    }
+
+    return res.json({ success: true, data: school });
+  } catch (error) {
+    console.error('Error fetching accountant settings:', error);
+    return res.status(500).json({ success: false, error: 'Internal server error' });
+  }
+});
+
+// PUT /api/accountant/settings - Update accountant settings
+router.put('/settings', async (req, res) => {
+  const schoolId = parseInt(req.user.schoolId, 10);
+  const { feeDueDay, collectFeeAnyDay, allowPartPayment } = req.body;
+
+  try {
+    const updatedSchool = await prisma.school.update({
+      where: { id: schoolId },
+      data: {
+        feeDueDay: typeof feeDueDay === 'number' ? feeDueDay : parseInt(feeDueDay || 10, 10),
+        collectFeeAnyDay: !!collectFeeAnyDay,
+        allowPartPayment: !!allowPartPayment
+      },
+      select: {
+        feeDueDay: true,
+        collectFeeAnyDay: true,
+        allowPartPayment: true
+      }
+    });
+
+    return res.json({ success: true, message: 'Settings updated successfully', data: updatedSchool });
+  } catch (error) {
+    console.error('Error updating accountant settings:', error);
     return res.status(500).json({ success: false, error: 'Internal server error' });
   }
 });

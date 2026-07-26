@@ -43,6 +43,19 @@ const calculateFeeBreakdown = (selectedCourse) => {
   };
 };
 
+const getTodayDateString = () => {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+};
+
+const formatDateTime = (dateVal) => {
+  if (!dateVal) return 'N/A';
+  const d = new Date(dateVal);
+  const dateStr = d.toLocaleDateString();
+  const timeStr = d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true });
+  return `${dateStr} - ${timeStr}`;
+};
+
 export default function AccountantStudents() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -67,7 +80,7 @@ export default function AccountantStudents() {
     motherName: '',
     phone: '',
     address: '',
-    admissionDate: '',
+    admissionDate: getTodayDateString(),
     feeCycle: 'MONTHLY'
   });
 
@@ -377,7 +390,7 @@ export default function AccountantStudents() {
                               <strong>Receipt #${idx + 1}:</strong> Paid <strong>₹${p.amount.toLocaleString()}</strong> (${p.paymentMethod} ${p.receiptNumber ? `| Ref: ${p.receiptNumber}` : ''})
                             </div>
                             <div style="color: #6b7280;">
-                              ${new Date(p.date || p.createdAt).toLocaleDateString()}
+                              ${formatDateTime(p.date || p.createdAt)}
                             </div>
                           </div>
                         `).join('')}
@@ -680,7 +693,7 @@ export default function AccountantStudents() {
           motherName: '',
           phone: '',
           address: '',
-          admissionDate: '',
+          admissionDate: getTodayDateString(),
           feeCycle: 'MONTHLY'
         });
         
@@ -1082,13 +1095,12 @@ export default function AccountantStudents() {
                   />
                 </div>
                 <div style={styles.formGroup}>
-                  <label style={styles.label}>Roll Number</label>
+                  <label style={styles.label}>Admission Date</label>
                   <input
-                    type="text"
+                    type="date"
                     style={styles.input}
-                    value={formData.rollNumber}
-                    onChange={(e) => setFormData({ ...formData, rollNumber: e.target.value })}
-                    placeholder="e.g. 101"
+                    value={formData.admissionDate}
+                    onChange={(e) => setFormData({ ...formData, admissionDate: e.target.value })}
                   />
                 </div>
               </div>
@@ -1100,7 +1112,17 @@ export default function AccountantStudents() {
                     required
                     style={styles.input}
                     value={formData.classId}
-                    onChange={(e) => setFormData({ ...formData, classId: e.target.value })}
+                    onChange={(e) => {
+                      const newClassId = e.target.value;
+                      const selectedClass = classes.find(cls => String(cls.id) === String(newClassId));
+                      const studentCount = selectedClass && selectedClass._count ? selectedClass._count.students : 0;
+                      const nextRoll = newClassId ? String(studentCount + 1) : '';
+                      setFormData({ 
+                        ...formData, 
+                        classId: newClassId,
+                        rollNumber: nextRoll
+                      });
+                    }}
                   >
                     <option value="">Select a Class</option>
                     {classes.map((cls) => (
@@ -1111,12 +1133,13 @@ export default function AccountantStudents() {
                   </select>
                 </div>
                 <div style={styles.formGroup}>
-                  <label style={styles.label}>Admission Date</label>
+                  <label style={styles.label}>Roll Number</label>
                   <input
-                    type="date"
+                    type="text"
                     style={styles.input}
-                    value={formData.admissionDate}
-                    onChange={(e) => setFormData({ ...formData, admissionDate: e.target.value })}
+                    value={formData.rollNumber}
+                    onChange={(e) => setFormData({ ...formData, rollNumber: e.target.value })}
+                    placeholder="e.g. 101"
                   />
                 </div>
               </div>
@@ -1299,24 +1322,6 @@ export default function AccountantStudents() {
                     placeholder="Residential address"
                   />
                 </div>
-              </div>
-
-              <div style={styles.formRow}>
-                <div style={styles.formGroup}>
-                  <label style={styles.label}>Fee Payment Cycle *</label>
-                  <select
-                    required
-                    style={styles.input}
-                    value={formData.feeCycle}
-                    onChange={(e) => setFormData({ ...formData, feeCycle: e.target.value })}
-                  >
-                    <option value="MONTHLY">Monthly</option>
-                    <option value="QUARTERLY">Quarterly</option>
-                    <option value="HALF_YEARLY">Half-Yearly</option>
-                    <option value="YEARLY">Yearly</option>
-                  </select>
-                </div>
-                <div style={styles.formGroup} />
               </div>
 
               <div style={styles.formActions}>
@@ -1683,7 +1688,7 @@ export default function AccountantStudents() {
                                     </span>
                                   </div>
                                   <div style={{ color: 'var(--text-secondary)', fontSize: '0.7rem' }}>
-                                    {new Date(p.date || p.createdAt).toLocaleDateString()}
+                                    {formatDateTime(p.date || p.createdAt)}
                                   </div>
                                 </div>
                               ))}
@@ -1730,13 +1735,12 @@ export default function AccountantStudents() {
                   />
                 </div>
                 <div style={styles.formGroup}>
-                  <label style={styles.label}>Roll Number</label>
+                  <label style={styles.label}>Date of Admission</label>
                   <input
-                    type="text"
+                    type="date"
                     style={styles.input}
-                    value={editFormData.rollNumber}
-                    onChange={(e) => setEditFormData({ ...editFormData, rollNumber: e.target.value })}
-                    placeholder="e.g. 101"
+                    value={editFormData.admissionDate}
+                    onChange={(e) => setEditFormData({ ...editFormData, admissionDate: e.target.value })}
                   />
                 </div>
               </div>
@@ -1748,7 +1752,22 @@ export default function AccountantStudents() {
                     required
                     style={styles.input}
                     value={editFormData.classId}
-                    onChange={(e) => setEditFormData({ ...editFormData, classId: e.target.value })}
+                    onChange={(e) => {
+                      const newClassId = e.target.value;
+                      let nextRoll = editFormData.rollNumber;
+                      if (String(newClassId) !== String(editingStudent.classId)) {
+                        const selectedClass = classes.find(cls => String(cls.id) === String(newClassId));
+                        const studentCount = selectedClass && selectedClass._count ? selectedClass._count.students : 0;
+                        nextRoll = newClassId ? String(studentCount + 1) : '';
+                      } else {
+                        nextRoll = editingStudent.rollNumber === 'N/A' ? '' : (editingStudent.rollNumber || '');
+                      }
+                      setEditFormData({ 
+                        ...editFormData, 
+                        classId: newClassId,
+                        rollNumber: nextRoll
+                      });
+                    }}
                   >
                     <option value="">Select Class</option>
                     {classes.map((cls) => (
@@ -1759,12 +1778,13 @@ export default function AccountantStudents() {
                   </select>
                 </div>
                 <div style={styles.formGroup}>
-                  <label style={styles.label}>Date of Admission</label>
+                  <label style={styles.label}>Roll Number</label>
                   <input
-                    type="date"
+                    type="text"
                     style={styles.input}
-                    value={editFormData.admissionDate}
-                    onChange={(e) => setEditFormData({ ...editFormData, admissionDate: e.target.value })}
+                    value={editFormData.rollNumber}
+                    onChange={(e) => setEditFormData({ ...editFormData, rollNumber: e.target.value })}
+                    placeholder="e.g. 101"
                   />
                 </div>
               </div>
@@ -1947,24 +1967,6 @@ export default function AccountantStudents() {
                     placeholder="Residential address"
                   />
                 </div>
-              </div>
-
-              <div style={styles.formRow}>
-                <div style={styles.formGroup}>
-                  <label style={styles.label}>Fee Payment Cycle *</label>
-                  <select
-                    required
-                    style={styles.input}
-                    value={editFormData.feeCycle}
-                    onChange={(e) => setEditFormData({ ...editFormData, feeCycle: e.target.value })}
-                  >
-                    <option value="MONTHLY">Monthly</option>
-                    <option value="QUARTERLY">Quarterly</option>
-                    <option value="HALF_YEARLY">Half-Yearly</option>
-                    <option value="YEARLY">Yearly</option>
-                  </select>
-                </div>
-                <div style={styles.formGroup} />
               </div>
 
               <div style={styles.formActions}>

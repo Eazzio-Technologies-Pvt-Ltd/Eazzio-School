@@ -20,6 +20,9 @@ model School {
   studentCount       Int            @default(0)
   createdAt          DateTime       @default(now())
   schoolCode         String         @unique
+  feeDueDay          Int            @default(10)
+  collectFeeAnyDay   Boolean        @default(true)
+  allowPartPayment   Boolean        @default(false)
   accountants        Accountant[]
   Admin              Admin[]
   attendance         Attendance[]

@@ -19,9 +19,7 @@ export default function DashboardLayout() {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [isMobile, setIsMobile] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
-  const [openSubmenus, setOpenSubmenus] = useState({
-    feeStructure: true
-  });
+  const [openSubmenus, setOpenSubmenus] = useState({});
 
   const toggleSubmenu = (key) => {
     setOpenSubmenus(prev => ({ ...prev, [key]: !prev[key] }));
@@ -100,20 +98,9 @@ export default function DashboardLayout() {
       { path: '/accountant/dashboard', label: 'Dashboard', icon: <LayoutDashboard size={20} /> },
       { path: '/accountant/classes', label: 'Courses', icon: <GraduationCap size={20} /> },
       { path: '/accountant/students', label: 'Students', icon: <Users size={20} /> },
-      { path: '/accountant/fees', label: 'Fees Overview', icon: <CreditCard size={20} /> },
-      {
-        key: 'feeStructure',
-        label: 'Fee Structure',
-        icon: <FileText size={20} />,
-        children: [
-          { path: '/accountant/fee-structure?plan=add', label: 'Add Fee Plan' },
-          { path: '/accountant/fee-structure?plan=monthly', label: 'Monthly' },
-          { path: '/accountant/fee-structure?plan=quarterly', label: 'Quarterly' },
-          { path: '/accountant/fee-structure?plan=half-yearly', label: 'Half-Yearly' },
-          { path: '/accountant/fee-structure?plan=yearly', label: 'Yearly' },
-        ]
-      },
-      { path: '/accountant/notices', label: 'Notice Board', icon: <Megaphone size={20} /> }
+      { path: '/accountant/fees', label: 'Record Fee', icon: <CreditCard size={20} /> },
+      { path: '/accountant/notices', label: 'Notice Board', icon: <Megaphone size={20} /> },
+      { path: '/accountant/settings', label: 'Settings', icon: <Settings size={20} /> }
     ],
   };
 
