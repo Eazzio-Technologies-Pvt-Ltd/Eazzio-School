@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useContext } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { getCourseDetails, updateCourse, deleteCourse, getTeachers, assignCourseTeacher } from '../../api/principalApi';
+import { getCourseDetails, getTeachers, assignCourseTeacher, addCourseSubject, removeCourseSubject } from '../../api/principalApi';
 import Loader from '../../components/Loader';
 import { ToastContext } from '../../context/ToastContext';
 import { ArrowLeft, Edit2, Trash2, Users, Check, X, Calendar, BookOpen, AlertCircle, UserCheck } from 'lucide-react';
@@ -16,8 +16,11 @@ export default function CourseDetails() {
   const [error, setError] = useState('');
 
   const [editMode, setEditMode] = useState(false);
-  const [formData, setFormData] = useState({ courseName: '', section: '', academicYear: '' });
   const [teacherId, setTeacherId] = useState('');
+  
+  const [newSubjectName, setNewSubjectName] = useState('');
+  const [newSubjectTeacherId, setNewSubjectTeacherId] = useState('');
+  const [addingSubject, setAddingSubject] = useState(false);
 
   const loadData = async () => {
     try {
@@ -29,11 +32,6 @@ export default function CourseDetails() {
       const courseData = crsRes.data || crsRes;
       setCrs(courseData);
       setTeachers(tchRes.data || tchRes);
-      setFormData({
-        courseName: courseData.courseName,
-        section: courseData.section,
-        academicYear: courseData.academicYear
-      });
       setTeacherId(courseData.teacherId || '');
     } catch (err) {
       setError('Failed to load course details.');
@@ -48,7 +46,6 @@ export default function CourseDetails() {
 
   const handleUpdate = async () => {
     try {
-      await updateCourse(id, formData);
       const currentTeacherId = crs.teacherId || null;
       const newTeacherId = teacherId ? parseInt(teacherId) : null;
       if (newTeacherId !== currentTeacherId) {
@@ -56,19 +53,37 @@ export default function CourseDetails() {
       }
       setEditMode(false);
       loadData();
+      showToast('Course teacher updated successfully', 'success');
     } catch (err) {
-      showToast(err.response?.data?.error || 'Failed to update course.', 'error');
+      showToast(err.response?.data?.error || 'Failed to assign teacher.', 'error');
     }
   };
 
-  const handleDelete = async () => {
-    if (window.confirm('Are you sure you want to delete this course? This will orphan any linked students, attendance, and fee records.')) {
-      try {
-        await deleteCourse(id);
-        navigate('/principal/courses');
-      } catch (err) {
-        showToast('Failed to delete course.', 'error');
-      }
+  const handleAddSubject = async (e) => {
+    e.preventDefault();
+    if (!newSubjectName || !newSubjectTeacherId) return;
+    setAddingSubject(true);
+    try {
+      await addCourseSubject(id, { subject: newSubjectName, teacherId: newSubjectTeacherId });
+      setNewSubjectName('');
+      setNewSubjectTeacherId('');
+      loadData();
+      showToast('Subject added successfully', 'success');
+    } catch (err) {
+      showToast(err.response?.data?.error || 'Failed to add subject', 'error');
+    } finally {
+      setAddingSubject(false);
+    }
+  };
+
+  const handleRemoveSubject = async (subjectId) => {
+    if (!window.confirm('Are you sure you want to remove this subject?')) return;
+    try {
+      await removeCourseSubject(id, subjectId);
+      loadData();
+      showToast('Subject removed successfully', 'success');
+    } catch (err) {
+      showToast('Failed to remove subject', 'error');
     }
   };
 
@@ -84,36 +99,69 @@ export default function CourseDetails() {
         <button onClick={() => navigate('/principal/courses')} className="flex items-center gap-2 text-emerald-600 hover:text-emerald-800 font-medium w-fit">
           <ArrowLeft size={16} /> Back to Courses
         </button>
-        <button onClick={handleDelete} className="flex items-center gap-2 text-red-500 hover:text-red-700 font-medium px-3 py-1.5 border border-red-200 hover:bg-red-50 rounded-lg transition-colors duration-150">
-          <Trash2 size={16} /> Delete Course
-        </button>
+
       </div>
 
       <div className="bg-white border border-gray-200 shadow-sm rounded-xl p-8">
         {editMode ? (
-          <div className="flex flex-col gap-4">
-            <h2 className="text-xl font-bold">Edit Course</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="flex flex-col gap-6">
+            <div className="flex justify-between items-start border-b border-gray-100 pb-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Course Name</label>
-                <input type="text" value={formData.courseName} onChange={e => setFormData({...formData, courseName: e.target.value})} className="w-full p-2 border border-gray-300 rounded-lg outline-none focus:border-emerald-500" />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Section</label>
-                <input type="text" value={formData.section} onChange={e => setFormData({...formData, section: e.target.value})} className="w-full p-2 border border-gray-300 rounded-lg outline-none focus:border-emerald-500" />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Academic Year</label>
-                <input type="text" value={formData.academicYear} onChange={e => setFormData({...formData, academicYear: e.target.value})} className="w-full p-2 border border-gray-300 rounded-lg outline-none focus:border-emerald-500" />
+                <h2 className="text-2xl font-bold text-gray-900">{crs.courseName} - Section {crs.section}</h2>
+                <p className="text-gray-500">{crs.academicYear} Academic Session</p>
               </div>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-2">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Course Teacher</label>
+
+            <div>
+              <h3 className="text-lg font-bold mb-3">Assign Class Teacher</h3>
+              <div className="max-w-md">
                 <select value={teacherId} onChange={e => setTeacherId(e.target.value)} className="w-full p-2 border border-gray-300 rounded-lg outline-none focus:border-emerald-500 bg-white">
                   <option value="">-- Unassigned --</option>
                   {teachers.map(t => <option key={t.id} value={t.id}>{t.name} ({t.employeeId})</option>)}
                 </select>
+              </div>
+            </div>
+
+            <div className="pt-4 border-t border-gray-100">
+              <h3 className="text-lg font-bold mb-4">Manage Subjects & Teachers</h3>
+              
+              <div className="bg-gray-50 rounded-xl p-4 border border-gray-200 mb-6">
+                <form onSubmit={handleAddSubject} className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
+                  <div>
+                    <label className="block text-xs font-semibold text-gray-600 mb-1">Subject Name</label>
+                    <input required type="text" value={newSubjectName} onChange={e => setNewSubjectName(e.target.value)} placeholder="e.g. Mathematics" className="w-full p-2 text-sm border border-gray-300 rounded-lg outline-none focus:border-emerald-500 bg-white" />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-gray-600 mb-1">Subject Teacher</label>
+                    <select required value={newSubjectTeacherId} onChange={e => setNewSubjectTeacherId(e.target.value)} className="w-full p-2 text-sm border border-gray-300 rounded-lg outline-none focus:border-emerald-500 bg-white">
+                      <option value="">Select Teacher...</option>
+                      {teachers.map(t => <option key={t.id} value={t.id}>{t.name} ({t.employeeId})</option>)}
+                    </select>
+                  </div>
+                  <div>
+                    <button type="submit" disabled={addingSubject} className="w-full py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition-colors disabled:opacity-50">
+                      {addingSubject ? 'Adding...' : 'Add Subject'}
+                    </button>
+                  </div>
+                </form>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+                {crs.courseSubjects && crs.courseSubjects.length > 0 ? (
+                  crs.courseSubjects.map(sub => (
+                    <div key={sub.id} className="flex justify-between items-center p-3 border border-gray-200 rounded-lg bg-white shadow-sm">
+                      <div>
+                        <p className="font-bold text-gray-800 text-sm">{sub.subject}</p>
+                        <p className="text-xs text-gray-500">{sub.teacher?.name}</p>
+                      </div>
+                      <button onClick={() => handleRemoveSubject(sub.id)} className="text-red-400 hover:text-red-600 p-1 hover:bg-red-50 rounded">
+                        <Trash2 size={14} />
+                      </button>
+                    </div>
+                  ))
+                ) : (
+                  <div className="col-span-full text-sm text-gray-500 italic">No subjects configured for this class yet.</div>
+                )}
               </div>
             </div>
             <div className="flex gap-3 mt-4">
@@ -200,14 +248,15 @@ export default function CourseDetails() {
 
         <div className="bg-white border border-gray-200 shadow-sm rounded-xl p-6 h-fit">
           <h3 className="text-lg font-bold text-gray-900 mb-4">Assigned Subjects</h3>
-          {subjects.length === 0 ? (
-            <p className="text-gray-500 italic text-sm">No subjects assigned via timetable yet.</p>
+          {!crs.courseSubjects || crs.courseSubjects.length === 0 ? (
+            <p className="text-gray-500 italic text-sm">No subjects assigned yet.</p>
           ) : (
-            <div className="flex flex-wrap gap-2">
-              {subjects.map((sub, i) => (
-                <span key={i} className="px-3 py-1.5 bg-emerald-50 text-emerald-700 rounded-lg text-sm font-medium border border-emerald-100">
-                  {sub}
-                </span>
+            <div className="flex flex-col gap-2">
+              {crs.courseSubjects.map((sub) => (
+                <div key={sub.id} className="flex justify-between items-center px-3 py-2 bg-emerald-50 rounded-lg border border-emerald-100">
+                  <span className="text-emerald-800 font-semibold text-sm">{sub.subject}</span>
+                  <span className="text-emerald-600 text-xs font-medium bg-white px-2 py-0.5 rounded-full border border-emerald-200 shadow-sm">{sub.teacher?.name || 'Unassigned'}</span>
+                </div>
               ))}
             </div>
           )}

@@ -278,7 +278,6 @@ export default function TeacherDetails() {
           </div>
 
         </div>
-
       </div>
 
       {/* Edit Teacher Modal */}

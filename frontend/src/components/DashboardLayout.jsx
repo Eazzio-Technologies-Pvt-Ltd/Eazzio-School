@@ -6,7 +6,8 @@ import logo from '../assets/logo.png';
 import {
   LayoutDashboard, GraduationCap, Users, UsersRound, Calendar,
   CreditCard, Megaphone, Clock, FileText, Settings,
-  LogOut, Menu, ChevronLeft, ChevronRight, Briefcase, MessageSquare
+  LogOut, Menu, ChevronLeft, ChevronRight, Briefcase, MessageSquare,
+  Sun, Moon
 } from 'lucide-react';
 
 export default function DashboardLayout() {
@@ -271,7 +272,15 @@ export default function DashboardLayout() {
             </h2>
           </div>
 
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2 sm:gap-4">
+            <button 
+              onClick={toggleTheme}
+              className="p-2 text-gray-500 hover:text-emerald-600 hover:bg-emerald-50 rounded-full transition-colors hidden sm:block"
+              title="Toggle Theme"
+            >
+              {theme === 'dark' ? <Sun size={20} /> : <Moon size={20} />}
+            </button>
+
             <div className="flex items-center gap-3 bg-gray-50 border border-gray-100 rounded-full py-1.5 pr-4 pl-1.5 shadow-sm">
               <div className="w-8 h-8 rounded-full bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center text-white font-bold text-sm shadow-inner shrink-0">
                 {user.name ? user.name[0].toUpperCase() : 'U'}

@@ -56,6 +56,7 @@ model Course {
   students      Student[]
   timetables    Timetable[]
   exams         Exam[]
+  results       Result[]
   courseSubjects CourseSubject[]
 
   @@unique([schoolId, courseName, section, academicYear])
@@ -138,6 +139,7 @@ model Attendance {
 
   @@unique([studentId, date])
   @@index([schoolId])
+  @@index([courseId])
 }
 
 model Timetable {
@@ -293,12 +295,15 @@ model Result {
   maxMarks      Float
   grade         String?
   remarks       String?
+  courseId      Int?
   student       Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
   exam          Exam     @relation(fields: [examId], references: [id], onDelete: Cascade)
   school        School   @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  course        Course?  @relation(fields: [courseId], references: [id], onDelete: Cascade)
 
   @@unique([studentId, examId, subject])
   @@index([schoolId])
+  @@index([courseId])
 }
 
 model CourseSubject {

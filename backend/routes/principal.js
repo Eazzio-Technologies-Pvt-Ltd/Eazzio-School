@@ -105,6 +105,92 @@ router.get('/dashboard-summary', async (req, res) => {
     recentActivities.sort((a, b) => new Date(b.time) - new Date(a.time));
     const topActivities = recentActivities.slice(0, 5);
 
+    // Insights & Exceptions
+    
+    // 1. lowAttendanceClasses (Rolling 7 days, < 75%)
+    const sevenDaysAgo = new Date();
+    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+    const attendanceGrouped = await prisma.attendance.groupBy({
+      by: ['courseId', 'status'],
+      where: { schoolId, date: { gte: sevenDaysAgo }, courseId: { not: null } },
+      _count: { status: true }
+    });
+    
+    const courseAttendanceMap = {};
+    attendanceGrouped.forEach(record => {
+      const cid = record.courseId;
+      if (!courseAttendanceMap[cid]) courseAttendanceMap[cid] = { total: 0, present: 0 };
+      courseAttendanceMap[cid].total += record._count.status;
+      if (record.status === 'PRESENT') {
+        courseAttendanceMap[cid].present += record._count.status;
+      }
+    });
+
+    const lowAttendanceClassesIds = [];
+    const lowAttendanceClasses = [];
+    for (const [cidStr, stats] of Object.entries(courseAttendanceMap)) {
+      if (stats.total > 0) {
+        const percentage = (stats.present / stats.total) * 100;
+        if (percentage < 75) {
+           lowAttendanceClassesIds.push(parseInt(cidStr));
+        }
+      }
+    }
+    
+    if (lowAttendanceClassesIds.length > 0) {
+      const courses = await prisma.course.findMany({
+        where: { id: { in: lowAttendanceClassesIds } },
+        select: { id: true, courseName: true, section: true }
+      });
+      courses.forEach(c => {
+         const stats = courseAttendanceMap[c.id];
+         lowAttendanceClasses.push({
+           courseId: c.id,
+           courseName: `${c.courseName} - ${c.section}`,
+           percentage: Math.round((stats.present / stats.total) * 100)
+         });
+      });
+    }
+
+    // 2. topClasses and bottomClasses (using Result table grouped by courseId)
+    const resultStats = await prisma.result.groupBy({
+      by: ['courseId'],
+      where: { schoolId, courseId: { not: null } },
+      _sum: { marksObtained: true, maxMarks: true }
+    });
+
+    const classPerformance = [];
+    const courseIdsToFetch = resultStats.map(r => r.courseId);
+    let coursesData = [];
+    if (courseIdsToFetch.length > 0) {
+       coursesData = await prisma.course.findMany({
+         where: { id: { in: courseIdsToFetch } },
+         select: { id: true, courseName: true, section: true }
+       });
+    }
+
+    resultStats.forEach(stat => {
+      const course = coursesData.find(c => c.id === stat.courseId);
+      if (course && stat._sum.maxMarks > 0) {
+        const percentage = (stat._sum.marksObtained / stat._sum.maxMarks) * 100;
+        classPerformance.push({
+          courseId: stat.courseId,
+          courseName: `${course.courseName} - ${course.section}`,
+          averageGrade: Math.round(percentage)
+        });
+      }
+    });
+
+    classPerformance.sort((a, b) => b.averageGrade - a.averageGrade);
+    
+    const topClasses = classPerformance.slice(0, 3);
+    // bottomClasses: get lowest 3, sorted lowest to highest
+    const bottomClasses = classPerformance.slice(-3).sort((a, b) => a.averageGrade - b.averageGrade);
+
+    // 3. pendingLeaveRequests
+    // TODO: wire up once LeaveRequest model exists.
+    const pendingLeaveRequests = 0;
+
     res.json({
       totalCourses,
       totalClasses: courseCount,
@@ -120,7 +206,11 @@ router.get('/dashboard-summary', async (req, res) => {
       activeNoticesCount,
       feeAlerts,
       upcomingNotices,
-      recentActivities: topActivities
+      recentActivities: topActivities,
+      lowAttendanceClasses,
+      topClasses,
+      bottomClasses,
+      pendingLeaveRequests
     });
   } catch (err) {
     console.error('Error in dashboard-summary:', err);
@@ -1350,12 +1440,56 @@ router.get('/courses/:id', async (req, res) => {
         teacher: true,
         students: true,
         timetables: { select: { subject: true } },
-        feeStructures: true
+        feeStructures: true,
+        courseSubjects: {
+          include: { teacher: true }
+        }
       }
     });
     if (!cls || cls.schoolId !== schoolId) return res.status(404).json({ error: 'Not found' });
     return res.json({ success: true, data: cls });
   } catch (err) {
+    return res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+router.post('/courses/:id/subjects', async (req, res) => {
+  const schoolId = req.user.schoolId;
+  const courseId = parseInt(req.params.id);
+  const { subject, teacherId } = req.body;
+  try {
+    const cls = await prisma.course.findUnique({ where: { id: courseId } });
+    if (!cls || cls.schoolId !== schoolId) return res.status(404).json({ error: 'Course not found' });
+    
+    const newSubject = await prisma.courseSubject.create({
+      data: {
+        courseId,
+        subject,
+        teacherId: parseInt(teacherId)
+      },
+      include: { teacher: true }
+    });
+    return res.status(201).json({ success: true, data: newSubject });
+  } catch (err) {
+    console.error('Error adding subject:', err);
+    return res.status(500).json({ error: 'Internal server error or subject already assigned' });
+  }
+});
+
+router.delete('/courses/:id/subjects/:subjectId', async (req, res) => {
+  const schoolId = req.user.schoolId;
+  const courseId = parseInt(req.params.id);
+  const subjectId = parseInt(req.params.subjectId);
+  try {
+    const cls = await prisma.course.findUnique({ where: { id: courseId } });
+    if (!cls || cls.schoolId !== schoolId) return res.status(404).json({ error: 'Course not found' });
+    
+    await prisma.courseSubject.delete({
+      where: { id: subjectId, courseId }
+    });
+    return res.json({ success: true, message: 'Subject removed' });
+  } catch (err) {
+    console.error('Error removing subject:', err);
     return res.status(500).json({ error: 'Internal server error' });
   }
 });

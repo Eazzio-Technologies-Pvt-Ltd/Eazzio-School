@@ -1,0 +1,16 @@
+[
+  {
+    "id": 1,
+    "schoolId": 5,
+    "content": "very hardworking faculty",
+    "createdAt": "2026-07-25T14:34:51.668Z",
+    "authorId": null,
+    "authorRole": "",
+    "authorName": "",
+    "subjectId": 14,
+    "subjectType": "TEACHER",
+    "visibleToRoles": [
+      "ADMIN"
+    ]
+  }
+]

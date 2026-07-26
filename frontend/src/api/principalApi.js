@@ -72,6 +72,17 @@ export const assignCourseTeacher = async (courseId, teacherId) => {
   return response.data;
 };
 
+export const addCourseSubject = async (courseId, payload) => {
+  const response = await api.post(`/principal/courses/${courseId}/subjects`, payload);
+  return response.data;
+};
+
+export const removeCourseSubject = async (courseId, subjectId) => {
+  const response = await api.delete(`/principal/courses/${courseId}/subjects/${subjectId}`);
+  return response.data;
+};
+
+
 // --- Students ---
 export const getStudents = async () => {
   const response = await api.get('/principal/students');

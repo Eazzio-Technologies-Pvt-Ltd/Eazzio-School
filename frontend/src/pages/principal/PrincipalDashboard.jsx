@@ -5,7 +5,7 @@ import Loader from '../../components/Loader';
 import { 
   BookOpen, School, Users, UserCheck, CheckCircle, 
   XCircle, CreditCard, Bell, PlusSquare, Upload, 
-  Send, Calendar, RefreshCw 
+  Send, Calendar, RefreshCw, AlertTriangle, TrendingUp, TrendingDown, Clock
 } from 'lucide-react';
 
 const StatCard = ({ title, value, icon, desc, colorCourse, iconColor }) => (
@@ -62,13 +62,89 @@ export default function PrincipalDashboard() {
       {/* TOP SUMMARY CARDS */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard title="Total Courses" value={data.totalCourses || 0} icon={<BookOpen size={24} />} desc="Unique subjects taught" iconColor="text-emerald-500" />
-        <StatCard title="Total Classes" value={data.totalClasses || 0} icon={<School size={24} />} desc="Active class sections" iconColor="text-blue-500" />
         <StatCard title="Total Students" value={data.totalStudents || 0} icon={<Users size={24} />} desc="Enrolled students" iconColor="text-emerald-500" />
         <StatCard title="Total Teachers" value={data.totalTeachers || 0} icon={<UserCheck size={24} />} desc="Faculty members" iconColor="text-emerald-500" />
         <StatCard title="Today's Attendance" value={`${data.todayAttendance?.percentage || 0}%`} icon={<CheckCircle size={24} />} desc="Overall presence rate" colorCourse="text-emerald-600" iconColor="text-emerald-500" />
         <StatCard title="Absent Today" value={data.todayAttendance?.absent || 0} icon={<XCircle size={24} />} desc="Students missing" colorCourse="text-red-600" iconColor="text-red-500" />
         <StatCard title="Students with Pending Fees" value={data.studentsWithFeeDue || 0} icon={<CreditCard size={24} />} desc="Outstanding balances" colorCourse="text-amber-600" iconColor="text-amber-500" />
         <StatCard title="Active Notices" value={data.activeNoticesCount || 0} icon={<Bell size={24} />} desc="Published announcements" iconColor="text-pink-500" />
+      </div>
+
+      {/* INSIGHTS & EXCEPTIONS */}
+      <div className="bg-white border border-gray-200 shadow-sm rounded-xl p-6">
+        <div className="flex justify-between items-center mb-6 flex-wrap gap-4">
+          <div>
+            <h3 className="text-lg font-bold text-gray-900">Insights & Exceptions</h3>
+            <p className="text-sm text-gray-500">Key metrics requiring attention.</p>
+          </div>
+          <div className="flex items-center gap-2 bg-amber-50 text-amber-700 px-3 py-1.5 rounded-full border border-amber-200 opacity-70">
+            <Clock size={16} />
+            <span className="text-sm font-semibold">{data.pendingLeaveRequests || 0} Pending Leave Requests</span>
+            <span className="ml-2 text-[10px] bg-amber-200 text-amber-800 px-1.5 py-0.5 rounded font-bold uppercase tracking-wider">Coming Soon</span>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Low Attendance */}
+          <div className="bg-gray-50 rounded-lg p-4 border border-gray-100">
+            <div className="flex items-center gap-2 mb-4">
+              <AlertTriangle size={18} className="text-red-500" />
+              <h4 className="font-semibold text-gray-800 text-sm">Low Attendance (Last 7 Days)</h4>
+            </div>
+            <div className="flex flex-col gap-2">
+              {!data.lowAttendanceClasses || data.lowAttendanceClasses.length === 0 ? (
+                <p className="text-xs text-gray-500 italic">No classes below 75% attendance.</p>
+              ) : (
+                data.lowAttendanceClasses.map((c, i) => (
+                  <div key={i} className="flex justify-between items-center p-2 bg-white rounded border border-red-100 shadow-sm">
+                    <span className="text-xs font-medium text-gray-700">{c.courseName}</span>
+                    <span className="text-xs font-bold text-red-600">{c.percentage}%</span>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+
+          {/* Top 3 Classes */}
+          <div className="bg-gray-50 rounded-lg p-4 border border-gray-100">
+            <div className="flex items-center gap-2 mb-4">
+              <TrendingUp size={18} className="text-emerald-500" />
+              <h4 className="font-semibold text-gray-800 text-sm">Top Performing Classes</h4>
+            </div>
+            <div className="flex flex-col gap-2">
+              {!data.topClasses || data.topClasses.length === 0 ? (
+                <p className="text-xs text-gray-500 italic">No grade data available.</p>
+              ) : (
+                data.topClasses.map((c, i) => (
+                  <div key={i} className="flex justify-between items-center p-2 bg-white rounded border border-emerald-100 shadow-sm">
+                    <span className="text-xs font-medium text-gray-700">{i + 1}. {c.courseName}</span>
+                    <span className="text-xs font-bold text-emerald-600">{c.averageGrade}%</span>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+
+          {/* Bottom 3 Classes */}
+          <div className="bg-gray-50 rounded-lg p-4 border border-gray-100">
+            <div className="flex items-center gap-2 mb-4">
+              <TrendingDown size={18} className="text-red-500" />
+              <h4 className="font-semibold text-gray-800 text-sm">Needs Improvement</h4>
+            </div>
+            <div className="flex flex-col gap-2">
+              {!data.bottomClasses || data.bottomClasses.length === 0 ? (
+                <p className="text-xs text-gray-500 italic">No grade data available.</p>
+              ) : (
+                data.bottomClasses.map((c, i) => (
+                  <div key={i} className="flex justify-between items-center p-2 bg-white rounded border border-red-100 shadow-sm">
+                    <span className="text-xs font-medium text-gray-700">{c.courseName}</span>
+                    <span className="text-xs font-bold text-red-600">{c.averageGrade}%</span>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
@@ -164,33 +240,6 @@ export default function PrincipalDashboard() {
             </div>
           </div>
 
-          {/* QUICK ACTIONS */}
-          <div className="bg-white border border-gray-200 shadow-sm rounded-xl p-6">
-            <h3 className="text-lg font-bold text-gray-900 mb-1">Quick Actions</h3>
-            <p className="text-sm text-gray-500 mb-4">Fast navigation to core modules.</p>
-            <div className="grid grid-cols-2 gap-3">
-              <button onClick={() => navigate('/principal/courses')} className="flex flex-col items-center justify-center gap-2 p-4 bg-gray-50 hover:bg-gray-100 hover:shadow-sm border border-gray-200 rounded-lg transition-colors duration-150 text-emerald-600">
-                <PlusSquare size={24} />
-                <span className="text-xs font-semibold text-gray-700">Add Course</span>
-              </button>
-              <button onClick={() => navigate('/principal/students')} className="flex flex-col items-center justify-center gap-2 p-4 bg-gray-50 hover:bg-gray-100 hover:shadow-sm border border-gray-200 rounded-lg transition-colors duration-150 text-emerald-600">
-                <Upload size={24} />
-                <span className="text-xs font-semibold text-gray-700">Import Students</span>
-              </button>
-              <button onClick={() => navigate('/principal/teachers')} className="flex flex-col items-center justify-center gap-2 p-4 bg-gray-50 hover:bg-gray-100 hover:shadow-sm border border-gray-200 rounded-lg transition-colors duration-150 text-emerald-600">
-                <Upload size={24} />
-                <span className="text-xs font-semibold text-gray-700">Import Teachers</span>
-              </button>
-              <button onClick={() => navigate('/principal/notices')} className="flex flex-col items-center justify-center gap-2 p-4 bg-gray-50 hover:bg-gray-100 hover:shadow-sm border border-gray-200 rounded-lg transition-colors duration-150 text-pink-600">
-                <Send size={24} />
-                <span className="text-xs font-semibold text-gray-700">Publish Notice</span>
-              </button>
-              <button onClick={() => navigate('/principal/timetable')} className="col-span-2 flex flex-row items-center justify-center gap-3 p-4 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg transition-colors duration-150 shadow-sm">
-                <Calendar size={20} />
-                <span className="text-sm font-semibold">Generate Timetable</span>
-              </button>
-            </div>
-          </div>
 
           {/* UPCOMING NOTICES */}
           <div className="bg-white border border-gray-200 shadow-sm rounded-xl p-6">
