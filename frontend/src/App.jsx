@@ -40,8 +40,8 @@ import TakeAttendance from './pages/teacher/TakeAttendance';
 import AttendanceHistory from './pages/teacher/AttendanceHistory';
 import TeacherProfile from './pages/teacher/TeacherProfile';
 import TeacherRoutine from './pages/teacher/TeacherRoutine';
-import CourseFees from './pages/teacher/CourseFees';
 import TeacherNotices from './pages/teacher/Notices';
+import TeacherAssignments from './pages/teacher/Assignments';
 
 // Student Pages
 import StudentDashboard from './pages/student/StudentDashboard';
@@ -51,6 +51,7 @@ import MyFees from './pages/student/MyFees';
 import Notices from './pages/student/Notices';
 import AcademicReport from './pages/student/AcademicReport';
 import StudentSettings from './pages/student/StudentSettings';
+import StudentAssignments from './pages/student/Assignments';
 
 // Accountant Pages
 import AccountantDashboard from './pages/accountant/AccountantDashboard';
@@ -164,9 +165,9 @@ export default function App() {
           >
             <Route path="dashboard" element={<TeacherDashboard />} />
             <Route path="courses" element={<MyCourses />} />
+            <Route path="assignments" element={<TeacherAssignments />} />
             <Route path="take-attendance" element={<TakeAttendance />} />
             <Route path="history" element={<AttendanceHistory />} />
-            <Route path="fees" element={<CourseFees />} />
             <Route path="profile" element={<TeacherProfile />} />
             <Route path="routine" element={<TeacherRoutine />} />
             <Route path="notices" element={<TeacherNotices />} />
@@ -184,6 +185,7 @@ export default function App() {
           >
             <Route path="dashboard" element={<StudentDashboard />} />
             <Route path="class-details" element={<ClassDetails />} />
+            <Route path="assignments" element={<StudentAssignments />} />
             <Route path="attendance" element={<MyAttendance />} />
             <Route path="fees" element={<MyFees />} />
             <Route path="notices" element={<Notices />} />

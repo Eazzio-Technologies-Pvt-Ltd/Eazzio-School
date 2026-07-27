@@ -10,6 +10,11 @@ export const getCourseDetails = async () => {
   return response.data;
 };
 
+export const getAllMyClasses = async () => {
+  const response = await api.get('/teacher/my-classes');
+  return response.data;
+};
+
 export const saveAttendance = async (payload) => {
   const response = await api.post('/teacher/attendance', payload);
   return response.data;
@@ -25,13 +30,26 @@ export const getRoutine = async () => {
   return response.data;
 };
 
-export const getAttendanceHistory = async (date) => {
-  const params = date ? { date } : {};
+export const getAttendanceHistory = async (date, courseId) => {
+  const params = {};
+  if (date) params.date = date;
+  if (courseId) params.courseId = courseId;
   const response = await api.get('/teacher/attendance-history', { params });
   return response.data;
 };
 
-export const getCourseFees = async () => {
-  const response = await api.get('/teacher/course-fees');
+export const getAssignments = async (courseId) => {
+  const params = courseId ? { courseId } : {};
+  const response = await api.get('/teacher/assignments', { params });
+  return response.data;
+};
+
+export const createAssignment = async (payload) => {
+  const response = await api.post('/teacher/assignments', payload);
+  return response.data;
+};
+
+export const deleteAssignment = async (id) => {
+  const response = await api.delete(`/teacher/assignments/${id}`);
   return response.data;
 };

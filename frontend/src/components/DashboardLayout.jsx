@@ -78,9 +78,9 @@ export default function DashboardLayout() {
     TEACHER: [
       { path: '/teacher/dashboard', label: 'Dashboard', icon: <LayoutDashboard size={20} /> },
       { path: '/teacher/courses', label: 'My Courses', icon: <GraduationCap size={20} /> },
+      { path: '/teacher/assignments', label: 'Assignments', icon: <FileText size={20} /> },
       { path: '/teacher/take-attendance', label: 'Take Attendance', icon: <Calendar size={20} /> },
-      { path: '/teacher/history', label: 'Roster History', icon: <Clock size={20} /> },
-      { path: '/teacher/fees', label: 'Course Fees', icon: <CreditCard size={20} /> },
+      { path: '/teacher/history', label: 'Attendance History', icon: <Clock size={20} /> },
       { path: '/teacher/notices', label: 'Notice Board', icon: <Megaphone size={20} /> },
       { path: '/teacher/feedback', label: 'Feedback', icon: <MessageSquare size={20} /> },
       { path: '/teacher/routine', label: 'My Routine', icon: <Clock size={20} /> },
@@ -89,6 +89,7 @@ export default function DashboardLayout() {
     STUDENT: [
       { path: '/student/dashboard', label: 'Dashboard', icon: <LayoutDashboard size={20} /> },
       { path: '/student/class-details', label: 'Class Details', icon: <Users size={20} /> },
+      { path: '/student/assignments', label: 'Homework', icon: <FileText size={20} /> },
       { path: '/student/fees', label: 'Fees', icon: <CreditCard size={20} /> },
       { path: '/student/attendance', label: 'Attendance', icon: <Calendar size={20} /> },
       { path: '/student/notices', label: 'Notice Board', icon: <Megaphone size={20} /> },

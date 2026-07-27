@@ -584,4 +584,33 @@ router.get('/results', async (req, res) => {
   }
 });
 
+// --- ASSIGNMENTS ---
+
+// GET /api/student/assignments
+router.get('/assignments', async (req, res) => {
+  try {
+    const student = await getBaseStudent(req);
+    if (!student.courseId) {
+      return res.json({ success: true, data: [] });
+    }
+
+    const assignments = await prisma.assignment.findMany({
+      where: {
+        schoolId: req.user.schoolId,
+        courseId: student.courseId
+      },
+      orderBy: { createdAt: 'desc' },
+      include: {
+        teacher: { select: { name: true } },
+        course: { select: { courseName: true, section: true } }
+      }
+    });
+    
+    return res.json({ success: true, data: assignments });
+  } catch (err) {
+    console.error('Error fetching student assignments:', err);
+    return res.status(500).json({ success: false, error: 'Internal server error' });
+  }
+});
+
 export default router;

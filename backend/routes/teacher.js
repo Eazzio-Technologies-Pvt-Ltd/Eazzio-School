@@ -54,6 +54,90 @@ router.get('/class-details', async (req, res) => {
   }
 });
 
+// GET /api/teacher/my-classes
+router.get('/my-classes', async (req, res) => {
+  try {
+    const schoolId = req.user.schoolId;
+    const teacherId = req.user.userId;
+
+    const teacherProfile = await prisma.teacher.findUnique({
+      where: { id: teacherId },
+      include: {
+        assignedCourse: {
+          include: {
+            students: {
+              orderBy: { rollNumber: 'asc' }
+            }
+          }
+        },
+        courseSubjects: {
+          include: {
+            course: {
+              include: {
+                students: {
+                  orderBy: { rollNumber: 'asc' }
+                }
+              }
+            }
+          }
+        }
+      }
+    });
+
+    if (!teacherProfile) {
+      return res.status(404).json({ success: false, error: 'Teacher profile not found' });
+    }
+
+    const classMap = {};
+
+    // 1. Process homeroom (assignedCourse)
+    if (teacherProfile.assignedCourse) {
+      const course = teacherProfile.assignedCourse;
+      classMap[course.id] = {
+        courseId: course.id,
+        courseName: course.courseName,
+        section: course.section,
+        isHomeroom: true,
+        subjects: ['Homeroom'],
+        students: course.students
+      };
+    }
+
+    // 2. Process courseSubjects
+    for (const cs of teacherProfile.courseSubjects) {
+      const course = cs.course;
+      if (classMap[course.id]) {
+        // Already exists (maybe as homeroom or another subject)
+        if (!classMap[course.id].subjects.includes(cs.subject)) {
+          classMap[course.id].subjects.push(cs.subject);
+        }
+      } else {
+        classMap[course.id] = {
+          courseId: course.id,
+          courseName: course.courseName,
+          section: course.section,
+          isHomeroom: false,
+          subjects: [cs.subject],
+          students: course.students
+        };
+      }
+    }
+
+    // Convert map to array and sort by courseName, then section
+    const data = Object.values(classMap).sort((a, b) => {
+      if (a.courseName === b.courseName) {
+        return a.section.localeCompare(b.section);
+      }
+      return a.courseName.localeCompare(b.courseName);
+    });
+
+    return res.json({ success: true, data });
+  } catch (err) {
+    console.error('Error fetching my-classes:', err);
+    return res.status(500).json({ success: false, error: 'Internal server error' });
+  }
+});
+
 // POST /api/teacher/attendance
 router.post('/attendance', async (req, res) => {
   const { date, records } = req.body;
@@ -131,15 +215,28 @@ router.get('/dashboard-summary', async (req, res) => {
     const { assignedCourse } = teacherProfile;
     const schoolId = req.user.schoolId;
 
+    // Get today's routine
+    const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+    const currentDay = days[new Date().getDay()];
+    
+    const routine = await prisma.timetable.findMany({
+      where: { schoolId, teacherId: req.user.userId, dayOfWeek: currentDay },
+      include: {
+        course: { select: { courseName: true, section: true } }
+      },
+      orderBy: { period: 'asc' }
+    });
+
     if (!assignedCourse) {
       return res.json({
         success: true,
         data: {
+          hasHomeroom: false,
           assignedCourse: 'Unassigned',
-          studentCount: 0,
-          courseAttendanceRate: 100,
+          studentCount: null,
+          courseAttendanceRate: null,
           recentAbsentees: [],
-          routine: []
+          routine
         }
       });
     }
@@ -196,18 +293,10 @@ router.get('/dashboard-summary', async (req, res) => {
       date: log.date
     }));
 
-    // Get today's routine
-    const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-    const currentDay = days[new Date().getDay()];
-    
-    const routine = await prisma.timetable.findMany({
-      where: { schoolId, teacherId: req.user.userId, dayOfWeek: currentDay },
-      orderBy: { period: 'asc' }
-    });
-
     return res.json({
       success: true,
       data: {
+        hasHomeroom: true,
         assignedCourse: `${assignedCourse.courseName}-${assignedCourse.section}`,
         studentCount,
         courseAttendanceRate,
@@ -300,16 +389,35 @@ router.get('/attendance-history', async (req, res) => {
   const schoolId = req.user.schoolId;
   const teacherId = req.user.userId;
   const dateStr = req.query.date;
+  const requestedCourseId = req.query.courseId ? parseInt(req.query.courseId, 10) : null;
 
   try {
     const teacherProfile = await prisma.teacher.findUnique({ 
       where: { id: teacherId },
-      include: { assignedCourse: true }
+      include: { 
+        assignedCourse: true,
+        courseSubjects: true
+      }
     });
-    if (!teacherProfile?.assignedCourse) {
-      return res.status(403).json({ success: false, error: 'You are not assigned to a class' });
+
+    let courseId = null;
+
+    if (requestedCourseId) {
+      // Validate requested course
+      const isHomeroom = teacherProfile?.assignedCourse?.id === requestedCourseId;
+      const isSubject = teacherProfile?.courseSubjects?.some(cs => cs.courseId === requestedCourseId);
+      
+      if (!isHomeroom && !isSubject) {
+        return res.status(403).json({ success: false, error: 'You are not assigned to this class' });
+      }
+      courseId = requestedCourseId;
+    } else {
+      // Fallback to homeroom
+      if (!teacherProfile?.assignedCourse) {
+        return res.status(403).json({ success: false, error: 'You are not assigned to a class and no courseId was provided' });
+      }
+      courseId = teacherProfile.assignedCourse.id;
     }
-    const courseId = teacherProfile.assignedCourse.id;
 
     if (!dateStr) {
       // return all historical dates that have attendance for this class
@@ -430,6 +538,112 @@ router.get('/class-fees', async (req, res) => {
     return res.json({ success: true, data: Object.values(studentMap) });
   } catch (err) {
     console.error('Error fetching class fees:', err);
+    return res.status(500).json({ success: false, error: 'Internal server error' });
+  }
+});
+
+// --- ASSIGNMENTS ---
+
+// GET /api/teacher/assignments
+router.get('/assignments', async (req, res) => {
+  const schoolId = req.user.schoolId;
+  const teacherId = req.user.userId;
+  const courseId = req.query.courseId ? parseInt(req.query.courseId) : null;
+
+  try {
+    const whereClause = { schoolId, teacherId };
+    if (courseId) whereClause.courseId = courseId;
+    console.log('[DEBUG] GET /assignments whereClause:', whereClause);
+
+    const assignments = await prisma.assignment.findMany({
+      where: whereClause,
+      include: {
+        course: { select: { courseName: true, section: true } }
+      },
+      orderBy: { createdAt: 'desc' }
+    });
+    console.log('[DEBUG] Fetched assignments count:', assignments.length);
+
+    return res.json({ success: true, data: assignments });
+  } catch (error) {
+    console.error('Error fetching assignments:', error);
+    return res.status(500).json({ success: false, error: 'Internal server error' });
+  }
+});
+
+// POST /api/teacher/assignments
+router.post('/assignments', async (req, res) => {
+  const schoolId = req.user.schoolId;
+  const teacherId = req.user.userId;
+  const { title, description, courseId, dueDate } = req.body;
+
+  if (!title || !description || !courseId) {
+    return res.status(400).json({ success: false, error: 'Missing required fields' });
+  }
+
+  try {
+    // Validate teacher is assigned to this course
+    const teacherProfile = await prisma.teacher.findUnique({
+      where: { id: teacherId },
+      include: { assignedCourse: true, courseSubjects: true }
+    });
+    
+    const parsedCourseId = parseInt(courseId);
+    const isHomeroom = teacherProfile?.assignedCourse?.id === parsedCourseId;
+    const isSubject = teacherProfile?.courseSubjects?.some(cs => cs.courseId === parsedCourseId);
+    
+    if (!isHomeroom && !isSubject) {
+      return res.status(403).json({ success: false, error: 'You are not assigned to this class' });
+    }
+
+    const assignment = await prisma.assignment.create({
+      data: {
+        schoolId,
+        teacherId,
+        courseId: parsedCourseId,
+        title,
+        description,
+        dueDate: dueDate ? new Date(dueDate) : null
+      },
+      include: {
+        course: { select: { courseName: true, section: true } }
+      }
+    });
+
+    return res.json({ success: true, data: assignment });
+  } catch (error) {
+    console.error('Error creating assignment:', error);
+    return res.status(500).json({ success: false, error: 'Internal server error' });
+  }
+});
+
+// DELETE /api/teacher/assignments/:id
+router.delete('/assignments/:id', async (req, res) => {
+  const schoolId = req.user.schoolId;
+  const teacherId = req.user.userId;
+  const assignmentId = parseInt(req.params.id);
+
+  try {
+    const assignment = await prisma.assignment.findUnique({
+      where: { id: assignmentId }
+    });
+
+    if (!assignment) {
+      return res.status(404).json({ success: false, error: 'Assignment not found' });
+    }
+    
+    // Only the teacher who created it can delete it, and it must belong to the school
+    if (assignment.teacherId !== teacherId || assignment.schoolId !== schoolId) {
+      return res.status(403).json({ success: false, error: 'Unauthorized to delete this assignment' });
+    }
+
+    await prisma.assignment.delete({
+      where: { id: assignmentId }
+    });
+
+    return res.json({ success: true, message: 'Assignment deleted successfully' });
+  } catch (error) {
+    console.error('Error deleting assignment:', error);
     return res.status(500).json({ success: false, error: 'Internal server error' });
   }
 });

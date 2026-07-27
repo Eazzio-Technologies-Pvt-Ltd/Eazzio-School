@@ -1,24 +1,58 @@
 import React, { useState, useEffect } from 'react';
-import { getAttendanceHistory } from '../../api/teacherApi';
+import { getAttendanceHistory, getAllMyClasses } from '../../api/teacherApi';
 import Loader from '../../components/Loader';
+import EmptyState from '../../components/EmptyState';
 
 export default function AttendanceHistory() {
+  const [classes, setClasses] = useState([]);
+  const [selectedCourseId, setSelectedCourseId] = useState('');
+  
   const [availableDates, setAvailableDates] = useState([]);
   const [selectedDate, setSelectedDate] = useState('');
   const [records, setRecords] = useState(null);
   
-  const [loadingDates, setLoadingDates] = useState(true);
+  const [loadingClasses, setLoadingClasses] = useState(true);
+  const [loadingDates, setLoadingDates] = useState(false);
   const [loadingRecords, setLoadingRecords] = useState(false);
   const [error, setError] = useState('');
 
+  // 1. Load classes on mount
   useEffect(() => {
-    fetchDates();
+    loadClasses();
   }, []);
 
-  const fetchDates = async () => {
+  const loadClasses = async () => {
+    try {
+      setLoadingClasses(true);
+      const data = await getAllMyClasses();
+      setClasses(data);
+      if (data.length > 0) {
+        setSelectedCourseId(data[0].courseId);
+      }
+    } catch (err) {
+      console.error(err);
+      setError('Failed to load assigned classes.');
+    } finally {
+      setLoadingClasses(false);
+    }
+  };
+
+  // 2. Fetch dates when course changes
+  useEffect(() => {
+    if (selectedCourseId) {
+      fetchDates(selectedCourseId);
+    }
+  }, [selectedCourseId]);
+
+  const fetchDates = async (courseId) => {
     try {
       setLoadingDates(true);
-      const data = await getAttendanceHistory();
+      setError('');
+      setRecords(null);
+      setSelectedDate('');
+      setAvailableDates([]);
+      
+      const data = await getAttendanceHistory(null, courseId);
       const dates = data.dates || [];
       setAvailableDates(dates);
       
@@ -29,23 +63,24 @@ export default function AttendanceHistory() {
       }
     } catch (err) {
       console.error(err);
-      setError('Failed to load attendance dates.');
+      setError('Failed to load attendance dates for this class.');
     } finally {
       setLoadingDates(false);
     }
   };
 
+  // 3. Fetch records when date changes
   useEffect(() => {
-    if (selectedDate) {
-      fetchRecords(selectedDate);
+    if (selectedDate && selectedCourseId) {
+      fetchRecords(selectedDate, selectedCourseId);
     }
-  }, [selectedDate]);
+  }, [selectedDate, selectedCourseId]);
 
-  const fetchRecords = async (dateStr) => {
+  const fetchRecords = async (dateStr, courseId) => {
     try {
       setLoadingRecords(true);
       setError('');
-      const data = await getAttendanceHistory(dateStr);
+      const data = await getAttendanceHistory(dateStr, courseId);
       setRecords(data.records);
     } catch (err) {
       console.error(err);
@@ -63,11 +98,42 @@ export default function AttendanceHistory() {
     total: records.length
   } : null;
 
+  if (loadingClasses) return <Loader message="Loading teaching assignments..." />;
+
+  if (classes.length === 0) {
+    return (
+      <div style={styles.container} className="animate-fade-in">
+        <EmptyState
+          icon="📅"
+          title="No Teaching Assignments"
+          description="You are not currently assigned to teach any classes or subjects."
+        />
+      </div>
+    );
+  }
+
+  const currentCourse = classes.find(c => c.courseId.toString() === selectedCourseId.toString());
+
   return (
     <div style={styles.container} className="animate-fade-in">
       <div style={styles.header}>
         <h2>Attendance History</h2>
-        <p style={styles.sub}>Review past attendance records for your assigned course.</p>
+        <p style={styles.sub}>Review past daily attendance records for your assigned classes.</p>
+      </div>
+
+      <div style={styles.topControl}>
+        <label style={styles.controlLabel}>Select Class:</label>
+        <select 
+          style={styles.select}
+          value={selectedCourseId}
+          onChange={(e) => setSelectedCourseId(e.target.value)}
+        >
+          {classes.map(cls => (
+            <option key={cls.courseId} value={cls.courseId}>
+              {cls.courseName}-{cls.section} {cls.isHomeroom ? '(Homeroom)' : ''}
+            </option>
+          ))}
+        </select>
       </div>
 
       {error && <div style={styles.errorAlert}>{error}</div>}
@@ -79,7 +145,7 @@ export default function AttendanceHistory() {
           {loadingDates ? (
             <p>Loading dates...</p>
           ) : availableDates.length === 0 ? (
-            <p style={styles.noData}>No attendance history found.</p>
+            <p style={styles.noData}>No attendance history found for {currentCourse?.courseName}-{currentCourse?.section}.</p>
           ) : (
             <div style={styles.dateList}>
               <input 
@@ -187,6 +253,9 @@ const styles = {
   container: { display: 'flex', flexDirection: 'column', gap: '24px' },
   header: { marginBottom: '10px' },
   sub: { color: 'var(--text-secondary)' },
+  topControl: { display: 'flex', alignItems: 'center', gap: '16px', background: 'var(--bg-card)', padding: '16px 24px', borderRadius: 'var(--radius-md)', border: '1px solid var(--glass-border)' },
+  controlLabel: { fontWeight: '600', color: 'var(--text-primary)' },
+  select: { padding: '8px 12px', borderRadius: 'var(--radius-sm)', border: '1px solid var(--glass-border)', background: 'var(--input-bg)', color: 'var(--text-primary)', minWidth: '250px' },
   errorAlert: { padding: '10px', background: 'var(--danger-glow)', border: '1px solid var(--danger)', color: '#fca5a5', borderRadius: '4px' },
   mainLayout: { display: 'grid', gridTemplateColumns: '1fr 3fr', gap: '24px', alignItems: 'start' },
   sidebar: { background: 'var(--bg-card)', padding: '24px', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border-glow)' },

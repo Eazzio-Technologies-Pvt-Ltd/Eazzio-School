@@ -59,3 +59,8 @@ export const getResults = async () => {
   const response = await api.get('/student/results');
   return response.data;
 };
+
+export const getAssignments = async () => {
+  const response = await api.get('/student/assignments');
+  return response.data;
+};
