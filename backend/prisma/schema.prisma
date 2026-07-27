@@ -23,6 +23,7 @@ model School {
   feeDueDay          Int            @default(10)
   collectFeeAnyDay   Boolean        @default(true)
   allowPartPayment   Boolean        @default(false)
+  lateFineAmount     Int            @default(150)
   accountants        Accountant[]
   Admin              Admin[]
   attendance         Attendance[]

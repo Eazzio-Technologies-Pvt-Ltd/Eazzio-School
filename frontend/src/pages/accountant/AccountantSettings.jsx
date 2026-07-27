@@ -2,16 +2,19 @@ import React, { useState, useEffect } from 'react';
 import api from '../../api/axios';
 import Loader from '../../components/Loader';
 import AccountantFeeStructure from './AccountantFeeStructure';
+import AccountantClasses from './AccountantClasses';
 
 export default function AccountantSettings() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
   const [successMsg, setSuccessMsg] = useState('');
+  const [activeTab, setActiveTab] = useState('settings');
   const [settings, setSettings] = useState({
     feeDueDay: 10,
     collectFeeAnyDay: true,
-    allowPartPayment: false
+    allowPartPayment: false,
+    lateFineAmount: 150
   });
 
   const loadSettings = async () => {
@@ -80,101 +83,153 @@ export default function AccountantSettings() {
       <div style={styles.headerRow}>
         <div>
           <h2>⚙️ Accountant Settings</h2>
-          <p style={styles.sub}>Configure dynamic fee deadlines, monthly collect options, and installment part-payment permissions.</p>
+          <p style={styles.sub}>Configure dynamic fee deadlines, monthly collect options, and manage academic courses.</p>
         </div>
       </div>
 
-      {error && (
-        <div style={styles.errorAlert}>
-          ⚠️ {error}
-        </div>
-      )}
-
-      {successMsg && (
-        <div style={styles.successAlert}>
-          ✅ {successMsg}
-        </div>
-      )}
-
-      <form onSubmit={handleSave} style={styles.panel}>
-        <h3 style={styles.sectionTitle}>💰 Fee Management & Guidelines</h3>
-        <p style={styles.panelDesc}>These rules dictate how invoices are settled, when fines are applied, and who can make partial payments.</p>
-        
-        <div style={styles.divider}></div>
-
-        {/* Option 1: Fee Collection Date */}
-        <div style={styles.settingGroup}>
-          <div style={styles.settingText}>
-            <label style={styles.label}>1. Fee Collection Due Date</label>
-            <p style={styles.desc}>Define the day of the month by which students must pay their fees. Any payments recorded after this date will incur a late fee fine.</p>
-          </div>
-          <div style={styles.settingInputContainer}>
-            <input
-              type="number"
-              min="1"
-              max="31"
-              required
-              value={settings.feeDueDay}
-              onChange={(e) => setSettings({ ...settings, feeDueDay: parseInt(e.target.value) || 1 })}
-              onBlur={() => updateSettingField('feeDueDay', settings.feeDueDay)}
-              style={styles.numberInput}
-            />
-            <span style={styles.suffix}>of every month</span>
-          </div>
-        </div>
-
-        {/* Option 2: Collect Fee Any Date */}
-        <div style={styles.settingGroup}>
-          <div style={styles.settingText}>
-            <label style={styles.label}>2. Collect Fee Any Date of Month</label>
-            <p style={styles.desc}>If checked, fee collections can be recorded on any calendar date. If unchecked, payments are blocked after the due date has passed.</p>
-          </div>
-          <div style={styles.settingInputContainer}>
-            <label style={styles.switchLabel}>
-              <input
-                type="checkbox"
-                checked={settings.collectFeeAnyDay}
-                onChange={(e) => updateSettingField('collectFeeAnyDay', e.target.checked)}
-                style={styles.checkbox}
-              />
-              <span style={{ fontSize: '0.9rem', color: 'var(--text-primary)', fontWeight: '500' }}>
-                {settings.collectFeeAnyDay ? 'Allowed on any date' : 'Restrict to due date'}
-              </span>
-            </label>
-          </div>
-        </div>
-
-        {/* Option 3: Allow Part Payment */}
-        <div style={styles.settingGroup}>
-          <div style={styles.settingText}>
-            <label style={styles.label}>3. Allow Part Payment</label>
-            <p style={styles.desc}>If checked, accountants can record partial / custom amount payments. If unchecked, invoices must be paid in full.</p>
-          </div>
-          <div style={styles.settingInputContainer}>
-            <label style={styles.switchLabel}>
-              <input
-                type="checkbox"
-                checked={settings.allowPartPayment}
-                onChange={(e) => updateSettingField('allowPartPayment', e.target.checked)}
-                style={styles.checkbox}
-              />
-              <span style={{ fontSize: '0.9rem', color: 'var(--text-primary)', fontWeight: '500' }}>
-                {settings.allowPartPayment ? 'Allow partial installments' : 'Force full payments'}
-              </span>
-            </label>
-          </div>
-        </div>
-
-        <div style={styles.formActions}>
-          <button type="submit" disabled={saving} style={styles.submitBtn}>
-            {saving ? 'Saving...' : '💾 Save Settings'}
-          </button>
-        </div>
-      </form>
-      
-      <div style={{ marginTop: '24px', borderTop: '1px solid var(--glass-border)', paddingTop: '24px' }}>
-        <AccountantFeeStructure />
+      {/* Tab system */}
+      <div style={styles.tabContainer}>
+        <button
+          onClick={() => setActiveTab('settings')}
+          style={{
+            ...styles.tabButton,
+            borderBottom: activeTab === 'settings' ? '3px solid var(--primary)' : 'none',
+            color: activeTab === 'settings' ? 'var(--text-primary)' : 'var(--text-secondary)',
+            fontWeight: activeTab === 'settings' ? '700' : '500',
+          }}
+        >
+          ⚙️ Fee Rules & Settings
+        </button>
+        <button
+          onClick={() => setActiveTab('courses')}
+          style={{
+            ...styles.tabButton,
+            borderBottom: activeTab === 'courses' ? '3px solid var(--primary)' : 'none',
+            color: activeTab === 'courses' ? 'var(--text-primary)' : 'var(--text-secondary)',
+            fontWeight: activeTab === 'courses' ? '700' : '500',
+          }}
+        >
+          🏫 Manage Courses
+        </button>
       </div>
+
+      {activeTab === 'settings' ? (
+        <>
+          {error && (
+            <div style={styles.errorAlert}>
+              ⚠️ {error}
+            </div>
+          )}
+
+          {successMsg && (
+            <div style={styles.successAlert}>
+              ✅ {successMsg}
+            </div>
+          )}
+
+          <form onSubmit={handleSave} style={styles.panel}>
+            <h3 style={styles.sectionTitle}>💰 Fee Management & Guidelines</h3>
+            <p style={styles.panelDesc}>These rules dictate how invoices are settled, when fines are applied, and who can make partial payments.</p>
+            
+            <div style={styles.divider}></div>
+
+            {/* Option 1: Fee Collection Date */}
+            <div style={styles.settingGroup}>
+              <div style={styles.settingText}>
+                <label style={styles.label}>1. Fee Collection Due Date</label>
+                <p style={styles.desc}>Define the day of the month by which students must pay their fees. Any payments recorded after this date will incur a late fee fine.</p>
+              </div>
+              <div style={styles.settingInputContainer}>
+                <input
+                  type="number"
+                  min="1"
+                  max="31"
+                  required
+                  value={settings.feeDueDay}
+                  onChange={(e) => setSettings({ ...settings, feeDueDay: parseInt(e.target.value) || 1 })}
+                  onBlur={() => updateSettingField('feeDueDay', settings.feeDueDay)}
+                  style={styles.numberInput}
+                />
+                <span style={styles.suffix}>of every month</span>
+              </div>
+            </div>
+
+            {/* Option 2: Collect Fee Any Date */}
+            <div style={styles.settingGroup}>
+              <div style={styles.settingText}>
+                <label style={styles.label}>2. Collect Fee Any Date of Month</label>
+                <p style={styles.desc}>If checked, fee collections can be recorded on any calendar date. If unchecked, payments are blocked after the due date has passed.</p>
+              </div>
+              <div style={styles.settingInputContainer}>
+                <label style={styles.switchLabel}>
+                  <input
+                    type="checkbox"
+                    checked={settings.collectFeeAnyDay}
+                    onChange={(e) => updateSettingField('collectFeeAnyDay', e.target.checked)}
+                    style={styles.checkbox}
+                  />
+                  <span style={{ fontSize: '0.9rem', color: 'var(--text-primary)', fontWeight: '500' }}>
+                    {settings.collectFeeAnyDay ? 'Allowed on any date' : 'Restrict to due date'}
+                  </span>
+                </label>
+              </div>
+            </div>
+
+            {/* Option 3: Allow Part Payment */}
+            <div style={styles.settingGroup}>
+              <div style={styles.settingText}>
+                <label style={styles.label}>3. Allow Part Payment</label>
+                <p style={styles.desc}>If checked, accountants can record partial / custom amount payments. If unchecked, invoices must be paid in full.</p>
+              </div>
+              <div style={styles.settingInputContainer}>
+                <label style={styles.switchLabel}>
+                  <input
+                    type="checkbox"
+                    checked={settings.allowPartPayment}
+                    onChange={(e) => updateSettingField('allowPartPayment', e.target.checked)}
+                    style={styles.checkbox}
+                  />
+                  <span style={{ fontSize: '0.9rem', color: 'var(--text-primary)', fontWeight: '500' }}>
+                    {settings.allowPartPayment ? 'Allow partial installments' : 'Force full payments'}
+                  </span>
+                </label>
+              </div>
+            </div>
+
+            {/* Option 4: Fine Adjustment */}
+            <div style={styles.settingGroup}>
+              <div style={styles.settingText}>
+                <label style={styles.label}>4. Fine Adjustment</label>
+                <p style={styles.desc}>Specify the fixed late fine amount (in ₹) that will be automatically added to any invoices paid after the due date.</p>
+              </div>
+              <div style={styles.settingInputContainer}>
+                <span style={styles.suffix}>₹</span>
+                <input
+                  type="number"
+                  min="0"
+                  required
+                  value={settings.lateFineAmount}
+                  onChange={(e) => setSettings({ ...settings, lateFineAmount: parseInt(e.target.value) || 0 })}
+                  onBlur={() => updateSettingField('lateFineAmount', settings.lateFineAmount)}
+                  style={styles.numberInput}
+                />
+              </div>
+            </div>
+
+            <div style={styles.formActions}>
+              <button type="submit" disabled={saving} style={styles.submitBtn}>
+                {saving ? 'Saving...' : '💾 Save Settings'}
+              </button>
+            </div>
+          </form>
+          
+          <div style={{ marginTop: '24px', borderTop: '1px solid var(--glass-border)', paddingTop: '24px' }}>
+            <AccountantFeeStructure />
+          </div>
+        </>
+      ) : (
+        <AccountantClasses />
+      )}
     </div>
   );
 }
@@ -184,6 +239,22 @@ const styles = {
     display: 'flex',
     flexDirection: 'column',
     gap: '24px',
+  },
+  tabContainer: {
+    display: 'flex',
+    gap: '24px',
+    borderBottom: '1px solid var(--glass-border)',
+    paddingBottom: '0px',
+    marginBottom: '8px',
+  },
+  tabButton: {
+    background: 'none',
+    border: 'none',
+    padding: '12px 16px',
+    fontSize: '0.95rem',
+    cursor: 'pointer',
+    transition: 'all 0.2s',
+    outline: 'none',
   },
   headerRow: {
     display: 'flex',

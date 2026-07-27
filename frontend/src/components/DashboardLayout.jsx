@@ -7,7 +7,7 @@ import {
   LayoutDashboard, GraduationCap, Users, UsersRound, Calendar,
   CreditCard, Megaphone, Clock, FileText, Settings,
   LogOut, Menu, ChevronLeft, ChevronRight, Briefcase, MessageSquare,
-  Sun, Moon
+  Sun, Moon, BarChart2
 } from 'lucide-react';
 
 export default function DashboardLayout() {
@@ -52,8 +52,8 @@ export default function DashboardLayout() {
   const menuConfig = {
     PRINCIPAL: [
       { path: '/principal/dashboard', label: 'Dashboard', icon: <LayoutDashboard size={20} /> },
-      { path: '/principal/courses', label: 'Courses', icon: <GraduationCap size={20} /> },
       { path: '/principal/students', label: 'Students', icon: <Users size={20} /> },
+      { path: '/principal/courses', label: 'Courses', icon: <GraduationCap size={20} /> },
       { path: '/principal/teachers', label: 'Teachers', icon: <UsersRound size={20} /> },
       { path: '/principal/attendance', label: 'Attendance', icon: <Calendar size={20} /> },
       { path: '/principal/fees', label: 'Fees Overview', icon: <CreditCard size={20} /> },
@@ -64,8 +64,8 @@ export default function DashboardLayout() {
     ],
     ADMIN: [
       { path: '/admin/dashboard', label: 'Dashboard', icon: <LayoutDashboard size={20} /> },
-      { path: '/admin/courses', label: 'Courses', icon: <GraduationCap size={20} /> },
       { path: '/admin/students', label: 'Students', icon: <Users size={20} /> },
+      { path: '/admin/courses', label: 'Courses', icon: <GraduationCap size={20} /> },
       { path: '/admin/teachers', label: 'Teachers', icon: <UsersRound size={20} /> },
       { path: '/admin/staff', label: 'Management Staff', icon: <Briefcase size={20} /> },
       { path: '/admin/attendance', label: 'Attendance', icon: <Calendar size={20} /> },
@@ -98,10 +98,10 @@ export default function DashboardLayout() {
     ],
     ACCOUNTANT: [
       { path: '/accountant/dashboard', label: 'Dashboard', icon: <LayoutDashboard size={20} /> },
-      { path: '/accountant/classes', label: 'Courses', icon: <GraduationCap size={20} /> },
-      { path: '/accountant/students', label: 'Students', icon: <Users size={20} /> },
+      { path: '/accountant/students', label: 'New Admission', icon: <Users size={20} /> },
       { path: '/accountant/fees', label: 'Record Fee', icon: <CreditCard size={20} /> },
       { path: '/accountant/notices', label: 'Notice Board', icon: <Megaphone size={20} /> },
+      { path: '/accountant/reports', label: 'Reports', icon: <BarChart2 size={20} /> },
       { path: '/accountant/settings', label: 'Settings', icon: <Settings size={20} /> }
     ],
   };
@@ -274,13 +274,7 @@ export default function DashboardLayout() {
           </div>
 
           <div className="flex items-center gap-2 sm:gap-4">
-            <button 
-              onClick={toggleTheme}
-              className="p-2 text-gray-500 hover:text-emerald-600 hover:bg-emerald-50 rounded-full transition-colors hidden sm:block"
-              title="Toggle Theme"
-            >
-              {theme === 'dark' ? <Sun size={20} /> : <Moon size={20} />}
-            </button>
+
 
             <div className="flex items-center gap-3 bg-gray-50 border border-gray-100 rounded-full py-1.5 pr-4 pl-1.5 shadow-sm">
               <div className="w-8 h-8 rounded-full bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center text-white font-bold text-sm shadow-inner shrink-0">

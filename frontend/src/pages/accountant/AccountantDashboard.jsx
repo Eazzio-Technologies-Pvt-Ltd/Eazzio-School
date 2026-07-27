@@ -20,7 +20,15 @@ export default function AccountantDashboard() {
   const [activeModal, setActiveModal] = useState(null);
   const [modalSearchQuery, setModalSearchQuery] = useState('');
   const [modalFilterStatus, setModalFilterStatus] = useState('ALL');
+  const [admissionFilterType, setAdmissionFilterType] = useState('TODAY'); // 'TODAY' or 'MONTH'
+  const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth());
+  const [selectedPaymentMethod, setSelectedPaymentMethod] = useState('ALL');
   const navigate = useNavigate();
+
+  const monthsList = [
+    'January', 'February', 'March', 'April', 'May', 'June',
+    'July', 'August', 'September', 'October', 'November', 'December'
+  ];
 
   const loadData = async () => {
     try {
@@ -53,6 +61,32 @@ export default function AccountantDashboard() {
     };
   }, [activeModal]);
 
+  const admittedStudentsFiltered = (data.studentsFeesList || []).filter(student => {
+    if (!student.admissionDate) return false;
+    const admDate = new Date(student.admissionDate);
+    const today = new Date();
+    
+    if (admissionFilterType === 'TODAY') {
+      return admDate.getDate() === today.getDate() &&
+             admDate.getMonth() === today.getMonth() &&
+             admDate.getFullYear() === today.getFullYear();
+    } else {
+      return admDate.getMonth() === selectedMonth &&
+             admDate.getFullYear() === today.getFullYear();
+    }
+  });
+
+  const todayPayments = (data.allPayments || []).filter(p => {
+    if (!p.date) return false;
+    const pDate = new Date(p.date);
+    const today = new Date();
+    return pDate.getDate() === today.getDate() &&
+           pDate.getMonth() === today.getMonth() &&
+           pDate.getFullYear() === today.getFullYear();
+  });
+
+  const todayCollectionsTotal = todayPayments.reduce((sum, p) => sum + p.amount, 0);
+
   const renderModal = () => {
     if (!activeModal) return null;
 
@@ -65,7 +99,46 @@ export default function AccountantDashboard() {
 
     if (activeModal === 'collections') {
       modalTitle = '💰 Collections Ledger (All Successful Payments)';
-      const rawPayments = data.allPayments || [];
+      let rawPayments = data.allPayments || [];
+      if (selectedPaymentMethod !== 'ALL') {
+        rawPayments = rawPayments.filter(p => p.method && p.method.toUpperCase() === selectedPaymentMethod.toUpperCase());
+      }
+      filteredData = rawPayments.filter(p => 
+        p.studentName.toLowerCase().includes(query) || 
+        p.studentId.toLowerCase().includes(query) || 
+        (p.rollNumber && p.rollNumber.toLowerCase().includes(query)) ||
+        (p.receiptNumber && p.receiptNumber.toLowerCase().includes(query))
+      );
+      tableHeaders = ['Student (Roll No)', 'Student ID', 'Amount Paid', 'Method', 'Receipt No', 'Date'];
+      tableBody = filteredData.map((item) => (
+        <tr key={item.id} style={styles.tr}>
+          <td style={{ ...styles.td, color: 'var(--text-primary)', fontWeight: '600' }}>
+            {item.studentName} {item.rollNumber !== 'N/A' && `(Roll No: ${item.rollNumber})`}
+          </td>
+          <td style={styles.td}>{item.studentId}</td>
+          <td style={{ ...styles.td, color: 'var(--success)', fontWeight: 'bold' }}>
+            ₹{item.amount.toLocaleString()}
+          </td>
+          <td style={styles.td}>
+            <span style={{
+              ...styles.badge,
+              backgroundColor: 'rgba(255, 255, 255, 0.05)',
+              border: '1px solid var(--glass-border)',
+              color: 'var(--text-secondary)'
+            }}>
+              {item.method}
+            </span>
+          </td>
+          <td style={styles.td}>{item.receiptNumber}</td>
+          <td style={styles.td}>{new Date(item.date).toLocaleDateString()}</td>
+        </tr>
+      ));
+    } else if (activeModal === 'dailyCollections') {
+      modalTitle = "📅 Today's Collections Ledger";
+      let rawPayments = todayPayments;
+      if (selectedPaymentMethod !== 'ALL') {
+        rawPayments = rawPayments.filter(p => p.method && p.method.toUpperCase() === selectedPaymentMethod.toUpperCase());
+      }
       filteredData = rawPayments.filter(p => 
         p.studentName.toLowerCase().includes(query) || 
         p.studentId.toLowerCase().includes(query) || 
@@ -200,6 +273,37 @@ export default function AccountantDashboard() {
           </tr>
         );
       });
+    } else if (activeModal === 'admissions') {
+      modalTitle = `🎓 Admitted Students Ledger (${admissionFilterType === 'TODAY' ? 'Today' : monthsList[selectedMonth]})`;
+      filteredData = admittedStudentsFiltered.filter(s => 
+        s.name.toLowerCase().includes(query) || 
+        s.studentId.toLowerCase().includes(query) || 
+        (s.rollNumber && s.rollNumber.toLowerCase().includes(query)) ||
+        (s.className && s.className.toLowerCase().includes(query))
+      );
+      tableHeaders = ['Student Name', 'Student ID', 'Roll No', 'Class', 'Admission Date', 'Fee Cycle'];
+      tableBody = filteredData.map((item) => (
+        <tr key={item.id} style={styles.tr}>
+          <td style={{ ...styles.td, color: 'var(--text-primary)', fontWeight: '600' }}>
+            {item.name}
+          </td>
+          <td style={styles.td}>{item.studentId}</td>
+          <td style={styles.td}>{item.rollNumber || 'N/A'}</td>
+          <td style={styles.td}>{item.className || 'N/A'}</td>
+          <td style={styles.td}>{item.admissionDate ? new Date(item.admissionDate).toLocaleDateString() : 'N/A'}</td>
+          <td style={styles.td}>
+            <span style={{
+              ...styles.badge,
+              backgroundColor: 'rgba(139, 92, 246, 0.1)',
+              border: '1px solid rgba(139, 92, 246, 0.2)',
+              color: 'var(--primary)',
+              textTransform: 'capitalize'
+            }}>
+              {item.feeCycle.toLowerCase().replace('_', ' ')}
+            </span>
+          </td>
+        </tr>
+      ));
     }
 
     return createPortal(
@@ -242,6 +346,85 @@ export default function AccountantDashboard() {
                   <option value="ALL">All Records</option>
                   <option value="PAID">Paid (Completed)</option>
                   <option value="PENDING">Pending (Outstanding)</option>
+                </select>
+              </div>
+            )}
+            { (activeModal === 'collections' || activeModal === 'dailyCollections') && (
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', fontWeight: '600' }}>METHOD:</span>
+                <select
+                  value={selectedPaymentMethod}
+                  onChange={(e) => setSelectedPaymentMethod(e.target.value)}
+                  style={{
+                    background: 'rgba(255, 255, 255, 0.05)',
+                    border: '1px solid var(--glass-border)',
+                    borderRadius: 'var(--radius-sm)',
+                    color: 'var(--text-primary)',
+                    fontSize: '0.85rem',
+                    padding: '6px 12px',
+                    outline: 'none',
+                    cursor: 'pointer',
+                  }}
+                >
+                  <option value="ALL" style={{ color: 'var(--text-primary)', backgroundColor: 'var(--bg-card)' }}>All Methods</option>
+                  <option value="CASH" style={{ color: 'var(--text-primary)', backgroundColor: 'var(--bg-card)' }}>Cash</option>
+                  <option value="UPI" style={{ color: 'var(--text-primary)', backgroundColor: 'var(--bg-card)' }}>UPI</option>
+                  <option value="CARD" style={{ color: 'var(--text-primary)', backgroundColor: 'var(--bg-card)' }}>Card</option>
+                </select>
+              </div>
+            )}
+
+            { activeModal === 'admissions' && (
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <button
+                  type="button"
+                  onClick={() => setAdmissionFilterType('TODAY')}
+                  style={{
+                    padding: '6px 12px',
+                    borderRadius: 'var(--radius-sm)',
+                    border: '1px solid var(--glass-border)',
+                    backgroundColor: admissionFilterType === 'TODAY' ? 'var(--primary)' : 'rgba(255, 255, 255, 0.05)',
+                    color: 'var(--text-primary)',
+                    fontSize: '0.85rem',
+                    fontWeight: '600',
+                    cursor: 'pointer',
+                    transition: 'background 0.2s'
+                  }}
+                >
+                  Today
+                </button>
+                
+                <select
+                  value={admissionFilterType === 'MONTH' ? selectedMonth : ''}
+                  onChange={(e) => {
+                    if (e.target.value !== '') {
+                      setAdmissionFilterType('MONTH');
+                      setSelectedMonth(parseInt(e.target.value));
+                    }
+                  }}
+                  style={{
+                    padding: '6px 12px',
+                    borderRadius: 'var(--radius-sm)',
+                    border: '1px solid var(--glass-border)',
+                    backgroundColor: admissionFilterType === 'MONTH' ? 'var(--primary)' : 'rgba(255, 255, 255, 0.05)',
+                    color: 'var(--text-primary)',
+                    fontSize: '0.85rem',
+                    fontWeight: '600',
+                    cursor: 'pointer',
+                    outline: 'none',
+                    transition: 'background 0.2s'
+                  }}
+                >
+                  <option value="" disabled style={{ color: 'var(--text-primary)', backgroundColor: 'var(--bg-card)' }}>Select Month</option>
+                  {monthsList.map((mName, idx) => (
+                    <option 
+                      key={idx} 
+                      value={idx} 
+                      style={{ color: 'var(--text-primary)', backgroundColor: 'var(--bg-card)' }}
+                    >
+                      {mName}
+                    </option>
+                  ))}
                 </select>
               </div>
             )}
@@ -303,39 +486,41 @@ export default function AccountantDashboard() {
       {/* Metrics Cards Grid */}
       <div style={styles.metricsGrid}>
         <StatCard
-          label="Total Collections"
-          value={`₹${data.totalCollections?.toLocaleString() || '0'}`}
-          icon="💰"
-          trend="Successful payments settled"
+          label="Number of Admission"
+          value={data.studentsFeesList?.length || 0}
+          icon="🎓"
+          trend="Total enrolled students"
           trendColor="var(--success)"
           onClick={() => {
             setModalSearchQuery('');
             setModalFilterStatus('ALL');
+            setActiveModal('admissions');
+          }}
+        />
+        <StatCard
+          label="Fee Collected"
+          value={`₹${data.totalCollections?.toLocaleString() || '0'}`}
+          icon="💰"
+          trend="Total successful collections"
+          trendColor="var(--success)"
+          onClick={() => {
+            setModalSearchQuery('');
+            setModalFilterStatus('ALL');
+            setSelectedPaymentMethod('ALL');
             setActiveModal('collections');
           }}
         />
         <StatCard
-          label="Pending Fees"
-          value={`₹${data.pendingFees?.toLocaleString() || '0'}`}
-          icon="💳"
-          trend="Outstanding balances due"
-          trendColor="var(--warning)"
-          onClick={() => {
-            setModalSearchQuery('');
-            setModalFilterStatus('PENDING');
-            setActiveModal('pending');
-          }}
-        />
-        <StatCard
-          label="Active Invoices"
-          value={data.activeInvoices || 0}
-          icon="📄"
-          trend="Total fee templates issued"
+          label="Daily Counter"
+          value={`₹${todayCollectionsTotal?.toLocaleString() || '0'}`}
+          icon="📅"
+          trend="Today's total collections"
           trendColor="var(--info)"
           onClick={() => {
             setModalSearchQuery('');
             setModalFilterStatus('ALL');
-            setActiveModal('invoices');
+            setSelectedPaymentMethod('ALL');
+            setActiveModal('dailyCollections');
           }}
         />
       </div>
@@ -644,5 +829,53 @@ const styles = {
     padding: '24px',
     overflowY: 'auto',
     flex: 1,
+  },
+  card: {
+    background: 'var(--bg-card)',
+    border: '1px solid var(--glass-border)',
+    borderRadius: 'var(--radius-md)',
+    padding: '24px',
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    boxShadow: '0 8px 32px rgba(0, 0, 0, 0.2)',
+    transition: 'var(--transition-fast)',
+    flex: '1',
+    minWidth: '240px',
+  },
+  cardLeft: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '6px',
+    flex: 1,
+  },
+  cardRight: {
+    display: 'flex',
+  },
+  cardLabel: {
+    fontSize: '0.85rem',
+    color: 'var(--text-secondary)',
+    fontWeight: '500',
+    textTransform: 'uppercase',
+    letterSpacing: '0.05em',
+  },
+  cardValue: {
+    fontSize: '2rem',
+    fontWeight: '800',
+    color: 'var(--text-primary)',
+    lineHeight: '1.2',
+  },
+  iconCircle: {
+    width: '48px',
+    height: '48px',
+    borderRadius: '50%',
+    background: 'rgba(139, 92, 246, 0.1)',
+    border: '1px solid var(--border-glow)',
+    display: 'flex',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  cardIcon: {
+    fontSize: '1.4rem',
   },
 };
