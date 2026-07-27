@@ -175,12 +175,84 @@ router.get('/teachers', async (req, res) => {
   try {
     const teachers = await prisma.teacher.findMany({
       where: { schoolId },
-      include: { assignedCourse: true },
+      include: { 
+        assignedCourse: true,
+        courseSubjects: { select: { subject: true } }
+      },
       orderBy: { name: 'asc' }
     });
     return res.json({ success: true, data: teachers });
   } catch (err) {
     console.error('Error fetching teachers:', err);
+    return res.status(500).json({ success: false, error: 'Internal server error' });
+  }
+});
+
+// UPDATE /teachers/:id
+router.put('/teachers/:id', async (req, res) => {
+  const teacherId = parseInt(req.params.id);
+  const { name, email, phone, subjects } = req.body;
+  const schoolId = req.user.schoolId;
+
+  try {
+    const existingTeacher = await prisma.teacher.findUnique({ where: { id: teacherId } });
+    if (!existingTeacher || existingTeacher.schoolId !== schoolId) {
+      return res.status(404).json({ success: false, error: 'Teacher not found' });
+    }
+
+    if (email && email !== existingTeacher.email) {
+      const emailTaken = await prisma.teacher.findUnique({ where: { email } });
+      if (emailTaken) {
+        return res.status(400).json({ success: false, error: 'Email is already in use by another teacher' });
+      }
+    }
+
+    const updatedTeacher = await prisma.teacher.update({
+      where: { id: teacherId },
+      data: {
+        name: name !== undefined ? name : existingTeacher.name,
+        email: email !== undefined ? email : existingTeacher.email,
+        phone: phone !== undefined ? phone : existingTeacher.phone,
+        subjects: subjects !== undefined ? subjects : existingTeacher.subjects
+      }
+    });
+
+    return res.json({ success: true, message: 'Teacher updated successfully', data: updatedTeacher });
+  } catch (err) {
+    console.error('Error updating teacher:', err);
+    return res.status(500).json({ success: false, error: 'Internal server error' });
+  }
+});
+
+// DELETE /teachers/:id
+router.delete('/teachers/:id', async (req, res) => {
+  const teacherId = parseInt(req.params.id);
+  const schoolId = req.user.schoolId;
+
+  try {
+    const teacher = await prisma.teacher.findUnique({ where: { id: teacherId } });
+    if (!teacher || teacher.schoolId !== schoolId) {
+      return res.status(404).json({ success: false, error: 'Teacher not found' });
+    }
+
+    await prisma.$transaction(async (tx) => {
+      // Remove teacher from course assignments
+      await tx.course.updateMany({
+        where: { teacherId },
+        data: { teacherId: null }
+      });
+      // Remove teacher from attendance logs where they were marked as taking attendance
+      await tx.attendance.updateMany({
+        where: { teacherId },
+        data: { teacherId: null }
+      });
+      
+      await tx.teacher.delete({ where: { id: teacherId } });
+    });
+
+    return res.json({ success: true, message: 'Teacher deleted successfully' });
+  } catch (err) {
+    console.error('Error deleting teacher:', err);
     return res.status(500).json({ success: false, error: 'Internal server error' });
   }
 });
@@ -597,31 +669,60 @@ router.get('/fee-collection', async (req, res) => {
     let totalPaid = 0;
     let totalPending = 0;
     let totalDueAmount = 0;
+    let todaysCollection = 0;
 
     // Aggregate by student for the summary view
     const studentMap = {};
+    const courseBreakdown = {};
+    const paymentModeBreakdown = {};
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
 
     invoices.forEach(inv => {
       const s = inv.student;
+      const courseKey = s.course ? `${s.course.courseName}-${s.course.section}` : 'N/A';
+      
       if (!studentMap[s.id]) {
         studentMap[s.id] = {
           id: s.id,
           name: s.name,
           rollNumber: s.rollNumber,
-          courseName: s.course ? `${s.course.courseName}-${s.course.section}` : 'N/A',
+          courseName: courseKey,
           totalFees: 0,
           paid: 0,
           pending: 0,
           status: 'PAID' // Start optimistic, downgrade if pending/overdue found
         };
       }
+      
+      if (!courseBreakdown[courseKey]) {
+        courseBreakdown[courseKey] = { courseName: courseKey, totalCollected: 0, totalPending: 0 };
+      }
 
-      const invPaid = inv.payments.reduce((acc, p) => acc + p.amount, 0);
+      let invPaid = 0;
+      inv.payments.forEach(p => {
+        invPaid += p.amount;
+        
+        // Payment mode breakdown
+        paymentModeBreakdown[p.paymentMethod] = (paymentModeBreakdown[p.paymentMethod] || 0) + p.amount;
+        
+        // Today's collection
+        const pDate = new Date(p.date);
+        pDate.setHours(0, 0, 0, 0);
+        if (pDate.getTime() === today.getTime()) {
+          todaysCollection += p.amount;
+        }
+      });
+      
       const invPending = Math.max(0, inv.amount - invPaid);
 
       studentMap[s.id].totalFees += inv.amount;
       studentMap[s.id].paid += invPaid;
       studentMap[s.id].pending += invPending;
+      
+      courseBreakdown[courseKey].totalCollected += invPaid;
+      courseBreakdown[courseKey].totalPending += invPending;
 
       if (inv.status === 'OVERDUE') studentMap[s.id].status = 'OVERDUE';
       else if (inv.status === 'PENDING' && studentMap[s.id].status !== 'OVERDUE') studentMap[s.id].status = 'PENDING';
@@ -635,6 +736,9 @@ router.get('/fee-collection', async (req, res) => {
       paid: totalPaid,
       pending: totalPending,
       dueAmount: totalDueAmount,
+      todaysCollection,
+      courseBreakdown: Object.values(courseBreakdown),
+      paymentModeBreakdown,
       students: Object.values(studentMap)
     });
   } catch (err) {
@@ -831,7 +935,11 @@ router.post('/notices', async (req, res) => {
 
 // 9. Manage Fee Structures & Invoices
 router.post('/fees/structure', async (req, res) => {
-  const { feeType, amount, courseId, dueDate } = req.body;
+  const { 
+    feeType, amount, courseId, dueDate, 
+    feeNature, applicableTo, studentId, academicYear, 
+    isMandatory, isActive, planType, autoGenerateInvoices
+  } = req.body;
   const schoolId = req.user.schoolId;
 
   if (!feeType || !amount) {
@@ -845,12 +953,101 @@ router.post('/fees/structure', async (req, res) => {
         feeType,
         amount: parseInt(amount),
         courseId: courseId ? parseInt(courseId) : null,
-        dueDate: dueDate ? new Date(dueDate) : null
+        dueDate: dueDate ? new Date(dueDate) : null,
+        feeNature: feeNature || 'Recurring',
+        applicableTo: applicableTo || 'Specific Class',
+        studentId: studentId ? parseInt(studentId) : null,
+        academicYear: academicYear || '2026-2027',
+        isMandatory: isMandatory !== undefined ? Boolean(isMandatory) : true,
+        isActive: isActive !== undefined ? Boolean(isActive) : true,
+        planType: planType || 'MONTHLY'
       }
     });
-    return res.status(201).json({ message: 'Fee structure created', structure });
+
+    let generatedCount = 0;
+    if (autoGenerateInvoices) {
+      const targetClassId = courseId ? parseInt(courseId) : null;
+      let studentsQuery = { schoolId };
+      if (applicableTo === 'Individual Student' && studentId) {
+        studentsQuery.id = parseInt(studentId);
+      } else if (applicableTo === 'Specific Class' && targetClassId) {
+        studentsQuery.courseId = targetClassId;
+      }
+
+      const students = await prisma.student.findMany({ where: studentsQuery });
+      const invoiceData = students.map(student => ({
+        schoolId,
+        studentId: student.id,
+        feeType,
+        amount: parseInt(amount),
+        dueDate: dueDate ? new Date(dueDate) : new Date(),
+        status: 'PENDING'
+      }));
+      
+      if (invoiceData.length > 0) {
+        const result = await prisma.feeInvoice.createMany({ data: invoiceData, skipDuplicates: true });
+        generatedCount = result.count;
+      }
+    }
+
+    return res.status(201).json({ message: 'Fee structure created', structure, generatedCount });
   } catch (err) {
     console.error('Error creating fee structure:', err);
+    return res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+router.put('/fees/structure/:id', async (req, res) => {
+  const structureId = parseInt(req.params.id);
+  const schoolId = req.user.schoolId;
+  const { 
+    feeType, amount, courseId, dueDate, 
+    feeNature, applicableTo, studentId, academicYear, 
+    isMandatory, isActive, planType
+  } = req.body;
+
+  try {
+    const structure = await prisma.feeStructure.findFirst({
+      where: { id: structureId, schoolId }
+    });
+    if (!structure) return res.status(404).json({ error: 'Fee structure not found' });
+
+    const updated = await prisma.feeStructure.update({
+      where: { id: structureId },
+      data: {
+        feeType,
+        amount: amount ? parseInt(amount) : structure.amount,
+        courseId: courseId ? parseInt(courseId) : null,
+        dueDate: dueDate ? new Date(dueDate) : null,
+        feeNature: feeNature || structure.feeNature,
+        applicableTo: applicableTo || structure.applicableTo,
+        studentId: studentId ? parseInt(studentId) : null,
+        academicYear: academicYear || structure.academicYear,
+        isMandatory: isMandatory !== undefined ? Boolean(isMandatory) : structure.isMandatory,
+        isActive: isActive !== undefined ? Boolean(isActive) : structure.isActive,
+        planType: planType || structure.planType
+      }
+    });
+    return res.json({ message: 'Fee structure updated', structure: updated });
+  } catch (err) {
+    console.error('Error updating fee structure:', err);
+    return res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+router.delete('/fees/structure/:id', async (req, res) => {
+  const structureId = parseInt(req.params.id);
+  const schoolId = req.user.schoolId;
+  try {
+    const structure = await prisma.feeStructure.findFirst({
+      where: { id: structureId, schoolId }
+    });
+    if (!structure) return res.status(404).json({ error: 'Fee structure not found' });
+
+    await prisma.feeStructure.delete({ where: { id: structureId } });
+    return res.json({ message: 'Fee structure deleted' });
+  } catch (err) {
+    console.error('Error deleting fee structure:', err);
     return res.status(500).json({ error: 'Internal server error' });
   }
 });
@@ -974,6 +1171,45 @@ router.post('/fees/invoices/:id/pay', async (req, res) => {
     return res.status(201).json({ message: 'Payment recorded successfully', payment: newPayment });
   } catch (err) {
     console.error('Error recording payment:', err);
+    return res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// ==================== FEE CATEGORIES ====================
+
+router.get('/fees/categories', async (req, res) => {
+  try {
+    const categories = await prisma.feeCategory.findMany({ where: { schoolId: req.user.schoolId } });
+    return res.json({ data: categories });
+  } catch (err) {
+    console.error('Error fetching categories:', err);
+    return res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+router.post('/fees/categories', async (req, res) => {
+  const { name, description } = req.body;
+  if (!name) return res.status(400).json({ error: 'Name is required' });
+  try {
+    const category = await prisma.feeCategory.create({
+      data: { name, description, schoolId: req.user.schoolId }
+    });
+    return res.status(201).json({ message: 'Category created', data: category });
+  } catch (err) {
+    console.error('Error creating category:', err);
+    return res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+router.delete('/fees/categories/:id', async (req, res) => {
+  const categoryId = parseInt(req.params.id);
+  try {
+    await prisma.feeCategory.deleteMany({
+      where: { id: categoryId, schoolId: req.user.schoolId }
+    });
+    return res.json({ message: 'Category deleted' });
+  } catch (err) {
+    console.error('Error deleting category:', err);
     return res.status(500).json({ error: 'Internal server error' });
   }
 });
@@ -1137,6 +1373,79 @@ router.delete('/accountants/:id', async (req, res) => {
   } catch (err) {
     console.error('Error deleting accountant:', err);
     return res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// --- FEE CATEGORIES API ---
+
+router.get('/fee-categories', async (req, res) => {
+  const schoolId = req.user.schoolId;
+  try {
+    const categories = await prisma.feeCategory.findMany({
+      where: { schoolId },
+      orderBy: { name: 'asc' }
+    });
+    return res.json({ success: true, data: categories });
+  } catch (err) {
+    console.error('Error fetching fee categories:', err);
+    return res.status(500).json({ success: false, error: 'Internal server error' });
+  }
+});
+
+router.post('/fee-categories', async (req, res) => {
+  const schoolId = req.user.schoolId;
+  const { name, description } = req.body;
+  if (!name) return res.status(400).json({ error: 'Category name is required' });
+
+  try {
+    const existing = await prisma.feeCategory.findUnique({
+      where: { schoolId_name: { schoolId, name } }
+    });
+    if (existing) return res.status(400).json({ error: 'Fee category already exists' });
+
+    const newCategory = await prisma.feeCategory.create({
+      data: { schoolId, name, description }
+    });
+    return res.status(201).json({ success: true, message: 'Fee category created', data: newCategory });
+  } catch (err) {
+    console.error('Error creating fee category:', err);
+    return res.status(500).json({ success: false, error: 'Internal server error' });
+  }
+});
+
+router.put('/fee-categories/:id', async (req, res) => {
+  const schoolId = req.user.schoolId;
+  const id = parseInt(req.params.id);
+  const { name, description } = req.body;
+
+  try {
+    const category = await prisma.feeCategory.findUnique({ where: { id } });
+    if (!category || category.schoolId !== schoolId) return res.status(404).json({ error: 'Fee category not found' });
+
+    const updatedCategory = await prisma.feeCategory.update({
+      where: { id },
+      data: { name, description }
+    });
+    return res.json({ success: true, message: 'Fee category updated', data: updatedCategory });
+  } catch (err) {
+    console.error('Error updating fee category:', err);
+    return res.status(500).json({ success: false, error: 'Internal server error' });
+  }
+});
+
+router.delete('/fee-categories/:id', async (req, res) => {
+  const schoolId = req.user.schoolId;
+  const id = parseInt(req.params.id);
+
+  try {
+    const category = await prisma.feeCategory.findUnique({ where: { id } });
+    if (!category || category.schoolId !== schoolId) return res.status(404).json({ error: 'Fee category not found' });
+
+    await prisma.feeCategory.delete({ where: { id } });
+    return res.json({ success: true, message: 'Fee category deleted' });
+  } catch (err) {
+    console.error('Error deleting fee category:', err);
+    return res.status(500).json({ success: false, error: 'Internal server error' });
   }
 });
 

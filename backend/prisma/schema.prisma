@@ -31,6 +31,7 @@ model School {
   feeInvoices        FeeInvoice[]
   payments           FeePayment[]
   feeStructures      FeeStructure[]
+  feeCategories      FeeCategory[]
   notices            Notice[]
   principals         Principal[]
   students           Student[]
@@ -118,6 +119,7 @@ model Student {
   courseId      Int?
   attendance    Attendance[]
   feeInvoices   FeeInvoice[]
+  feeStructures FeeStructure[]
   payments      FeePayment[]
   results       Result[]
   course        Course?      @relation(fields: [courseId], references: [id])
@@ -170,9 +172,29 @@ model FeeStructure {
   dueDate  DateTime?
   courseId Int?
   planType String    @default("MONTHLY")
+  
+  feeNature      String   @default("Recurring")
+  applicableTo   String   @default("Specific Class")
+  studentId      Int?
+  academicYear   String   @default("2026-2027")
+  isMandatory    Boolean  @default(true)
+  isActive       Boolean  @default(true)
+  
   course   Course?   @relation(fields: [courseId], references: [id], onDelete: Cascade)
   school   School    @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  student  Student?  @relation(fields: [studentId], references: [id])
 
+  @@index([schoolId])
+}
+
+model FeeCategory {
+  id          Int      @id @default(autoincrement())
+  schoolId    Int
+  name        String
+  description String?
+  school      School   @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  
+  @@unique([schoolId, name])
   @@index([schoolId])
 }
 
@@ -204,6 +226,7 @@ model FeePayment {
   razorpayOrderId   String?
   razorpayPaymentId String?
   razorpaySignature String?
+  collectedBy       String?
   feeInvoice        FeeInvoice @relation(fields: [feeInvoiceId], references: [id], onDelete: Cascade)
   school            School     @relation(fields: [schoolId], references: [id], onDelete: Cascade)
   student           Student    @relation(fields: [studentId], references: [id], onDelete: Cascade)

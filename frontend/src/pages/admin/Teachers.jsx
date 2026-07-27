@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { useLocation } from 'react-router-dom';
-import { getTeachers, registerTeacher } from '../../api/adminApi';
+import { getTeachers, registerTeacher, updateTeacher, deleteTeacher } from '../../api/adminApi';
 import Loader from '../../components/Loader';
 
 export default function Teachers() {
@@ -13,6 +13,11 @@ export default function Teachers() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [phone, setPhone] = useState('');
+  const [subjects, setSubjects] = useState('');
+
+  // Edit / View State
+  const [viewTeacher, setViewTeacher] = useState(null);
+  const [editTeacher, setEditTeacher] = useState(null);
 
   // Filters State
   const [searchQuery, setSearchQuery] = useState('');
@@ -56,7 +61,7 @@ export default function Teachers() {
   }, [location, loading]);
 
   const resetForm = () => {
-    setName(''); setEmail(''); setPassword(''); setPhone('');
+    setName(''); setEmail(''); setPassword(''); setPhone(''); setSubjects('');
     setFeedback({ type: '', message: '' });
   };
 
@@ -77,8 +82,50 @@ export default function Teachers() {
     }
   };
 
-  const subjectsList = ['Mathematics', 'Science', 'English Literature', 'History', 'Computer Science'];
+  const handleDelete = async (id) => {
+    if (window.confirm("Are you sure you want to delete this teacher?")) {
+      try {
+        await deleteTeacher(id);
+        triggerToast('Teacher deleted successfully', 'success');
+        await loadTeachers();
+      } catch (err) {
+        triggerToast(err.response?.data?.error || 'Failed to delete teacher', 'error');
+      }
+    }
+  };
+
+  const handleUpdate = async (e) => {
+    e.preventDefault();
+    setFeedback({ type: '', message: '' });
+    setSubmitting(true);
+    try {
+      const subjectArray = subjects.split(',').map(s => s.trim()).filter(Boolean);
+      await updateTeacher(editTeacher.id, { name, email, phone, subjects: subjectArray });
+      setFeedback({ type: 'success', message: '✅ Teacher updated successfully!' });
+      await loadTeachers();
+      setTimeout(() => { setEditTeacher(null); setFeedback({ type: '', message: '' }); }, 1500);
+    } catch (err) {
+      setFeedback({ type: 'error', message: err.response?.data?.error || 'Update failed' });
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const openEditModal = (teacher) => {
+    setEditTeacher(teacher);
+    setName(teacher.name);
+    setEmail(teacher.email);
+    setPhone(teacher.phone || '');
+    setSubjects(teacher.subjects ? teacher.subjects.join(', ') : '');
+    setFeedback({ type: '', message: '' });
+  };
+
+  // Derive lists for filters from actual data
   const coursesList = [...new Set(teachersList.map(t => t.assignedCourse ? `${t.assignedCourse.courseName}-${t.assignedCourse.section}` : null).filter(Boolean))];
+  const subjectsList = [...new Set(teachersList.flatMap(t => [
+    ...(t.subjects || []), 
+    ...(t.courseSubjects?.map(cs => cs.subject) || [])
+  ]))].filter(Boolean);
 
   const filteredTeachers = teachersList.filter(user => {
     const matchesSearch =
@@ -86,8 +133,8 @@ export default function Teachers() {
       user.email.toLowerCase().includes(searchQuery.toLowerCase());
     const teacherCourse = user.assignedCourse ? `${user.assignedCourse.courseName}-${user.assignedCourse.section}` : '';
     const matchesCourse = !courseFilter || teacherCourse === courseFilter;
-    const mockSubject = subjectsList[user.id % subjectsList.length];
-    const matchesSubject = !subjectFilter || mockSubject === subjectFilter;
+    const teacherSubjects = [...(user.subjects || []), ...(user.courseSubjects?.map(cs => cs.subject) || [])];
+    const matchesSubject = !subjectFilter || teacherSubjects.includes(subjectFilter);
     return matchesSearch && matchesCourse && matchesSubject;
   });
 
@@ -168,7 +215,11 @@ export default function Teachers() {
                   </tr>
                 ) : (
                   filteredTeachers.map((user) => {
-                    const mockSubject = subjectsList[user.id % subjectsList.length];
+                    const combinedSubjects = new Set([
+                      ...(user.subjects || []),
+                      ...(user.courseSubjects?.map(cs => cs.subject) || [])
+                    ]);
+                    const teacherSubjects = combinedSubjects.size > 0 ? Array.from(combinedSubjects).join(', ') : 'Unassigned';
                     return (
                       <tr key={user.id} style={s.tr}
                         onMouseEnter={e => e.currentTarget.style.background = '#f9fafb'}
@@ -181,7 +232,7 @@ export default function Teachers() {
                         <td style={s.td}>
                           <span style={s.empIdBadge}>{user.employeeId}</span>
                         </td>
-                        <td style={s.td}>{mockSubject}</td>
+                        <td style={s.td}>{teacherSubjects}</td>
                         <td style={s.td}>
                           <span style={user.assignedCourse ? s.courseBadge : s.unassignedBadge}>
                             {user.assignedCourse ? `${user.assignedCourse.courseName}-${user.assignedCourse.section}` : 'Unassigned'}
@@ -193,9 +244,9 @@ export default function Teachers() {
                         </td>
                         <td style={{ ...s.td, textAlign: 'center' }}>
                           <div style={s.actionGroup}>
-                            <button style={s.viewBtn} title="View" onClick={() => triggerToast(`Viewing: ${user.name}`)}>👁 View</button>
-                            <button style={s.editBtn} title="Edit" onClick={() => triggerToast(`Edit: ${user.name} (coming soon)`)}>✏️ Edit</button>
-                            <button style={s.deleteBtn} title="Deactivate" onClick={() => triggerToast(`Deactivating: ${user.name}`)}>🚫</button>
+                            <button style={s.viewBtn} title="View" onClick={() => setViewTeacher(user)}>👁 View</button>
+                            <button style={s.editBtn} title="Edit" onClick={() => openEditModal(user)}>✏️ Edit</button>
+                            <button style={s.deleteBtn} title="Deactivate" onClick={() => handleDelete(user.id)}>🚫</button>
                           </div>
                         </td>
                       </tr>
@@ -305,6 +356,82 @@ export default function Teachers() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>,
+        document.body
+      )}
+
+      {/* ── EDIT TEACHER MODAL ── */}
+      {editTeacher && createPortal(
+        <div style={s.overlay} onClick={() => !submitting && setEditTeacher(null)}>
+          <div style={s.modal} onClick={e => e.stopPropagation()}>
+            <div style={s.modalHeader}>
+              <div>
+                <h3 style={{ margin: 0, fontSize: '1.15rem', color: '#111827' }}>✏️ Edit Teacher</h3>
+                <p style={{ margin: '5px 0 0', fontSize: '0.82rem', color: '#6b7280' }}>Update teacher information.</p>
+              </div>
+              <button style={s.closeBtn} onClick={() => setEditTeacher(null)}>✕</button>
+            </div>
+            {feedback.message && (
+              <div style={{ margin: '0 28px', padding: '10px 14px', borderRadius: '8px', fontSize: '0.88rem', background: feedback.type === 'error' ? 'rgba(220,38,38,0.08)' : 'rgba(5,150,105,0.08)', border: `1px solid ${feedback.type === 'error' ? '#fca5a5' : '#6ee7b7'}`, color: feedback.type === 'error' ? '#dc2626' : '#059669' }}>
+                {feedback.message}
+              </div>
+            )}
+            <form onSubmit={handleUpdate} style={s.modalBody}>
+              <div style={s.formGrid}>
+                <div style={s.inputGroup}>
+                  <label style={s.label}>Full Name <span style={{ color: '#dc2626' }}>*</span></label>
+                  <input type="text" value={name} onChange={e => setName(e.target.value)} required style={s.input} />
+                </div>
+                <div style={s.inputGroup}>
+                  <label style={s.label}>Phone Number</label>
+                  <input type="text" value={phone} onChange={e => setPhone(e.target.value)} style={s.input} />
+                </div>
+                <div style={s.inputGroup}>
+                  <label style={s.label}>Email Address <span style={{ color: '#dc2626' }}>*</span></label>
+                  <input type="email" value={email} onChange={e => setEmail(e.target.value)} required style={s.input} />
+                </div>
+                <div style={s.inputGroup}>
+                  <label style={s.label}>Subjects (comma separated)</label>
+                  <input type="text" value={subjects} onChange={e => setSubjects(e.target.value)} placeholder="Math, Science" style={s.input} />
+                </div>
+              </div>
+              <div style={s.modalFooter}>
+                <button type="button" style={s.cancelBtn} onClick={() => setEditTeacher(null)} disabled={submitting}>Cancel</button>
+                <button type="submit" style={s.submitBtn} disabled={submitting}>{submitting ? 'Updating...' : '✅ Update Teacher'}</button>
+              </div>
+            </form>
+          </div>
+        </div>,
+        document.body
+      )}
+
+      {/* ── VIEW TEACHER MODAL ── */}
+      {viewTeacher && createPortal(
+        <div style={s.overlay} onClick={() => setViewTeacher(null)}>
+          <div style={s.modal} onClick={e => e.stopPropagation()}>
+            <div style={s.modalHeader}>
+              <div>
+                <h3 style={{ margin: 0, fontSize: '1.15rem', color: '#111827' }}>👁 Teacher Details</h3>
+              </div>
+              <button style={s.closeBtn} onClick={() => setViewTeacher(null)}>✕</button>
+            </div>
+            <div style={s.modalBody}>
+              <p><strong>Name:</strong> {viewTeacher.name}</p>
+              <p><strong>Email:</strong> {viewTeacher.email}</p>
+              <p><strong>Phone:</strong> {viewTeacher.phone || 'N/A'}</p>
+              <p><strong>Employee ID:</strong> {viewTeacher.employeeId}</p>
+              <p><strong>Subjects:</strong> {
+                Array.from(new Set([
+                  ...(viewTeacher.subjects || []),
+                  ...(viewTeacher.courseSubjects?.map(cs => cs.subject) || [])
+                ])).join(', ') || 'Unassigned'
+              }</p>
+              <p><strong>Assigned Course:</strong> {viewTeacher.assignedCourse ? `${viewTeacher.assignedCourse.courseName}-${viewTeacher.assignedCourse.section}` : 'Unassigned'}</p>
+              <div style={s.modalFooter}>
+                <button type="button" style={s.cancelBtn} onClick={() => setViewTeacher(null)}>Close</button>
+              </div>
+            </div>
           </div>
         </div>,
         document.body

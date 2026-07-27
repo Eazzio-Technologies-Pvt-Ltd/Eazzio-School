@@ -21,6 +21,16 @@ export const registerTeacher = async (payload) => {
   return response.data;
 };
 
+export const updateTeacher = async (id, payload) => {
+  const response = await api.put(`/admin/teachers/${id}`, payload);
+  return response.data;
+};
+
+export const deleteTeacher = async (id) => {
+  const response = await api.delete(`/admin/teachers/${id}`);
+  return response.data;
+};
+
 // --- Courses ---
 export const getCourses = async () => {
   const response = await api.get('/admin/courses');
@@ -95,6 +105,36 @@ export const getFeeStructures = async () => {
 
 export const createFeeStructure = async (payload) => {
   const response = await api.post('/admin/fees/structure', payload);
+  return response.data;
+};
+
+export const updateFeeStructure = async (id, payload) => {
+  const response = await api.put(`/admin/fees/structure/${id}`, payload);
+  return response.data;
+};
+
+export const deleteFeeStructure = async (id) => {
+  const response = await api.delete(`/admin/fees/structure/${id}`);
+  return response.data;
+};
+
+export const getFeeCategories = async () => {
+  const response = await api.get('/admin/fees/categories');
+  return response.data;
+};
+
+export const createFeeCategory = async (payload) => {
+  const response = await api.post('/admin/fees/categories', payload);
+  return response.data;
+};
+
+export const updateFeeCategory = async (id, payload) => {
+  const response = await api.put(`/admin/fees/categories/${id}`, payload);
+  return response.data;
+};
+
+export const deleteFeeCategory = async (id) => {
+  const response = await api.delete(`/admin/fees/categories/${id}`);
   return response.data;
 };
 
@@ -174,3 +214,5 @@ export const deleteAccountant = async (id) => {
   const response = await api.delete(`/admin/accountants/${id}`);
   return response.data;
 };
+
+
