@@ -60,6 +60,7 @@ import AccountantStudents from './pages/accountant/AccountantStudents';
 import AccountantFees from './pages/accountant/AccountantFees';
 import AccountantFeeStructure from './pages/accountant/AccountantFeeStructure';
 import AccountantSettings from './pages/accountant/AccountantSettings';
+import AccountantReports from './pages/accountant/AccountantReports';
 
 // Shared Pages
 import Feedback from './pages/shared/Feedback';
@@ -205,6 +206,7 @@ export default function App() {
             <Route path="fees" element={<AccountantFees />} />
             <Route path="fee-structure" element={<AccountantFeeStructure />} />
             <Route path="notices" element={<AccountantNotices />} />
+            <Route path="reports" element={<AccountantReports />} />
             <Route path="settings" element={<AccountantSettings />} />
           </Route>
 

@@ -60,7 +60,8 @@ export default function AccountantFees() {
   const [settings, setSettings] = useState({
     feeDueDay: 10,
     collectFeeAnyDay: true,
-    allowPartPayment: false
+    allowPartPayment: false,
+    lateFineAmount: 150
   });
 
   const isInvoiceOverdue = (inv) => {
@@ -84,6 +85,7 @@ export default function AccountantFees() {
   const [recordingPaymentForInvoice, setRecordingPaymentForInvoice] = useState(null);
   const [viewingFeeBookForStudent, setViewingFeeBookForStudent] = useState(null);
   const [payingFeeForInvoice, setPayingFeeForInvoice] = useState(null);
+  const [viewingPaidDetailsInvoice, setViewingPaidDetailsInvoice] = useState(null);
   const [paymentFormData, setPaymentFormData] = useState({
     amount: '',
     paymentMethod: 'CASH',
@@ -93,8 +95,58 @@ export default function AccountantFees() {
   const [processing, setProcessing] = useState(false);
   const [processingMessage, setProcessingMessage] = useState('');
   const [toast, setToast] = useState({ show: false, message: '', type: 'success' });
+  const [studentSearchQuery, setStudentSearchQuery] = useState('');
+  const [showStudentDropdown, setShowStudentDropdown] = useState(false);
+  const [hoveredItemId, setHoveredItemId] = useState(null);
+  const [invoicesSearchQuery, setInvoicesSearchQuery] = useState('');
   const [selectedCourseFilter, setSelectedCourseFilter] = useState('');
   const [selectedSessionFilter, setSelectedSessionFilter] = useState('');
+
+  const handleSelectStudent = (selStudent) => {
+    if (!selStudent) return;
+    
+    let amount = '';
+    let feeType = invoiceFormData.feeType || 'Tuition Fee';
+
+    if (selStudent.academicYear) {
+      setSelectedSessionFilter(selStudent.academicYear);
+    }
+    const targetClassId = selStudent.classId || selStudent.courseId;
+    if (targetClassId) {
+      setSelectedCourseFilter(targetClassId.toString());
+    }
+    const selCourse = classes.find(c => c.id.toString() === (targetClassId || '').toString());
+    if (selCourse && selCourse.feesList && selCourse.feesList.length > 0) {
+      const tuitionFee = selCourse.feesList.find(f => f.feeType === 'Tuition Fee') || selCourse.feesList[0];
+      if (tuitionFee) {
+        feeType = tuitionFee.feeType;
+        const feeBreakdown = calculateFeeBreakdown(selCourse);
+        if (feeBreakdown) {
+          const cycle = (selStudent.feeCycle || 'MONTHLY').toUpperCase();
+          if (cycle === 'QUARTERLY') {
+            amount = feeBreakdown.tuition.quarterly.toString();
+          } else if (cycle === 'HALF_YEARLY') {
+            amount = feeBreakdown.tuition.halfYearly.toString();
+          } else if (cycle === 'YEARLY') {
+            amount = feeBreakdown.tuition.yearly.toString();
+          } else if (cycle === 'ONE_TIME') {
+            amount = feeBreakdown.tuition.oneTime.toString();
+          } else {
+            amount = feeBreakdown.tuition.monthly.toString();
+          }
+        } else {
+          amount = tuitionFee.amount.toString();
+        }
+      }
+    }
+
+    setInvoiceFormData(prev => ({
+      ...prev,
+      studentId: selStudent.id.toString(),
+      amount,
+      feeType
+    }));
+  };
 
   const showToast = (message, type = 'success') => {
     setToast({ show: true, message, type });
@@ -260,6 +312,13 @@ export default function AccountantFees() {
     const matchSession = !selectedSessionFilter || s.academicYear === selectedSessionFilter;
     return matchCourse && matchSession;
   });
+  const filteredInvoices = invoices.filter(inv => {
+    const studentName = inv.student?.name || '';
+    const studentId = inv.student?.studentId || '';
+    const feeType = inv.feeType || '';
+    const query = invoicesSearchQuery.toLowerCase();
+    return studentName.toLowerCase().includes(query) || studentId.toLowerCase().includes(query) || feeType.toLowerCase().includes(query);
+  });
   const getCourseOrClassInfo = (student) => {
     if (!student) return { label: 'Class / Course', value: 'N/A' };
     
@@ -332,6 +391,59 @@ export default function AccountantFees() {
         <div style={styles.panel}>
           <div style={styles.panelHeader}>
             <h3 style={styles.panelTitle}>💳 Create Fee Invoice</h3>
+            
+            {/* Search Student Input */}
+            <div style={{ position: 'relative', width: '250px' }}>
+              <input
+                type="text"
+                placeholder="Search student name/ID..."
+                value={studentSearchQuery}
+                onChange={(e) => {
+                  setStudentSearchQuery(e.target.value);
+                  setShowStudentDropdown(true);
+                }}
+                onFocus={() => setShowStudentDropdown(true)}
+                onBlur={() => setTimeout(() => setShowStudentDropdown(false), 200)}
+                style={styles.headerSearchInput}
+              />
+              {showStudentDropdown && studentSearchQuery && (
+                <div style={styles.searchDropdownMenu}>
+                  {studentsList
+                    .filter(s => 
+                      s.name.toLowerCase().includes(studentSearchQuery.toLowerCase()) || 
+                      s.studentId.toLowerCase().includes(studentSearchQuery.toLowerCase())
+                    )
+                    .slice(0, 8)
+                    .map(student => (
+                      <div
+                        key={student.id}
+                        style={{
+                          ...styles.searchDropdownItem,
+                          backgroundColor: hoveredItemId === student.id ? 'rgba(255, 255, 255, 0.05)' : 'transparent'
+                        }}
+                        onMouseEnter={() => setHoveredItemId(student.id)}
+                        onMouseLeave={() => setHoveredItemId(null)}
+                        onClick={() => {
+                          handleSelectStudent(student);
+                          setStudentSearchQuery(student.name);
+                          setShowStudentDropdown(false);
+                        }}
+                      >
+                        <div style={{ fontWeight: '600', color: 'var(--text-primary)', fontSize: '0.82rem' }}>{student.name}</div>
+                        <div style={{ fontSize: '0.72rem', color: 'var(--text-secondary)' }}>ID: {student.studentId} | Class: {student.courseName || 'N/A'}</div>
+                      </div>
+                    ))}
+                  {studentsList.filter(s => 
+                    s.name.toLowerCase().includes(studentSearchQuery.toLowerCase()) || 
+                    s.studentId.toLowerCase().includes(studentSearchQuery.toLowerCase())
+                  ).length === 0 && (
+                    <div style={{ padding: '10px', fontSize: '0.8rem', color: 'var(--text-muted)', textAlign: 'center' }}>
+                      No students found
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
           </div>
           <form onSubmit={handleCreateInvoice} style={styles.form}>
             <div style={styles.formRow}>
@@ -342,53 +454,15 @@ export default function AccountantFees() {
                   style={styles.input}
                   value={invoiceFormData.studentId}
                   onChange={(e) => {
-                    const studentId = e.target.value;
-                    let amount = '';
-                    let feeType = invoiceFormData.feeType || 'Tuition Fee';
-
-                    if (studentId) {
-                      const selStudent = studentsList.find(s => s.id.toString() === studentId.toString());
-                      if (selStudent) {
-                        if (selStudent.academicYear) {
-                          setSelectedSessionFilter(selStudent.academicYear);
-                        }
-                        const targetClassId = selStudent.classId || selStudent.courseId;
-                        if (targetClassId) {
-                          setSelectedCourseFilter(targetClassId.toString());
-                        }
-                        const selCourse = classes.find(c => c.id.toString() === (targetClassId || '').toString());
-                        if (selCourse && selCourse.feesList && selCourse.feesList.length > 0) {
-                          const tuitionFee = selCourse.feesList.find(f => f.feeType === 'Tuition Fee') || selCourse.feesList[0];
-                          if (tuitionFee) {
-                            feeType = tuitionFee.feeType;
-                            const feeBreakdown = calculateFeeBreakdown(selCourse);
-                            if (feeBreakdown) {
-                              const cycle = (selStudent.feeCycle || 'MONTHLY').toUpperCase();
-                              if (cycle === 'QUARTERLY') {
-                                amount = feeBreakdown.tuition.quarterly.toString();
-                              } else if (cycle === 'HALF_YEARLY') {
-                                amount = feeBreakdown.tuition.halfYearly.toString();
-                              } else if (cycle === 'YEARLY') {
-                                amount = feeBreakdown.tuition.yearly.toString();
-                              } else if (cycle === 'ONE_TIME') {
-                                amount = feeBreakdown.tuition.oneTime.toString();
-                              } else {
-                                amount = feeBreakdown.tuition.monthly.toString();
-                              }
-                            } else {
-                              amount = tuitionFee.amount.toString();
-                            }
-                          }
-                        }
-                      }
+                    const val = e.target.value;
+                    if (val) {
+                      const student = studentsList.find(s => s.id.toString() === val.toString());
+                      handleSelectStudent(student);
+                      if (student) setStudentSearchQuery(student.name);
+                    } else {
+                      setInvoiceFormData(prev => ({ ...prev, studentId: '' }));
+                      setStudentSearchQuery('');
                     }
-
-                    setInvoiceFormData(prev => ({
-                      ...prev,
-                      studentId,
-                      amount,
-                      feeType
-                    }));
                   }}
                 >
                   <option value="">-- Choose Student ({filteredStudents.length} available) --</option>
@@ -515,8 +589,21 @@ export default function AccountantFees() {
         {/* Invoices Directory */}
         <div style={styles.panel}>
           <div style={styles.panelHeader}>
-            <h3 style={styles.panelTitle}>🗂️ Fee Invoices Log</h3>
-            <span style={styles.recordCounter}>{invoices.length} Invoices found</span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+              <h3 style={styles.panelTitle}>🗂️ Fee Invoices Log</h3>
+              <span style={styles.recordCounter}>{filteredInvoices.length} Invoices found</span>
+            </div>
+            
+            {/* Search Invoices Input */}
+            <div style={{ width: '250px' }}>
+              <input
+                type="text"
+                placeholder="Search invoices..."
+                value={invoicesSearchQuery}
+                onChange={(e) => setInvoicesSearchQuery(e.target.value)}
+                style={styles.headerSearchInput}
+              />
+            </div>
           </div>
           <div style={styles.tableContainer}>
             {loadingInvoices ? (
@@ -526,6 +613,10 @@ export default function AccountantFees() {
             ) : invoices.length === 0 ? (
               <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', fontStyle: 'italic', margin: 0, padding: '20px', textAlign: 'center' }}>
                 No invoices recorded. Generate one above.
+              </p>
+            ) : filteredInvoices.length === 0 ? (
+              <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', fontStyle: 'italic', margin: 0, padding: '20px', textAlign: 'center' }}>
+                No matching invoices found.
               </p>
             ) : (
               <table style={styles.table}>
@@ -542,7 +633,7 @@ export default function AccountantFees() {
                   </tr>
                 </thead>
                 <tbody>
-                  {invoices.map((inv) => {
+                  {filteredInvoices.map((inv) => {
                     const paidAmount = inv.payments ? inv.payments.reduce((sum, p) => sum + p.amount, 0) : 0;
                     const pendingAmount = Math.max(0, inv.amount - paidAmount);
                     return (
@@ -614,7 +705,7 @@ export default function AccountantFees() {
                                 title={!(settings.collectFeeAnyDay || new Date().getDate() <= settings.feeDueDay) ? "Fee collection is disabled past the monthly due date" : ""}
                                 onClick={() => {
                                   const isOverdue = isInvoiceOverdue(inv);
-                                  const lateFine = isOverdue ? 150 : 0;
+                                  const lateFine = isOverdue ? (settings.lateFineAmount ?? 150) : 0;
                                   const prevInvoices = invoices.filter(other => other.studentId === inv.studentId && other.id !== inv.id && other.status !== 'PAID');
                                   const prevDues = prevInvoices.reduce((sum, other) => {
                                     const paid = other.payments ? other.payments.reduce((s, p) => s + p.amount, 0) : 0;
@@ -633,7 +724,20 @@ export default function AccountantFees() {
                                 💵 Pay Fee
                               </button>
                             ) : (
-                              <span style={{ color: 'var(--text-muted)', fontSize: '0.8rem', alignSelf: 'center' }}>Settled</span>
+                              <button
+                                style={{
+                                  ...styles.detailsLink,
+                                  borderColor: 'var(--success)',
+                                  color: 'var(--success)',
+                                  background: 'rgba(16, 185, 129, 0.1)',
+                                  cursor: 'pointer'
+                                }}
+                                onClick={() => {
+                                  setViewingPaidDetailsInvoice(inv);
+                                }}
+                              >
+                                ✓ Paid
+                              </button>
                             )}
                           </div>
                         </td>
@@ -677,9 +781,8 @@ export default function AccountantFees() {
                   onChange={(e) => setPaymentFormData({ ...paymentFormData, paymentMethod: e.target.value })}
                 >
                   <option value="CASH">Cash</option>
-                  <option value="UPI">UPI / QR Code</option>
-                  <option value="BANK_TRANSFER">Bank Transfer / NetBanking</option>
-                  <option value="CHEQUE">Cheque</option>
+                  <option value="CARD">Card</option>
+                  <option value="UPI">UPI</option>
                 </select>
               </div>
 
@@ -879,7 +982,7 @@ export default function AccountantFees() {
                         monthInvoices.forEach((inv, idx) => {
                           const paidAmount = inv.payments ? inv.payments.reduce((sum, p) => sum + p.amount, 0) : 0;
                           const isOverdue = isInvoiceOverdue(inv);
-                          const lateFine = isOverdue ? 150 : 0;
+                          const lateFine = isOverdue ? (settings.lateFineAmount ?? 150) : 0;
                           const methods = inv.payments && inv.payments.length > 0 
                             ? Array.from(new Set(inv.payments.map(p => p.paymentMethod))).map(method => {
                                 if (method === 'BANK_TRANSFER') return 'Card/Bank';
@@ -973,7 +1076,7 @@ export default function AccountantFees() {
               const paidAmount = payingFeeForInvoice.payments ? payingFeeForInvoice.payments.reduce((sum, p) => sum + p.amount, 0) : 0;
               const pendingAmount = Math.max(0, payingFeeForInvoice.amount - paidAmount);
               const isOverdue = isInvoiceOverdue(payingFeeForInvoice);
-              const lateFine = isOverdue ? 150 : 0;
+              const lateFine = isOverdue ? (settings.lateFineAmount ?? 150) : 0;
 
               const prevInvoices = invoices.filter(other => other.studentId === payingFeeForInvoice.studentId && other.id !== payingFeeForInvoice.id && other.status !== 'PAID');
               const prevDues = prevInvoices.reduce((sum, other) => {
@@ -1060,9 +1163,8 @@ export default function AccountantFees() {
                       onChange={(e) => setPaymentFormData({ ...paymentFormData, paymentMethod: e.target.value })}
                     >
                       <option value="CASH">Cash</option>
-                      <option value="UPI">UPI / QR Code</option>
-                      <option value="BANK_TRANSFER">Bank Transfer / NetBanking</option>
-                      <option value="CHEQUE">Cheque</option>
+                      <option value="CARD">Card</option>
+                      <option value="UPI">UPI</option>
                     </select>
                   </div>
 
@@ -1116,6 +1218,124 @@ export default function AccountantFees() {
                 </form>
               );
             })()}
+          </div>
+        </div>,
+        document.body
+      )}
+
+      {/* Paid Invoice Details Modal */}
+      {viewingPaidDetailsInvoice && createPortal(
+        <div style={styles.modalOverlay}>
+          <div style={{
+            ...styles.modalContent,
+            maxWidth: '500px',
+            position: 'relative',
+            overflow: 'hidden',
+            boxShadow: '0 20px 50px rgba(0, 0, 0, 0.15)',
+          }} className="animate-scale-up">
+            
+            {/* PAID stamp background watermark */}
+            <div style={{
+              position: 'absolute',
+              top: '55%',
+              left: '50%',
+              transform: 'translate(-50%, -50%) rotate(-15deg)',
+              fontSize: '4.5rem',
+              fontWeight: '900',
+              color: 'rgba(16, 185, 129, 0.15)',
+              border: '6px double rgba(16, 185, 129, 0.25)',
+              padding: '8px 24px',
+              borderRadius: '12px',
+              textTransform: 'uppercase',
+              pointerEvents: 'none',
+              letterSpacing: '0.1em',
+              zIndex: 1,
+              userSelect: 'none',
+              fontFamily: '"Impact", "Arial Black", sans-serif'
+            }}>
+              PAID
+            </div>
+
+            <div style={styles.modalHeader}>
+              <h3 style={{ margin: 0, color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '8px', zIndex: 2 }}>
+                📄 Paid Fee Details
+              </h3>
+              <button style={{ ...styles.closeBtn, zIndex: 3 }} onClick={() => setViewingPaidDetailsInvoice(null)}>✕</button>
+            </div>
+
+            <div style={{ zIndex: 2, position: 'relative' }}>
+              <div style={{ marginBottom: '20px', padding: '16px', background: 'rgba(139, 92, 246, 0.03)', border: '1px solid var(--glass-border)', borderRadius: '8px' }}>
+                <p style={{ margin: '0 0 8px 0', fontSize: '0.9rem', color: 'var(--text-secondary)' }}>
+                  Student: <strong style={{ color: 'var(--text-primary)' }}>{viewingPaidDetailsInvoice.student?.name} {viewingPaidDetailsInvoice.student?.rollNumber ? `(Roll No: ${viewingPaidDetailsInvoice.student.rollNumber})` : ''}</strong>
+                </p>
+                {(() => {
+                  const info = getCourseOrClassInfo(viewingPaidDetailsInvoice.student);
+                  return (
+                    <p style={{ margin: '0 0 8px 0', fontSize: '0.9rem', color: 'var(--text-secondary)' }}>
+                      {info.label}: <strong style={{ color: 'var(--text-primary)' }}>{info.value}</strong>
+                    </p>
+                  );
+                })()}
+                <p style={{ margin: '0 0 8px 0', fontSize: '0.9rem', color: 'var(--text-secondary)' }}>
+                  Fee Cycle: <strong style={{ color: 'var(--text-primary)', textTransform: 'capitalize' }}>{(viewingPaidDetailsInvoice.student?.feeCycle || 'MONTHLY').toLowerCase().replace('_', ' ')}</strong>
+                </p>
+                <p style={{ margin: '0 0 8px 0', fontSize: '0.9rem', color: 'var(--text-secondary)' }}>
+                  Current Month: <strong style={{ color: 'var(--text-primary)' }}>{new Date(viewingPaidDetailsInvoice.dueDate).toLocaleString('default', { month: 'long' })}</strong>
+                </p>
+              </div>
+
+              {/* Calculations Breakdown */}
+              {(() => {
+                const paidAmount = viewingPaidDetailsInvoice.payments ? viewingPaidDetailsInvoice.payments.reduce((sum, p) => sum + p.amount, 0) : 0;
+                const isOverdue = isInvoiceOverdue(viewingPaidDetailsInvoice);
+                const lateFine = paidAmount > viewingPaidDetailsInvoice.amount ? (paidAmount - viewingPaidDetailsInvoice.amount) : 0;
+                
+                return (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                    <div style={{
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: '10px',
+                      padding: '14px',
+                      background: 'rgba(0, 0, 0, 0.02)',
+                      border: '1px solid var(--glass-border)',
+                      borderRadius: '8px',
+                      marginBottom: '20px'
+                    }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.9rem' }}>
+                        <span style={{ color: 'var(--text-secondary)' }}>Total Fee Amount ({new Date(viewingPaidDetailsInvoice.dueDate).toLocaleString('default', { month: 'long' })}):</span>
+                        <span style={{ color: 'var(--text-primary)', fontWeight: '600' }}>₹{viewingPaidDetailsInvoice.amount.toLocaleString()}</span>
+                      </div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.9rem', color: 'var(--success)' }}>
+                        <span>Paid Amount:</span>
+                        <span style={{ fontWeight: '600' }}>- ₹{paidAmount.toLocaleString()}</span>
+                      </div>
+                      {lateFine > 0 && (
+                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.9rem' }}>
+                          <span style={{ color: 'var(--text-secondary)' }}>Late Fine (Included):</span>
+                          <span style={{ color: 'var(--danger)', fontWeight: '600' }}>₹{lateFine.toLocaleString()}</span>
+                        </div>
+                      )}
+                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.9rem' }}>
+                        <span style={{ color: 'var(--text-secondary)' }}>Remaining Fee Amount:</span>
+                        <span style={{ color: 'var(--text-primary)', fontWeight: '600' }}>₹0</span>
+                      </div>
+                      <div style={{ borderTop: '1px solid var(--glass-border)', paddingTop: '10px', marginTop: '4px', display: 'flex', justifyContent: 'space-between', fontSize: '1.05rem' }}>
+                        <strong style={{ color: 'var(--text-primary)' }}>Total Amount:</strong>
+                        <strong style={{ color: 'var(--success)' }}>₹0</strong>
+                      </div>
+                    </div>
+
+
+                    <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '10px' }}>
+                      <button type="button" style={{ ...styles.submitBtn, background: 'var(--success)' }} onClick={() => setViewingPaidDetailsInvoice(null)}>
+                        Close Details
+                      </button>
+                    </div>
+                  </div>
+                );
+              })()}
+            </div>
           </div>
         </div>,
         document.body
@@ -1317,5 +1537,41 @@ const styles = {
     alignItems: 'center',
     gap: '6px',
     boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
+  },
+  headerSearchInput: {
+    padding: '8px 12px 8px 30px',
+    borderRadius: 'var(--radius-sm)',
+    border: '1px solid var(--glass-border)',
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    color: 'var(--text-primary)',
+    fontSize: '0.82rem',
+    outline: 'none',
+    width: '100%',
+    boxSizing: 'border-box',
+    backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='rgba(156, 163, 175, 0.7)' stroke-width='2'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' d='M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z'/%3E%3C/svg%3E")`,
+    backgroundRepeat: 'no-repeat',
+    backgroundPosition: '8px center',
+    backgroundSize: '16px 16px',
+    transition: 'border-color 0.2s',
+  },
+  searchDropdownMenu: {
+    position: 'absolute',
+    top: '100%',
+    right: 0,
+    left: 0,
+    backgroundColor: 'var(--bg-card)',
+    border: '1px solid var(--glass-border)',
+    borderRadius: 'var(--radius-sm)',
+    boxShadow: '0 10px 25px rgba(0, 0, 0, 0.3)',
+    zIndex: 100,
+    marginTop: '4px',
+    maxHeight: '250px',
+    overflowY: 'auto',
+  },
+  searchDropdownItem: {
+    padding: '10px 12px',
+    borderBottom: '1px solid var(--glass-border)',
+    cursor: 'pointer',
+    transition: 'background-color 0.2s',
   }
 };

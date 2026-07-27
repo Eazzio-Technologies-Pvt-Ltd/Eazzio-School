@@ -79,6 +79,7 @@ export default function AccountantStudents() {
     fatherName: '',
     motherName: '',
     phone: '',
+    phone2: '',
     address: '',
     admissionDate: getTodayDateString(),
     feeCycle: 'MONTHLY'
@@ -91,6 +92,7 @@ export default function AccountantStudents() {
     fatherName: '',
     motherName: '',
     phone: '',
+    phone2: '',
     address: '',
     admissionDate: '',
     feeCycle: 'MONTHLY'
@@ -681,7 +683,13 @@ export default function AccountantStudents() {
       setError('');
       setProcessing(true);
       setProcessingMessage('Creating new student profile...');
-      const response = await api.post('/accountant/students', formData);
+      const combinedPhone = formData.phone2.trim()
+        ? `${formData.phone.trim()}, ${formData.phone2.trim()}`
+        : formData.phone.trim();
+      const response = await api.post('/accountant/students', {
+        ...formData,
+        phone: combinedPhone
+      });
       if (response.data) {
         showToast('New student added successfully!');
         setShowModal(false);
@@ -692,6 +700,7 @@ export default function AccountantStudents() {
           fatherName: '',
           motherName: '',
           phone: '',
+          phone2: '',
           address: '',
           admissionDate: getTodayDateString(),
           feeCycle: 'MONTHLY'
@@ -710,13 +719,17 @@ export default function AccountantStudents() {
 
   const startEditing = (student) => {
     setEditingStudent(student);
+    const phoneParts = (student.phone || '').split(',').map(s => s.trim());
+    const phone1 = phoneParts[0] || '';
+    const phone2 = phoneParts[1] || '';
     setEditFormData({
       name: student.name || '',
       rollNumber: student.rollNumber === 'N/A' ? '' : (student.rollNumber || ''),
       classId: student.classId || '',
       fatherName: student.fatherName === 'N/A' ? '' : (student.fatherName || ''),
       motherName: student.motherName === 'N/A' ? '' : (student.motherName || ''),
-      phone: student.phone === 'N/A' ? '' : (student.phone || ''),
+      phone: phone1,
+      phone2: phone2,
       address: student.address === 'N/A' ? '' : (student.address || ''),
       admissionDate: student.admissionDate ? new Date(student.admissionDate).toISOString().split('T')[0] : '',
       feeCycle: student.feeCycle || 'MONTHLY'
@@ -729,7 +742,13 @@ export default function AccountantStudents() {
       setError('');
       setProcessing(true);
       setProcessingMessage('Saving student details changes...');
-      const response = await api.put(`/accountant/students/${editingStudent.id}`, editFormData);
+      const combinedPhone = editFormData.phone2.trim()
+        ? `${editFormData.phone.trim()}, ${editFormData.phone2.trim()}`
+        : editFormData.phone.trim();
+      const response = await api.put(`/accountant/students/${editingStudent.id}`, {
+        ...editFormData,
+        phone: combinedPhone
+      });
       if (response.data) {
         setEditingStudent(null);
         showToast('Student details updated successfully!');
@@ -1303,16 +1322,29 @@ export default function AccountantStudents() {
 
               <div style={styles.formRow}>
                 <div style={styles.formGroup}>
-                  <label style={styles.label}>Phone Number</label>
+                  <label style={styles.label}>Phone Number 1 (Primary)</label>
                   <input
                     type="tel"
                     style={styles.input}
                     value={formData.phone}
                     onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                    placeholder="Contact number"
+                    placeholder="Primary contact number"
                   />
                 </div>
                 <div style={styles.formGroup}>
+                  <label style={styles.label}>Phone Number 2 (Secondary)</label>
+                  <input
+                    type="tel"
+                    style={styles.input}
+                    value={formData.phone2}
+                    onChange={(e) => setFormData({ ...formData, phone2: e.target.value })}
+                    placeholder="Secondary contact number (optional)"
+                  />
+                </div>
+              </div>
+
+              <div style={styles.formRow}>
+                <div style={{ ...styles.formGroup, flex: '1 1 100%' }}>
                   <label style={styles.label}>Address</label>
                   <input
                     type="text"
@@ -1404,8 +1436,15 @@ export default function AccountantStudents() {
                   <span style={styles.detailsVal}>{viewingStudent.motherName}</span>
                 </div>
                 <div style={styles.detailsItem}>
-                  <span style={styles.detailsLabel}>Phone Number</span>
-                  <span style={styles.detailsVal}>{viewingStudent.phone}</span>
+                  <span style={styles.detailsLabel}>Phone Number(s)</span>
+                  <span style={styles.detailsVal}>
+                    {(() => {
+                      const parts = (viewingStudent.phone || '').split(',').map(p => p.trim()).filter(Boolean);
+                      if (parts.length === 0) return 'N/A';
+                      if (parts.length === 1) return parts[0];
+                      return `${parts[0]} / ${parts[1]}`;
+                    })()}
+                  </span>
                 </div>
                 <div style={styles.detailsItem}>
                   <span style={styles.detailsLabel}>Address</span>
@@ -1948,16 +1987,29 @@ export default function AccountantStudents() {
 
               <div style={styles.formRow}>
                 <div style={styles.formGroup}>
-                  <label style={styles.label}>Phone Number</label>
+                  <label style={styles.label}>Phone Number 1 (Primary)</label>
                   <input
                     type="tel"
                     style={styles.input}
                     value={editFormData.phone}
                     onChange={(e) => setEditFormData({ ...editFormData, phone: e.target.value })}
-                    placeholder="Contact number"
+                    placeholder="Primary contact number"
                   />
                 </div>
                 <div style={styles.formGroup}>
+                  <label style={styles.label}>Phone Number 2 (Secondary)</label>
+                  <input
+                    type="tel"
+                    style={styles.input}
+                    value={editFormData.phone2}
+                    onChange={(e) => setEditFormData({ ...editFormData, phone2: e.target.value })}
+                    placeholder="Secondary contact number (optional)"
+                  />
+                </div>
+              </div>
+
+              <div style={styles.formRow}>
+                <div style={{ ...styles.formGroup, flex: '1 1 100%' }}>
                   <label style={styles.label}>Address</label>
                   <input
                     type="text"
@@ -2013,9 +2065,8 @@ export default function AccountantStudents() {
                   onChange={(e) => setPaymentFormData({ ...paymentFormData, paymentMethod: e.target.value })}
                 >
                   <option value="CASH">Cash</option>
-                  <option value="UPI">UPI / QR Code</option>
-                  <option value="BANK_TRANSFER">Bank Transfer / NetBanking</option>
-                  <option value="CHEQUE">Cheque</option>
+                  <option value="CARD">Card</option>
+                  <option value="UPI">UPI</option>
                 </select>
               </div>
 

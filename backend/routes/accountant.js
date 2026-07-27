@@ -1088,7 +1088,8 @@ router.get('/settings', async (req, res) => {
       select: {
         feeDueDay: true,
         collectFeeAnyDay: true,
-        allowPartPayment: true
+        allowPartPayment: true,
+        lateFineAmount: true
       }
     });
 
@@ -1106,7 +1107,7 @@ router.get('/settings', async (req, res) => {
 // PUT /api/accountant/settings - Update accountant settings
 router.put('/settings', async (req, res) => {
   const schoolId = parseInt(req.user.schoolId, 10);
-  const { feeDueDay, collectFeeAnyDay, allowPartPayment } = req.body;
+  const { feeDueDay, collectFeeAnyDay, allowPartPayment, lateFineAmount } = req.body;
 
   try {
     const updatedSchool = await prisma.school.update({
@@ -1114,12 +1115,14 @@ router.put('/settings', async (req, res) => {
       data: {
         feeDueDay: typeof feeDueDay === 'number' ? feeDueDay : parseInt(feeDueDay || 10, 10),
         collectFeeAnyDay: !!collectFeeAnyDay,
-        allowPartPayment: !!allowPartPayment
+        allowPartPayment: !!allowPartPayment,
+        lateFineAmount: typeof lateFineAmount === 'number' ? lateFineAmount : parseInt(lateFineAmount || 150, 10)
       },
       select: {
         feeDueDay: true,
         collectFeeAnyDay: true,
-        allowPartPayment: true
+        allowPartPayment: true,
+        lateFineAmount: true
       }
     });
 
