@@ -38,6 +38,7 @@ model School {
   exams              Exam[]
   results            Result[]
   feedbacks          Feedback[]
+  assignments        Assignment[]
 }
 
 model Course {
@@ -58,6 +59,7 @@ model Course {
   exams         Exam[]
   results       Result[]
   courseSubjects CourseSubject[]
+  assignments   Assignment[]
 
   @@unique([schoolId, courseName, section, academicYear])
   @@index([schoolId])
@@ -93,6 +95,7 @@ model Teacher {
   courseSubjects CourseSubject[]
   authoredFeedbacks Feedback[] @relation("TeacherAuthoredFeedbacks")
   receivedFeedbacks Feedback[] @relation("TeacherTargetFeedbacks")
+  assignments    Assignment[]
 
   @@index([schoolId])
 }
@@ -338,4 +341,23 @@ model Feedback {
   targetStudent     Student?   @relation("StudentTargetFeedbacks", fields: [targetStudentId], references: [id], onDelete: Cascade)
 
   @@index([schoolId])
+}
+
+model Assignment {
+  id          Int      @id @default(autoincrement())
+  schoolId    Int
+  courseId    Int
+  teacherId   Int
+  title       String
+  description String
+  dueDate     DateTime?
+  createdAt   DateTime @default(now())
+
+  school      School   @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  course      Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  teacher     Teacher  @relation(fields: [teacherId], references: [id], onDelete: Cascade)
+
+  @@index([schoolId])
+  @@index([courseId])
+  @@index([teacherId])
 }

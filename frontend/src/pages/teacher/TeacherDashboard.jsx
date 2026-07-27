@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { Users, School, BarChart3, Mailbox, CheckCircle, Edit, List, Clock, Calendar, Sun } from 'lucide-react';
 import { getSummary } from '../../api/teacherApi';
 import StatCard from '../../components/StatCard';
 import ChartCard from '../../components/ChartCard';
@@ -38,22 +39,22 @@ export default function TeacherDashboard() {
       <div style={styles.metricsGrid}>
         <StatCard
           label="Course Size"
-          value={summary?.studentCount || 0}
-          icon="🎒"
+          value={summary?.hasHomeroom === false ? 'N/A' : (summary?.studentCount || 0)}
+          icon={<Users size={24} color="var(--primary)" />}
           trend="Registered in grade"
           trendColor="var(--text-secondary)"
         />
         <StatCard
           label="Courseroom Name"
           value={summary?.assignedCourse || 'N/A'}
-          icon="🏫"
+          icon={<School size={24} color="var(--secondary)" />}
           trend="Assigned Grade level"
           trendColor="var(--primary)"
         />
         <StatCard
           label="Monthly Course Attendance"
-          value={`${summary?.courseAttendanceRate || 100}%`}
-          icon="📊"
+          value={summary?.hasHomeroom === false ? 'N/A' : `${summary?.courseAttendanceRate || 100}%`}
+          icon={<BarChart3 size={24} color="var(--success)" />}
           trend="Based on active logs"
           trendColor="var(--success)"
         />
@@ -63,9 +64,15 @@ export default function TeacherDashboard() {
         {/* Recent Absentees Table Card */}
         <div style={styles.panel}>
           <h3 style={styles.panelTitle}>Recent Absent Alerts (Last 3 Days)</h3>
-          {summary?.recentAbsentees?.length === 0 ? (
+          {summary?.hasHomeroom === false ? (
             <EmptyState
-              icon="✅"
+              icon={<Mailbox size={32} color="var(--text-secondary)" />}
+              title="No Homeroom Assigned"
+              description="You are not currently assigned as a homeroom teacher."
+            />
+          ) : summary?.recentAbsentees?.length === 0 ? (
+            <EmptyState
+              icon={<CheckCircle size={32} color="var(--success)" />}
               title="Perfect Attendance!"
               description="No absences logged in your course over the last 3 days."
             />
@@ -93,16 +100,16 @@ export default function TeacherDashboard() {
           <h3 style={styles.panelTitle}>Courseroom Actions</h3>
           <div style={styles.actionsGrid}>
             <button onClick={() => navigate('/teacher/take-attendance')} className="btn-primary" style={styles.actionBtn}>
-              📝 Take Attendance Now
+              <Edit size={18} /> Take Attendance Now
             </button>
             <button onClick={() => navigate('/teacher/courses')} className="btn-secondary" style={styles.actionBtn}>
-              🏫 View Roster Directory
+              <List size={18} /> View Roster Directory
             </button>
             <button onClick={() => navigate('/teacher/history')} className="btn-secondary" style={styles.actionBtn}>
-              🕒 View Attendance History
+              <Clock size={18} /> View Attendance History
             </button>
             <button onClick={() => navigate('/teacher/routine')} className="btn-secondary" style={styles.actionBtn}>
-              📅 View Full Routine
+              <Calendar size={18} /> View Full Routine
             </button>
           </div>
         </div>
@@ -111,7 +118,7 @@ export default function TeacherDashboard() {
         <div style={{ ...styles.panel, gridColumn: '1 / -1' }}>
           <h3 style={styles.panelTitle}>Today's Routine</h3>
           {!summary?.routine || summary.routine.length === 0 ? (
-             <EmptyState icon="🏖️" title="Free Day!" description="No periods assigned for today." />
+             <EmptyState icon={<Sun size={32} color="#f59e0b" />} title="Free Day!" description="No periods assigned for today." />
           ) : (
             <div style={styles.routineGrid}>
               {summary.routine.map((r, idx) => (
@@ -205,7 +212,10 @@ const styles = {
     padding: '14px',
     fontSize: '0.95rem',
     width: '100%',
-    textAlign: 'center',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: '8px',
   },
   routineGrid: {
     display: 'flex',
