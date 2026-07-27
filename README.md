@@ -1,6 +1,6 @@
-# 🎓 EduSphere: AI-Assisted Student Management System
+# 🎓 Eazzio-School: AI-Assisted Student Management System
 
-EduSphere is a modern, premium, role-based school enterprise resource planning (ERP) commercial prototype. Designed with a dark glassmorphism interface, it streamlines administrative workflows, enables teachers to manage classroom rolls, allows students to track billing and academic presence, and employs AI-assisted operational insights to flag low attendance and fee dues risks.
+Eazzio-School is a modern, premium, role-based school enterprise resource planning (ERP) commercial prototype. Designed with a sleek glassmorphism interface, it streamlines administrative workflows, enables teachers to manage classroom rolls and assignments, allows students to track billing and academic presence, and employs AI-assisted operational insights to flag low attendance and fee dues risks.
 
 ---
 
@@ -16,12 +16,20 @@ EduSphere is a modern, premium, role-based school enterprise resource planning (
 ### 👩‍🏫 Faculty Workspace
 *   **Roster Overview**: Direct lookup of classroom sizes, class attendance averages, and a feed of recent absentees.
 *   **Roll Call Sheet**: Interactive present/absent roll toggle check sheets with "Select All Present" triggers, submission warnings, overwrite safeguards, and modal verification prompts.
+*   **Assignments Module**: Create and manage homework assignments and projects scoped precisely to assigned classrooms.
+*   **Student Remarks**: Write disciplinary or positive performance feedback for individual students.
 *   **Historical Logs**: Aggregated class logs showing attendance roll rollups by date (students registered, present counts, absent counts, rates).
 
 ### 🎒 Student Workspace
 *   **Overview Dashboard**: Radial attendance goal progress gauges, announcements bulletin boards, and term accounts ledger details.
+*   **Academic Tasks**: Dedicated section to view class-specific assignments and read personalized teacher feedback/remarks.
 *   **Attendance Ledger**: Complete rolls record sheets with month-by-month progress comparisons.
 *   **Tuition Ledger**: Detailed balances card showing total dues, payment statuses, and transaction details, alongside an online payment gateway sandbox drawer popup.
+
+### 💼 Accountant Workspace
+*   **Financial Dashboard**: Track total revenue, pending dues, and real-time fee collection analytics.
+*   **Student Billing Ledgers**: Filter and search students by course to generate, view, and manage specific fee invoices.
+*   **Transaction Reports**: Live data grids of all paid transactions and overdue alerts.
 
 ### 🔒 Enterprise Security
 *   **Authentication Route Guards**: Secure JWT access tokens storing session contexts, mapped to sub-profile IDs, and matching allowed role checks (PRINCIPAL, TEACHER, STUDENT).
@@ -46,6 +54,7 @@ All seeded accounts share the password: **`123456`**
 | Portal Role | Username / Email | Assigned Context |
 | :--- | :--- | :--- |
 | **Principal / Admin** | `principal@demo.com` | Full Administrative & Audits Control |
+| **Accountant** | `accountant@demo.com` | Full Financial & Billing Control |
 | **Teacher 1** | `teacher1@demo.com` | Assigned Class: `Grade 10-A` |
 | **Teacher 2** | `teacher2@demo.com` | Assigned Class: `Grade 10-B` |
 | **Teacher 3** | `teacher3@demo.com` | Assigned Class: `Grade 9-A` |
