@@ -761,13 +761,39 @@ export default function AccountantStudents() {
     try {
       setError('');
       setProcessing(true);
+      
+      let cloudinaryPhotoUrl = '';
+      if (formData.photo) {
+        if (formData.photo.startsWith('http')) {
+          cloudinaryPhotoUrl = formData.photo;
+        } else {
+          setProcessingMessage('Uploading student photo to Cloudinary...');
+          const uploadData = new FormData();
+          uploadData.append('file', formData.photo);
+          uploadData.append('upload_preset', 'eazzio_school');
+          
+          const cloudinaryRes = await fetch('https://api.cloudinary.com/v1_1/dpv9ov0ex/image/upload', {
+            method: 'POST',
+            body: uploadData
+          });
+
+          if (!cloudinaryRes.ok) {
+            throw new Error('Failed to upload student photo to Cloudinary');
+          }
+          
+          const cloudData = await cloudinaryRes.json();
+          cloudinaryPhotoUrl = cloudData.secure_url;
+        }
+      }
+
       setProcessingMessage('Creating new student profile...');
       const combinedPhone = formData.phone2.trim()
         ? `${formData.phone.trim()}, ${formData.phone2.trim()}`
         : formData.phone.trim();
       const response = await api.post('/accountant/students', {
         ...formData,
-        phone: combinedPhone
+        phone: combinedPhone,
+        photo: cloudinaryPhotoUrl
       });
       if (response.data) {
         showToast('New student added successfully!');
@@ -791,7 +817,7 @@ export default function AccountantStudents() {
       }
     } catch (err) {
       console.error(err);
-      setError(err.response?.data?.error || 'Failed to add student. Please try again.');
+      setError(err.response?.data?.error || err.message || 'Failed to add student. Please try again.');
     } finally {
       setProcessing(false);
     }
@@ -822,13 +848,35 @@ export default function AccountantStudents() {
     try {
       setError('');
       setProcessing(true);
+      
+      let cloudinaryPhotoUrl = editFormData.photo;
+      if (editFormData.photo && editFormData.photo.startsWith('data:')) {
+        setProcessingMessage('Uploading new student photo to Cloudinary...');
+        const uploadData = new FormData();
+        uploadData.append('file', editFormData.photo);
+        uploadData.append('upload_preset', 'eazzio_school');
+        
+        const cloudinaryRes = await fetch('https://api.cloudinary.com/v1_1/dpv9ov0ex/image/upload', {
+          method: 'POST',
+          body: uploadData
+        });
+
+        if (!cloudinaryRes.ok) {
+          throw new Error('Failed to upload new student photo to Cloudinary');
+        }
+        
+        const cloudData = await cloudinaryRes.json();
+        cloudinaryPhotoUrl = cloudData.secure_url;
+      }
+
       setProcessingMessage('Saving student details changes...');
       const combinedPhone = editFormData.phone2.trim()
         ? `${editFormData.phone.trim()}, ${editFormData.phone2.trim()}`
         : editFormData.phone.trim();
       const response = await api.put(`/accountant/students/${editingStudent.id}`, {
         ...editFormData,
-        phone: combinedPhone
+        phone: combinedPhone,
+        photo: cloudinaryPhotoUrl
       });
       if (response.data) {
         setEditingStudent(null);
@@ -839,7 +887,7 @@ export default function AccountantStudents() {
       }
     } catch (err) {
       console.error(err);
-      setError(err.response?.data?.error || 'Failed to update student. Please try again.');
+      setError(err.response?.data?.error || err.message || 'Failed to update student. Please try again.');
     } finally {
       setProcessing(false);
     }
@@ -2034,7 +2082,7 @@ export default function AccountantStudents() {
                       />
                     ) : editFormData.photo ? (
                       <img
-                        src={editFormData.photo.startsWith('data:') ? editFormData.photo : `${import.meta.env.VITE_API_URL.replace(/\/api$/, '')}${editFormData.photo}`}
+                        src={editFormData.photo.startsWith('data:') || editFormData.photo.startsWith('http') ? editFormData.photo : `${import.meta.env.VITE_API_URL.replace(/\/api$/, '')}${editFormData.photo}`}
                         alt="Preview"
                         style={{
                           width: '100%',

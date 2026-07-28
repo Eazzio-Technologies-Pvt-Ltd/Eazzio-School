@@ -270,23 +270,27 @@ router.post('/students', async (req, res) => {
     const maxNum = await getNextStudentNumber(schoolId);
     const studentId = generateStudentId(school.schoolCode, maxNum + 1, admissionDate);
 
-    // Save photo to disk if provided
+    // Save photo to disk if provided, or use direct Cloudinary URL
     let photoUrl = null;
     if (photo) {
-      try {
-        const matches = photo.match(/^data:([A-Za-z-+\/]+);base64,(.+)$/);
-        if (matches && matches.length === 3) {
-          const buffer = Buffer.from(matches[2], 'base64');
-          const uploadDir = path.join(process.cwd(), 'uploads', 'students');
-          if (!fs.existsSync(uploadDir)) {
-            fs.mkdirSync(uploadDir, { recursive: true });
+      if (photo.startsWith('http')) {
+        photoUrl = photo;
+      } else {
+        try {
+          const matches = photo.match(/^data:([A-Za-z-+\/]+);base64,(.+)$/);
+          if (matches && matches.length === 3) {
+            const buffer = Buffer.from(matches[2], 'base64');
+            const uploadDir = path.join(process.cwd(), 'uploads', 'students');
+            if (!fs.existsSync(uploadDir)) {
+              fs.mkdirSync(uploadDir, { recursive: true });
+            }
+            const filename = `${studentId}.png`;
+            fs.writeFileSync(path.join(uploadDir, filename), buffer);
+            photoUrl = `/uploads/students/${filename}`;
           }
-          const filename = `${studentId}.png`;
-          fs.writeFileSync(path.join(uploadDir, filename), buffer);
-          photoUrl = `/uploads/students/${filename}`;
+        } catch (err) {
+          console.error('Failed to save student photo:', err);
         }
-      } catch (err) {
-        console.error('Failed to save student photo:', err);
       }
     }
 
@@ -397,6 +401,8 @@ router.put('/students/:id', async (req, res) => {
     let photoUrl = student.photo;
     if (photo === '' || photo === null) {
       photoUrl = null;
+    } else if (photo && photo.startsWith('http')) {
+      photoUrl = photo;
     } else if (photo && photo.startsWith('data:image')) {
       try {
         const matches = photo.match(/^data:([A-Za-z-+\/]+);base64,(.+)$/);
