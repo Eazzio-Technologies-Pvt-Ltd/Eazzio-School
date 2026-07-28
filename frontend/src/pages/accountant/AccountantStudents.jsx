@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import api from '../../api/axios';
 import Loader from '../../components/Loader';
@@ -82,8 +82,87 @@ export default function AccountantStudents() {
     phone2: '',
     address: '',
     admissionDate: getTodayDateString(),
-    feeCycle: 'MONTHLY'
+    feeCycle: 'MONTHLY',
+    photo: ''
   });
+
+  // Webcam states & helpers for photo upload
+  const [webcamActive, setWebcamActive] = useState(false);
+  const videoRef = useRef(null);
+  const streamRef = useRef(null);
+
+  const startWebcam = async () => {
+    try {
+      setWebcamActive(true);
+      const constraints = { video: { width: 300, height: 300, facingMode: 'user' } };
+      const stream = await navigator.mediaDevices.getUserMedia(constraints);
+      streamRef.current = stream;
+      
+      // Delay slightly to make sure video ref is mounted
+      setTimeout(() => {
+        if (videoRef.current) {
+          videoRef.current.srcObject = stream;
+        }
+      }, 100);
+    } catch (err) {
+      console.error('Error starting webcam:', err);
+      showToast('Could not access camera. Please check permissions.', 'error');
+      setWebcamActive(false);
+    }
+  };
+
+  const capturePhoto = () => {
+    if (videoRef.current) {
+      const canvas = document.createElement('canvas');
+      canvas.width = 300;
+      canvas.height = 300;
+      const ctx = canvas.getContext('2d');
+      // Mirror the context so it matches the mirrored preview
+      ctx.translate(canvas.width, 0);
+      ctx.scale(-1, 1);
+      ctx.drawImage(videoRef.current, 0, 0, 300, 300);
+      const dataUrl = canvas.toDataURL('image/png');
+      if (editingStudent) {
+        setEditFormData(prev => ({ ...prev, photo: dataUrl }));
+      } else {
+        setFormData(prev => ({ ...prev, photo: dataUrl }));
+      }
+      stopWebcam();
+    }
+  };
+
+  const stopWebcam = () => {
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach(track => track.stop());
+      streamRef.current = null;
+    }
+    setWebcamActive(false);
+  };
+
+  const handlePhotoFileChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        const resultUrl = event.target.result;
+        if (editingStudent) {
+          setEditFormData(prev => ({ ...prev, photo: resultUrl }));
+        } else {
+          setFormData(prev => ({ ...prev, photo: resultUrl }));
+        }
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  useEffect(() => {
+    return () => {
+      if (streamRef.current) {
+        streamRef.current.getTracks().forEach(track => track.stop());
+      }
+    };
+  }, []);
+
 
   const [editFormData, setEditFormData] = useState({
     name: '',
@@ -703,7 +782,8 @@ export default function AccountantStudents() {
           phone2: '',
           address: '',
           admissionDate: getTodayDateString(),
-          feeCycle: 'MONTHLY'
+          feeCycle: 'MONTHLY',
+          photo: ''
         });
         
         setProcessingMessage('Refreshing student roster...');
@@ -732,7 +812,8 @@ export default function AccountantStudents() {
       phone2: phone2,
       address: student.address === 'N/A' ? '' : (student.address || ''),
       admissionDate: student.admissionDate ? new Date(student.admissionDate).toISOString().split('T')[0] : '',
-      feeCycle: student.feeCycle || 'MONTHLY'
+      feeCycle: student.feeCycle || 'MONTHLY',
+      photo: student.photo || ''
     });
   };
 
@@ -835,6 +916,49 @@ export default function AccountantStudents() {
           <h2>🎒 Students & Enrollment</h2>
           <p style={styles.sub}>Manage student records, CSV imports, class allocations, and billing status.</p>
         </div>
+        <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+          {lastImportedStudentIds && lastImportedStudentIds.length > 0 && (
+            <button 
+              onClick={handleRevertImport}
+              style={{
+                ...styles.addBtn,
+                background: 'linear-gradient(135deg, var(--danger), #f87171)',
+                borderColor: 'var(--danger)',
+                cursor: 'pointer',
+                color: '#fff',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px',
+                boxShadow: '0 4px 15px rgba(239, 68, 68, 0.3)',
+                margin: 0
+              }}
+            >
+              🗑️ Delete CSV (Revert Import)
+            </button>
+          )}
+
+          <label style={{
+            ...styles.addBtn,
+            background: 'linear-gradient(135deg, var(--success), #34d399)',
+            borderColor: 'var(--success)',
+            cursor: 'pointer',
+            margin: 0,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            color: '#fff',
+            boxShadow: '0 4px 15px rgba(5, 150, 105, 0.3)'
+          }}>
+            📁 {importing ? 'Importing...' : 'Bulk Import (CSV)'}
+            <input
+              type="file"
+              accept=".csv"
+              style={{ display: 'none' }}
+              onChange={handleCSVUpload}
+              disabled={importing}
+            />
+          </label>
+        </div>
       </div>
 
       {error && (
@@ -862,7 +986,7 @@ export default function AccountantStudents() {
           flexDirection: 'column',
           gap: '6px'
         }}>
-          <div style={{ display: 'flex', justifycontent: 'space-between', alignItems: 'center' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <span style={{ fontWeight: 'bold', color: 'var(--success)' }}>
               ✅ {importResult.message}
             </span>
@@ -912,107 +1036,436 @@ export default function AccountantStudents() {
         </div>
       )}
 
-      {/* Filter and Search Section */}
-      <div style={styles.filterSection}>
-        <div style={styles.filterGrid}>
-          <div style={styles.filterGroup}>
-            <label style={styles.filterLabel}>Class Filter</label>
-            <select
-              style={styles.selectInput}
-              value={selectedClassId}
-              onChange={(e) => setSelectedClassId(e.target.value)}
-            >
-              <option value="">All Classes</option>
-              {classes.map((cls) => (
-                <option key={cls.id} value={cls.id}>
-                  {cls.className} - {cls.section}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <div style={styles.filterGroup}>
-            <label style={styles.filterLabel}>Academic Session</label>
-            <select
-              style={styles.selectInput}
-              value={selectedSession}
-              onChange={(e) => setSelectedSession(e.target.value)}
-            >
-              <option value="">All Sessions</option>
-              {sessionsList.map((session) => (
-                <option key={session} value={session}>
-                  {session}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <div style={styles.filterGroup}>
-            <label style={styles.filterLabel}>Search Student</label>
-            <input
-              type="text"
-              placeholder="Search name or ID..."
-              style={styles.searchInput}
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-            />
-          </div>
+      {/* Admission Form */}
+      <div style={styles.panel}>
+        <div style={styles.panelHeader}>
+          <h3 style={styles.panelTitle}>➕ Admission Form</h3>
         </div>
-      </div>
-
-      {/* Action Buttons Row */}
-      <div style={{
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        gap: '12px',
-        margin: '12px 0',
-        flexWrap: 'wrap'
-      }}>
-        <label style={{
-          ...styles.addBtn,
-          background: 'linear-gradient(135deg, var(--success), #34d399)',
-          borderColor: 'var(--success)',
-          cursor: 'pointer',
-          margin: 0,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          color: '#fff',
-          boxShadow: '0 4px 15px rgba(5, 150, 105, 0.3)'
-        }}>
-          📁 {importing ? 'Importing...' : 'Bulk Import (CSV)'}
-          <input
-            type="file"
-            accept=".csv"
-            style={{ display: 'none' }}
-            onChange={handleCSVUpload}
-            disabled={importing}
-          />
-        </label>
-
-        {lastImportedStudentIds && lastImportedStudentIds.length > 0 && (
-          <button 
-            onClick={handleRevertImport}
-            style={{
-              ...styles.addBtn,
-              background: 'linear-gradient(135deg, var(--danger), #f87171)',
-              borderColor: 'var(--danger)',
-              cursor: 'pointer',
-              color: '#fff',
+        <form onSubmit={handleAddStudent} style={styles.form}>
+          {/* Centered Photo Section (Row 1) */}
+          <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '24px', width: '100%' }}>
+            <div style={{
               display: 'flex',
+              flexDirection: 'column',
               alignItems: 'center',
-              gap: '6px',
-              boxShadow: '0 4px 15px rgba(239, 68, 68, 0.3)'
-            }}
-          >
-            🗑️ Delete CSV (Revert Import)
-          </button>
-        )}
+              justifyContent: 'center',
+              width: '180px',
+              flex: '0 0 180px'
+            }}>
+              <label style={{ ...styles.label, width: '100%', textAlign: 'center', marginBottom: '4px' }}>Student Photo</label>
+              <div style={{
+                position: 'relative',
+                width: '80px',
+                height: '80px',
+                borderRadius: '50%',
+                border: '2px dashed var(--glass-border)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                overflow: 'hidden',
+                backgroundColor: 'rgba(255, 255, 255, 0.03)',
+                boxShadow: 'inset 0 2px 4px rgba(0, 0, 0, 0.3)',
+                marginBottom: '6px',
+                transition: 'all 0.3s ease'
+              }}>
+                {webcamActive ? (
+                  <video
+                    ref={videoRef}
+                    autoPlay
+                    playsInline
+                    style={{
+                      width: '100%',
+                      height: '100%',
+                      objectFit: 'cover',
+                      transform: 'scaleX(-1)'
+                    }}
+                  />
+                ) : formData.photo ? (
+                  <img
+                    src={formData.photo}
+                    alt="Preview"
+                    style={{
+                      width: '100%',
+                      height: '100%',
+                      objectFit: 'cover'
+                    }}
+                  />
+                ) : (
+                  <span style={{ fontSize: '1.8rem', color: 'var(--text-secondary)' }}>👤</span>
+                )}
+              </div>
+              
+              <div style={{ display: 'flex', gap: '6px', width: '100%', justifyContent: 'center', flexWrap: 'wrap' }}>
+                {webcamActive ? (
+                  <>
+                    <button
+                      type="button"
+                      onClick={capturePhoto}
+                      style={{
+                        padding: '4px 8px',
+                        borderRadius: 'var(--radius-sm)',
+                        background: 'linear-gradient(135deg, var(--success), #10b981)',
+                        border: 'none',
+                        color: '#fff',
+                        fontSize: '0.7rem',
+                        fontWeight: '600',
+                        cursor: 'pointer',
+                        boxShadow: '0 2px 8px rgba(16, 185, 129, 0.3)',
+                        transition: 'all 0.2s'
+                      }}
+                    >
+                      📸 Capture
+                    </button>
+                    <button
+                      type="button"
+                      onClick={stopWebcam}
+                      style={{
+                        padding: '4px 8px',
+                        borderRadius: 'var(--radius-sm)',
+                        background: 'rgba(255, 255, 255, 0.08)',
+                        border: '1px solid var(--glass-border)',
+                        color: 'var(--text-secondary)',
+                        fontSize: '0.7rem',
+                        fontWeight: '600',
+                        cursor: 'pointer',
+                        transition: 'all 0.2s'
+                      }}
+                    >
+                      Cancel
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <button
+                      type="button"
+                      onClick={startWebcam}
+                      style={{
+                        padding: '4px 8px',
+                        borderRadius: 'var(--radius-sm)',
+                        background: 'linear-gradient(135deg, var(--primary), var(--primary-hover))',
+                        border: 'none',
+                        color: '#fff',
+                        fontSize: '0.7rem',
+                        fontWeight: '600',
+                        cursor: 'pointer',
+                        boxShadow: '0 2px 8px rgba(110, 68, 255, 0.3)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '4px',
+                        transition: 'all 0.2s'
+                      }}
+                    >
+                      🎥 Webcam
+                    </button>
+                    
+                    <label style={{
+                      padding: '4px 8px',
+                      borderRadius: 'var(--radius-sm)',
+                      background: 'rgba(255, 255, 255, 0.05)',
+                      border: '1px solid var(--glass-border)',
+                      color: 'var(--text-primary)',
+                      fontSize: '0.7rem',
+                      fontWeight: '600',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '4px',
+                      transition: 'all 0.2s'
+                    }}>
+                      📁 Upload
+                      <input
+                        type="file"
+                        accept="image/*"
+                        style={{ display: 'none' }}
+                        onChange={handlePhotoFileChange}
+                      />
+                    </label>
+                    
+                    {formData.photo && (
+                      <button
+                        type="button"
+                        onClick={() => setFormData(prev => ({ ...prev, photo: '' }))}
+                        style={{
+                          padding: '4px 8px',
+                          borderRadius: 'var(--radius-sm)',
+                          background: 'rgba(239, 68, 68, 0.1)',
+                          border: '1px solid var(--danger)',
+                          color: 'var(--danger)',
+                          fontSize: '0.7rem',
+                          fontWeight: '600',
+                          cursor: 'pointer',
+                          transition: 'all 0.2s'
+                        }}
+                      >
+                        Remove
+                      </button>
+                    )}
+                  </>
+                )}
+              </div>
+            </div>
+          </div>
 
-        <button style={styles.addBtn} onClick={() => setShowModal(true)}>
-          ➕ Add New Student
-        </button>
+          {/* Name & Admission Date Row (Row 2) */}
+          <div style={styles.formRow}>
+            <div style={styles.formGroup}>
+              <label style={styles.label}>Name *</label>
+              <input
+                type="text"
+                required
+                style={styles.input}
+                value={formData.name}
+                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                placeholder="Enter student name"
+              />
+            </div>
+
+            <div style={styles.formGroup}>
+              <label style={styles.label}>Admission Date</label>
+              <input
+                type="date"
+                style={styles.input}
+                value={formData.admissionDate}
+                onChange={(e) => setFormData({ ...formData, admissionDate: e.target.value })}
+              />
+            </div>
+          </div>
+
+          <div style={styles.formRow}>
+            <div style={styles.formGroup}>
+              <label style={styles.label}>Class *</label>
+              <select
+                required
+                style={styles.input}
+                value={formData.classId}
+                onChange={(e) => {
+                  const newClassId = e.target.value;
+                  const selectedClass = classes.find(cls => String(cls.id) === String(newClassId));
+                  const studentCount = selectedClass && selectedClass._count ? selectedClass._count.students : 0;
+                  const nextRoll = newClassId ? String(studentCount + 1) : '';
+                  setFormData({ 
+                    ...formData, 
+                    classId: newClassId,
+                    rollNumber: nextRoll
+                  });
+                }}
+              >
+                <option value="">Select a Class</option>
+                {classes.map((cls) => (
+                  <option key={cls.id} value={cls.id}>
+                    {cls.className} - {cls.section} ({cls.academicYear})
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div style={styles.formGroup}>
+              <label style={styles.label}>Roll Number</label>
+              <input
+                type="text"
+                style={styles.input}
+                value={formData.rollNumber}
+                onChange={(e) => setFormData({ ...formData, rollNumber: e.target.value })}
+                placeholder="e.g. 101"
+              />
+            </div>
+          </div>
+
+          {(() => {
+            const selectedCourseForAdd = classes.find(c => c.id.toString() === formData.classId.toString());
+            const feeBreakdownForAdd = calculateFeeBreakdown(selectedCourseForAdd);
+            if (!selectedCourseForAdd) return null;
+            return (
+              <div style={{
+                background: 'rgba(255, 255, 255, 0.03)',
+                border: '1px solid var(--glass-border)',
+                borderRadius: '10px',
+                padding: '14px',
+                marginTop: '8px',
+                marginBottom: '14px',
+              }}>
+                {(() => {
+                  const calculatedTotal = selectedCourseForAdd.feesList ? selectedCourseForAdd.feesList.reduce((sum, fee) => {
+                    let calculatedAmount = fee.amount;
+                    if (fee.planType) {
+                      const cycle = formData.feeCycle || 'MONTHLY';
+                      if (cycle === 'MONTHLY') {
+                        calculatedAmount = feeBreakdownForAdd.tuition.monthly;
+                      } else if (cycle === 'QUARTERLY') {
+                        calculatedAmount = feeBreakdownForAdd.tuition.quarterly;
+                      } else if (cycle === 'HALF_YEARLY') {
+                        calculatedAmount = feeBreakdownForAdd.tuition.halfYearly;
+                      } else if (cycle === 'YEARLY') {
+                        calculatedAmount = feeBreakdownForAdd.tuition.yearly;
+                      } else if (cycle === 'ONE_TIME') {
+                        calculatedAmount = feeBreakdownForAdd.tuition.oneTime;
+                      }
+                    }
+                    return sum + calculatedAmount;
+                  }, 0) : 0;
+
+                  return (
+                    <>
+                      <h4 style={{ margin: '0 0 10px 0', fontSize: '0.85rem', color: 'var(--primary)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <span>💰 Course Fees Configured ({selectedCourseForAdd.className})</span>
+                        <span style={{ fontSize: '0.8rem', fontWeight: 'bold', color: 'var(--text-primary)' }}>
+                          Total: ₹{calculatedTotal.toLocaleString()}
+                        </span>
+                      </h4>
+
+                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginBottom: '14px' }}>
+                        {selectedCourseForAdd.feesList && selectedCourseForAdd.feesList.map(fee => {
+                          let calculatedAmount = fee.amount;
+                          let displayPlanType = fee.planType ? fee.planType.toLowerCase().replace('_', ' ') : 'one-time';
+                          if (fee.planType) {
+                            const cycle = formData.feeCycle || 'MONTHLY';
+                            if (cycle === 'MONTHLY') {
+                              calculatedAmount = feeBreakdownForAdd.tuition.monthly;
+                            } else if (cycle === 'QUARTERLY') {
+                              calculatedAmount = feeBreakdownForAdd.tuition.quarterly;
+                            } else if (cycle === 'HALF_YEARLY') {
+                              calculatedAmount = feeBreakdownForAdd.tuition.halfYearly;
+                            } else if (cycle === 'YEARLY') {
+                              calculatedAmount = feeBreakdownForAdd.tuition.yearly;
+                            } else if (cycle === 'ONE_TIME') {
+                              calculatedAmount = feeBreakdownForAdd.tuition.oneTime;
+                            }
+                            displayPlanType = cycle.toLowerCase().replace('_', ' ');
+                          }
+                          return (
+                            <div key={fee.id} style={{
+                              padding: '6px 12px',
+                              background: 'rgba(255, 255, 255, 0.05)',
+                              border: '1px solid var(--glass-border)',
+                              borderRadius: '6px',
+                              fontSize: '0.75rem',
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: '6px'
+                            }}>
+                              <span style={{ color: 'var(--text-secondary)' }}>{fee.feeType}:</span>
+                              <strong style={{ color: 'var(--text-primary)' }}>₹{calculatedAmount.toLocaleString()}</strong>
+                              <span style={{ fontSize: '0.65rem', color: 'var(--text-secondary)', textTransform: 'capitalize' }}>
+                                ({displayPlanType})
+                              </span>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </>
+                  );
+                })()}
+
+                {feeBreakdownForAdd ? (
+                  <div>
+                    <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', fontWeight: '600', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                      Calculate tuition installment cycles:
+                    </div>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '10px' }}>
+                      {[
+                        { key: 'MONTHLY', label: 'Monthly', value: feeBreakdownForAdd.tuition.monthly },
+                        { key: 'QUARTERLY', label: 'Quarterly', value: feeBreakdownForAdd.tuition.quarterly },
+                        { key: 'HALF_YEARLY', label: 'Half-Yearly', value: feeBreakdownForAdd.tuition.halfYearly },
+                        { key: 'YEARLY', label: 'Yearly', value: feeBreakdownForAdd.tuition.yearly },
+                        { key: 'ONE_TIME', label: 'One-time', value: feeBreakdownForAdd.tuition.oneTime },
+                      ].map(item => {
+                        const isSelected = formData.feeCycle === item.key;
+                        return (
+                          <div key={item.key} style={{
+                            padding: '10px 8px',
+                            background: isSelected ? 'rgba(139, 92, 246, 0.15)' : 'rgba(255,255,255,0.01)',
+                            border: isSelected ? '2px solid var(--primary)' : '1px solid var(--glass-border)',
+                            borderRadius: '8px',
+                            textAlign: 'center',
+                            cursor: 'pointer',
+                            transition: 'all 0.2s',
+                            boxShadow: isSelected ? '0 0 10px rgba(139, 92, 246, 0.2)' : 'none'
+                          }}
+                          onClick={() => setFormData({ ...formData, feeCycle: item.key })}
+                          >
+                            <span style={{ fontSize: '0.65rem', color: isSelected ? 'var(--primary)' : 'var(--text-secondary)', display: 'block', fontWeight: 'bold', pointerEvents: 'none' }}>{item.label}</span>
+                            <span style={{ fontSize: '0.9rem', fontWeight: 'bold', color: 'var(--text-primary)', display: 'block', marginTop: '4px', pointerEvents: 'none' }}>₹{item.value.toLocaleString()}</span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                    {feeBreakdownForAdd.otherTotal > 0 && (
+                      <div style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', marginTop: '8px', fontStyle: 'italic', textAlign: 'right' }}>
+                        * Note: One-time/other fees of ₹{feeBreakdownForAdd.otherTotal.toLocaleString()} will apply separately.
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', fontStyle: 'italic' }}>No tuition fee configured for this course yet.</span>
+                )}
+              </div>
+            );
+          })()}
+
+          <div style={styles.formRow}>
+            <div style={styles.formGroup}>
+              <label style={styles.label}>Father's Name</label>
+              <input
+                type="text"
+                style={styles.input}
+                value={formData.fatherName}
+                onChange={(e) => setFormData({ ...formData, fatherName: e.target.value })}
+                placeholder="Father's name"
+              />
+            </div>
+            <div style={styles.formGroup}>
+              <label style={styles.label}>Mother's Name</label>
+              <input
+                type="text"
+                style={styles.input}
+                value={formData.motherName}
+                onChange={(e) => setFormData({ ...formData, motherName: e.target.value })}
+                placeholder="Mother's name"
+              />
+            </div>
+          </div>
+
+          <div style={styles.formRow}>
+            <div style={styles.formGroup}>
+              <label style={styles.label}>Phone Number 1 (Primary)</label>
+              <input
+                type="tel"
+                style={styles.input}
+                value={formData.phone}
+                onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                placeholder="Primary contact number"
+              />
+            </div>
+            <div style={styles.formGroup}>
+              <label style={styles.label}>Phone Number 2 (Secondary)</label>
+              <input
+                type="tel"
+                style={styles.input}
+                value={formData.phone2}
+                onChange={(e) => setFormData({ ...formData, phone2: e.target.value })}
+                placeholder="Secondary contact number (optional)"
+              />
+            </div>
+          </div>
+
+          <div style={styles.formRow}>
+            <div style={{ ...styles.formGroup, flex: '1 1 100%' }}>
+              <label style={styles.label}>Address</label>
+              <input
+                type="text"
+                style={styles.input}
+                value={formData.address}
+                onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+                placeholder="Residential address"
+              />
+            </div>
+          </div>
+
+          <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '16px' }}>
+            <button type="submit" style={styles.submitBtn}>
+              Add Student
+            </button>
+          </div>
+        </form>
       </div>
 
       {/* Student Fees Status Panel */}
@@ -1024,7 +1477,7 @@ export default function AccountantStudents() {
         <div style={styles.tableContainer}>
           {filteredStudentsList.length === 0 ? (
             <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', fontStyle: 'italic', margin: 0, padding: '20px', textAlign: 'center' }}>
-              No students match the selected filters.
+              No students found.
             </p>
           ) : (
             <table style={styles.table}>
@@ -1043,10 +1496,51 @@ export default function AccountantStudents() {
                   return (
                     <tr key={student.id} style={styles.tr}>
                       <td style={{ ...styles.td, color: 'var(--text-primary)', fontWeight: '600' }}>
-                        {student.name}
-                        <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', display: 'block', fontWeight: 'normal', marginTop: '2px' }}>
-                          {student.studentId}
-                        </span>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                          <div style={{
+                            width: '36px',
+                            height: '36px',
+                            borderRadius: '50%',
+                            overflow: 'hidden',
+                            background: 'rgba(255, 255, 255, 0.05)',
+                            border: '1px solid var(--glass-border)',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            flexShrink: 0
+                          }}>
+                            {student.photo ? (
+                              <img
+                                src={student.photo.startsWith('http') ? student.photo : `${import.meta.env.VITE_API_URL.replace(/\/api$/, '')}${student.photo}`}
+                                alt={student.name}
+                                style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                                onError={(e) => {
+                                  e.target.onerror = null;
+                                  e.target.style.display = 'none';
+                                  const fallbackSpan = e.target.parentElement.querySelector('.fallback-initials');
+                                  if (fallbackSpan) fallbackSpan.style.display = 'flex';
+                                }}
+                              />
+                            ) : null}
+                            <span 
+                              className="fallback-initials"
+                              style={{ 
+                                display: student.photo ? 'none' : 'flex', 
+                                fontSize: '0.85rem', 
+                                fontWeight: 'bold', 
+                                color: 'var(--primary)' 
+                              }}
+                            >
+                              {student.name ? student.name[0].toUpperCase() : 'S'}
+                            </span>
+                          </div>
+                          <div>
+                            <span>{student.name}</span>
+                            <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', display: 'block', fontWeight: 'normal', marginTop: '2px' }}>
+                              {student.studentId}
+                            </span>
+                          </div>
+                        </div>
                       </td>
                       <td style={styles.td}>{student.rollNumber}</td>
                       <td style={styles.td}>{student.className}</td>
@@ -1091,285 +1585,6 @@ export default function AccountantStudents() {
         </div>
       </div>
 
-      {/* Add Student Modal */}
-      {showModal && createPortal(
-        <div style={styles.modalOverlay}>
-          <div style={styles.modalContent} className="animate-scale-up">
-            <div style={styles.modalHeader}>
-              <h3 style={{ margin: 0, color: 'var(--text-primary)' }}>➕ Add New Student</h3>
-              <button style={styles.closeBtn} onClick={() => setShowModal(false)}>✕</button>
-            </div>
-            
-            <form onSubmit={handleAddStudent} style={styles.form}>
-              <div style={styles.formRow}>
-                <div style={styles.formGroup}>
-                  <label style={styles.label}>Name *</label>
-                  <input
-                    type="text"
-                    required
-                    style={styles.input}
-                    value={formData.name}
-                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                    placeholder="Enter student name"
-                  />
-                </div>
-                <div style={styles.formGroup}>
-                  <label style={styles.label}>Admission Date</label>
-                  <input
-                    type="date"
-                    style={styles.input}
-                    value={formData.admissionDate}
-                    onChange={(e) => setFormData({ ...formData, admissionDate: e.target.value })}
-                  />
-                </div>
-              </div>
-
-              <div style={styles.formRow}>
-                <div style={styles.formGroup}>
-                  <label style={styles.label}>Class *</label>
-                  <select
-                    required
-                    style={styles.input}
-                    value={formData.classId}
-                    onChange={(e) => {
-                      const newClassId = e.target.value;
-                      const selectedClass = classes.find(cls => String(cls.id) === String(newClassId));
-                      const studentCount = selectedClass && selectedClass._count ? selectedClass._count.students : 0;
-                      const nextRoll = newClassId ? String(studentCount + 1) : '';
-                      setFormData({ 
-                        ...formData, 
-                        classId: newClassId,
-                        rollNumber: nextRoll
-                      });
-                    }}
-                  >
-                    <option value="">Select a Class</option>
-                    {classes.map((cls) => (
-                      <option key={cls.id} value={cls.id}>
-                        {cls.className} - {cls.section} ({cls.academicYear})
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                <div style={styles.formGroup}>
-                  <label style={styles.label}>Roll Number</label>
-                  <input
-                    type="text"
-                    style={styles.input}
-                    value={formData.rollNumber}
-                    onChange={(e) => setFormData({ ...formData, rollNumber: e.target.value })}
-                    placeholder="e.g. 101"
-                  />
-                </div>
-              </div>
-
-              {(() => {
-                const selectedCourseForAdd = classes.find(c => c.id.toString() === formData.classId.toString());
-                const feeBreakdownForAdd = calculateFeeBreakdown(selectedCourseForAdd);
-                if (!selectedCourseForAdd) return null;
-                return (
-                  <div style={{
-                    gridColumn: 'span 2',
-                    background: 'rgba(255, 255, 255, 0.03)',
-                    border: '1px solid var(--glass-border)',
-                    borderRadius: '10px',
-                    padding: '14px',
-                    marginTop: '8px',
-                    marginBottom: '14px',
-                  }}>
-                    {(() => {
-                      const calculatedTotal = selectedCourseForAdd.feesList ? selectedCourseForAdd.feesList.reduce((sum, fee) => {
-                        let calculatedAmount = fee.amount;
-                        if (fee.planType) {
-                          const cycle = formData.feeCycle || 'MONTHLY';
-                          if (cycle === 'MONTHLY') {
-                            calculatedAmount = feeBreakdownForAdd.tuition.monthly;
-                          } else if (cycle === 'QUARTERLY') {
-                            calculatedAmount = feeBreakdownForAdd.tuition.quarterly;
-                          } else if (cycle === 'HALF_YEARLY') {
-                            calculatedAmount = feeBreakdownForAdd.tuition.halfYearly;
-                          } else if (cycle === 'YEARLY') {
-                            calculatedAmount = feeBreakdownForAdd.tuition.yearly;
-                          } else if (cycle === 'ONE_TIME') {
-                            calculatedAmount = feeBreakdownForAdd.tuition.oneTime;
-                          }
-                        }
-                        return sum + calculatedAmount;
-                      }, 0) : 0;
-
-                      return (
-                        <>
-                          <h4 style={{ margin: '0 0 10px 0', fontSize: '0.85rem', color: 'var(--primary)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                            <span>💰 Course Fees Configured ({selectedCourseForAdd.className})</span>
-                            <span style={{ fontSize: '0.8rem', fontWeight: 'bold', color: 'var(--text-primary)' }}>
-                              Total: ₹{calculatedTotal.toLocaleString()}
-                            </span>
-                          </h4>
-
-                          {/* List of individual fee structures */}
-                          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginBottom: '14px' }}>
-                            {selectedCourseForAdd.feesList && selectedCourseForAdd.feesList.map(fee => {
-                              let calculatedAmount = fee.amount;
-                              let displayPlanType = fee.planType ? fee.planType.toLowerCase().replace('_', ' ') : 'one-time';
-                              if (fee.planType) {
-                                const cycle = formData.feeCycle || 'MONTHLY';
-                                if (cycle === 'MONTHLY') {
-                                  calculatedAmount = feeBreakdownForAdd.tuition.monthly;
-                                } else if (cycle === 'QUARTERLY') {
-                                  calculatedAmount = feeBreakdownForAdd.tuition.quarterly;
-                                } else if (cycle === 'HALF_YEARLY') {
-                                  calculatedAmount = feeBreakdownForAdd.tuition.halfYearly;
-                                } else if (cycle === 'YEARLY') {
-                                  calculatedAmount = feeBreakdownForAdd.tuition.yearly;
-                                } else if (cycle === 'ONE_TIME') {
-                                  calculatedAmount = feeBreakdownForAdd.tuition.oneTime;
-                                }
-                                displayPlanType = cycle.toLowerCase().replace('_', ' ');
-                              }
-                              return (
-                                <div key={fee.id} style={{
-                                  padding: '6px 12px',
-                                  background: 'rgba(255, 255, 255, 0.05)',
-                                  border: '1px solid var(--glass-border)',
-                                  borderRadius: '6px',
-                                  fontSize: '0.75rem',
-                                  display: 'flex',
-                                  alignItems: 'center',
-                                  gap: '6px'
-                                }}>
-                                  <span style={{ color: 'var(--text-secondary)' }}>{fee.feeType}:</span>
-                                  <strong style={{ color: 'var(--text-primary)' }}>₹{calculatedAmount.toLocaleString()}</strong>
-                                  <span style={{ fontSize: '0.65rem', color: 'var(--text-secondary)', textTransform: 'capitalize' }}>
-                                    ({displayPlanType})
-                                  </span>
-                                </div>
-                              );
-                            })}
-                          </div>
-                        </>
-                      );
-                    })()}
-
-                    {/* Fee cycle estimations */}
-                    {feeBreakdownForAdd ? (
-                      <div>
-                        <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', fontWeight: '600', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-                          Calculate tuition installment cycles:
-                        </div>
-                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '10px' }}>
-                          {[
-                            { key: 'MONTHLY', label: 'Monthly', value: feeBreakdownForAdd.tuition.monthly },
-                            { key: 'QUARTERLY', label: 'Quarterly', value: feeBreakdownForAdd.tuition.quarterly },
-                            { key: 'HALF_YEARLY', label: 'Half-Yearly', value: feeBreakdownForAdd.tuition.halfYearly },
-                            { key: 'YEARLY', label: 'Yearly', value: feeBreakdownForAdd.tuition.yearly },
-                            { key: 'ONE_TIME', label: 'One-time', value: feeBreakdownForAdd.tuition.oneTime },
-                          ].map(item => {
-                            const isSelected = formData.feeCycle === item.key;
-                            return (
-                              <div key={item.key} style={{
-                                padding: '10px 8px',
-                                background: isSelected ? 'rgba(139, 92, 246, 0.15)' : 'rgba(255,255,255,0.01)',
-                                border: isSelected ? '2px solid var(--primary)' : '1px solid var(--glass-border)',
-                                borderRadius: '8px',
-                                textAlign: 'center',
-                                cursor: 'pointer',
-                                transition: 'all 0.2s',
-                                boxShadow: isSelected ? '0 0 10px rgba(139, 92, 246, 0.2)' : 'none'
-                              }}
-                              onClick={() => setFormData({ ...formData, feeCycle: item.key })}
-                              >
-                                <span style={{ fontSize: '0.65rem', color: isSelected ? 'var(--primary)' : 'var(--text-secondary)', display: 'block', fontWeight: 'bold', pointerEvents: 'none' }}>{item.label}</span>
-                                <span style={{ fontSize: '0.9rem', fontWeight: 'bold', color: 'var(--text-primary)', display: 'block', marginTop: '4px', pointerEvents: 'none' }}>₹{item.value.toLocaleString()}</span>
-                              </div>
-                            );
-                          })}
-                        </div>
-                        {feeBreakdownForAdd.otherTotal > 0 && (
-                          <div style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', marginTop: '8px', fontStyle: 'italic', textAlign: 'right' }}>
-                            * Note: One-time/other fees of ₹{feeBreakdownForAdd.otherTotal.toLocaleString()} will apply separately.
-                          </div>
-                        )}
-                      </div>
-                    ) : (
-                      <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', fontStyle: 'italic' }}>No tuition fee configured for this course yet.</span>
-                    )}
-                  </div>
-                );
-              })()}
-
-              <div style={styles.formRow}>
-                <div style={styles.formGroup}>
-                  <label style={styles.label}>Father's Name</label>
-                  <input
-                    type="text"
-                    style={styles.input}
-                    value={formData.fatherName}
-                    onChange={(e) => setFormData({ ...formData, fatherName: e.target.value })}
-                    placeholder="Father's name"
-                  />
-                </div>
-                <div style={styles.formGroup}>
-                  <label style={styles.label}>Mother's Name</label>
-                  <input
-                    type="text"
-                    style={styles.input}
-                    value={formData.motherName}
-                    onChange={(e) => setFormData({ ...formData, motherName: e.target.value })}
-                    placeholder="Mother's name"
-                  />
-                </div>
-              </div>
-
-              <div style={styles.formRow}>
-                <div style={styles.formGroup}>
-                  <label style={styles.label}>Phone Number 1 (Primary)</label>
-                  <input
-                    type="tel"
-                    style={styles.input}
-                    value={formData.phone}
-                    onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                    placeholder="Primary contact number"
-                  />
-                </div>
-                <div style={styles.formGroup}>
-                  <label style={styles.label}>Phone Number 2 (Secondary)</label>
-                  <input
-                    type="tel"
-                    style={styles.input}
-                    value={formData.phone2}
-                    onChange={(e) => setFormData({ ...formData, phone2: e.target.value })}
-                    placeholder="Secondary contact number (optional)"
-                  />
-                </div>
-              </div>
-
-              <div style={styles.formRow}>
-                <div style={{ ...styles.formGroup, flex: '1 1 100%' }}>
-                  <label style={styles.label}>Address</label>
-                  <input
-                    type="text"
-                    style={styles.input}
-                    value={formData.address}
-                    onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-                    placeholder="Residential address"
-                  />
-                </div>
-              </div>
-
-              <div style={styles.formActions}>
-                <button type="button" style={styles.cancelBtn} onClick={() => setShowModal(false)}>
-                  Cancel
-                </button>
-                <button type="submit" style={styles.submitBtn}>
-                  Add Student
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>,
-        document.body
-      )}
-
       {/* Student Details Modal */}
       {viewingStudent && createPortal(
         <div style={styles.modalOverlay}>
@@ -1399,8 +1614,26 @@ export default function AccountantStudents() {
             
             <div style={styles.profileDetailsContainer}>
               <div style={styles.profileHeader}>
-                <div style={styles.bigAvatar}>
-                  {viewingStudent.name ? viewingStudent.name[0].toUpperCase() : 'S'}
+                <div style={{ ...styles.bigAvatar, overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(255, 255, 255, 0.05)', border: '1px solid var(--glass-border)' }}>
+                  {viewingStudent.photo ? (
+                    <img
+                      src={viewingStudent.photo.startsWith('http') ? viewingStudent.photo : `${import.meta.env.VITE_API_URL.replace(/\/api$/, '')}${viewingStudent.photo}`}
+                      alt={viewingStudent.name}
+                      style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                      onError={(e) => {
+                        e.target.onerror = null;
+                        e.target.style.display = 'none';
+                        const fallbackSpan = e.target.parentElement.querySelector('.big-fallback-initials');
+                        if (fallbackSpan) fallbackSpan.style.display = 'block';
+                      }}
+                    />
+                  ) : null}
+                  <span 
+                    className="big-fallback-initials"
+                    style={{ display: viewingStudent.photo ? 'none' : 'block' }}
+                  >
+                    {viewingStudent.name ? viewingStudent.name[0].toUpperCase() : 'S'}
+                  </span>
                 </div>
                 <div>
                   <h4 style={styles.profileName}>{viewingStudent.name}</h4>
@@ -1761,6 +1994,171 @@ export default function AccountantStudents() {
             </div>
             
             <form onSubmit={handleEditStudent} style={styles.form}>
+              {/* Centered Photo Section (Row 1) */}
+              <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '24px', width: '100%' }}>
+                <div style={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  width: '180px',
+                  flex: '0 0 180px'
+                }}>
+                  <label style={{ ...styles.label, width: '100%', textAlign: 'center', marginBottom: '4px' }}>Student Photo</label>
+                  <div style={{
+                    position: 'relative',
+                    width: '80px',
+                    height: '80px',
+                    borderRadius: '50%',
+                    border: '2px dashed var(--glass-border)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    overflow: 'hidden',
+                    backgroundColor: 'rgba(255, 255, 255, 0.03)',
+                    boxShadow: 'inset 0 2px 4px rgba(0, 0, 0, 0.3)',
+                    marginBottom: '6px',
+                    transition: 'all 0.3s ease'
+                  }}>
+                    {webcamActive ? (
+                      <video
+                        ref={videoRef}
+                        autoPlay
+                        playsInline
+                        style={{
+                          width: '100%',
+                          height: '100%',
+                          objectFit: 'cover',
+                          transform: 'scaleX(-1)'
+                        }}
+                      />
+                    ) : editFormData.photo ? (
+                      <img
+                        src={editFormData.photo.startsWith('data:') ? editFormData.photo : `${import.meta.env.VITE_API_URL.replace(/\/api$/, '')}${editFormData.photo}`}
+                        alt="Preview"
+                        style={{
+                          width: '100%',
+                          height: '100%',
+                          objectFit: 'cover'
+                        }}
+                      />
+                    ) : (
+                      <span style={{ fontSize: '1.8rem', color: 'var(--text-secondary)' }}>👤</span>
+                    )}
+                  </div>
+                  
+                  <div style={{ display: 'flex', gap: '6px', width: '100%', justifyContent: 'center', flexWrap: 'wrap' }}>
+                    {webcamActive ? (
+                      <>
+                        <button
+                          type="button"
+                          onClick={capturePhoto}
+                          style={{
+                            padding: '4px 8px',
+                            borderRadius: 'var(--radius-sm)',
+                            background: 'linear-gradient(135deg, var(--success), #10b981)',
+                            border: 'none',
+                            color: '#fff',
+                            fontSize: '0.7rem',
+                            fontWeight: '600',
+                            cursor: 'pointer',
+                            boxShadow: '0 2px 8px rgba(16, 185, 129, 0.3)',
+                            transition: 'all 0.2s'
+                          }}
+                        >
+                          📸 Capture
+                        </button>
+                        <button
+                          type="button"
+                          onClick={stopWebcam}
+                          style={{
+                            padding: '4px 8px',
+                            borderRadius: 'var(--radius-sm)',
+                            background: 'rgba(255, 255, 255, 0.08)',
+                            border: '1px solid var(--glass-border)',
+                            color: 'var(--text-secondary)',
+                            fontSize: '0.7rem',
+                            fontWeight: '600',
+                            cursor: 'pointer',
+                            transition: 'all 0.2s'
+                          }}
+                        >
+                          Cancel
+                        </button>
+                      </>
+                    ) : (
+                      <>
+                        <button
+                          type="button"
+                          onClick={startWebcam}
+                          style={{
+                            padding: '4px 8px',
+                            borderRadius: 'var(--radius-sm)',
+                            background: 'linear-gradient(135deg, var(--primary), var(--primary-hover))',
+                            border: 'none',
+                            color: '#fff',
+                            fontSize: '0.7rem',
+                            fontWeight: '600',
+                            cursor: 'pointer',
+                            boxShadow: '0 2px 8px rgba(110, 68, 255, 0.3)',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '4px',
+                            transition: 'all 0.2s'
+                          }}
+                        >
+                          🎥 Webcam
+                        </button>
+                        
+                        <label style={{
+                          padding: '4px 8px',
+                          borderRadius: 'var(--radius-sm)',
+                          background: 'rgba(255, 255, 255, 0.05)',
+                          border: '1px solid var(--glass-border)',
+                          color: 'var(--text-primary)',
+                          fontSize: '0.7rem',
+                          fontWeight: '600',
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '4px',
+                          transition: 'all 0.2s'
+                        }}>
+                          📁 Upload
+                          <input
+                            type="file"
+                            accept="image/*"
+                            style={{ display: 'none' }}
+                            onChange={handlePhotoFileChange}
+                          />
+                        </label>
+                        
+                        {editFormData.photo && (
+                          <button
+                            type="button"
+                            onClick={() => setEditFormData(prev => ({ ...prev, photo: '' }))}
+                            style={{
+                              padding: '4px 8px',
+                              borderRadius: 'var(--radius-sm)',
+                              background: 'rgba(239, 68, 68, 0.1)',
+                              border: '1px solid var(--danger)',
+                              color: 'var(--danger)',
+                              fontSize: '0.7rem',
+                              fontWeight: '600',
+                              cursor: 'pointer',
+                              transition: 'all 0.2s'
+                            }}
+                          >
+                            Remove
+                          </button>
+                        )}
+                      </>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* Name & Admission Date Row (Row 2) */}
               <div style={styles.formRow}>
                 <div style={styles.formGroup}>
                   <label style={styles.label}>Name *</label>
@@ -1773,6 +2171,7 @@ export default function AccountantStudents() {
                     placeholder="Enter student name"
                   />
                 </div>
+
                 <div style={styles.formGroup}>
                   <label style={styles.label}>Date of Admission</label>
                   <input

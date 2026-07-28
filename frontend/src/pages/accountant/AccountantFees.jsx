@@ -99,6 +99,7 @@ export default function AccountantFees() {
   const [showStudentDropdown, setShowStudentDropdown] = useState(false);
   const [hoveredItemId, setHoveredItemId] = useState(null);
   const [invoicesSearchQuery, setInvoicesSearchQuery] = useState('');
+  const [phoneSearchQuery, setPhoneSearchQuery] = useState('');
   const [selectedCourseFilter, setSelectedCourseFilter] = useState('');
   const [selectedSessionFilter, setSelectedSessionFilter] = useState('');
 
@@ -316,8 +317,20 @@ export default function AccountantFees() {
     const studentName = inv.student?.name || '';
     const studentId = inv.student?.studentId || '';
     const feeType = inv.feeType || '';
-    const query = invoicesSearchQuery.toLowerCase();
-    return studentName.toLowerCase().includes(query) || studentId.toLowerCase().includes(query) || feeType.toLowerCase().includes(query);
+    const phone = inv.student?.phone || '';
+    
+    const textQuery = invoicesSearchQuery.toLowerCase();
+    const phoneQuery = phoneSearchQuery.trim();
+
+    const matchesText = !textQuery || 
+      studentName.toLowerCase().includes(textQuery) || 
+      studentId.toLowerCase().includes(textQuery) || 
+      feeType.toLowerCase().includes(textQuery);
+
+    const matchesPhone = !phoneQuery || 
+      phone.includes(phoneQuery);
+
+    return matchesText && matchesPhone;
   });
   const getCourseOrClassInfo = (student) => {
     if (!student) return { label: 'Class / Course', value: 'N/A' };
@@ -368,7 +381,7 @@ export default function AccountantFees() {
     <div style={styles.container} className="animate-fade-in">
       <div style={styles.headerRow}>
         <div>
-          <h2>💳 Fee Invoices & Payments</h2>
+          <h2>💳 Student Fee & Payments</h2>
           <p style={styles.sub}>Generate dues notices and record incoming school tuition collections.</p>
         </div>
       </div>
@@ -387,222 +400,34 @@ export default function AccountantFees() {
       )}
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-        {/* Create Invoice Card */}
-        <div style={styles.panel}>
-          <div style={styles.panelHeader}>
-            <h3 style={styles.panelTitle}>💳 Create Fee Invoice</h3>
-            
-            {/* Search Student Input */}
-            <div style={{ position: 'relative', width: '250px' }}>
-              <input
-                type="text"
-                placeholder="Search student name/ID..."
-                value={studentSearchQuery}
-                onChange={(e) => {
-                  setStudentSearchQuery(e.target.value);
-                  setShowStudentDropdown(true);
-                }}
-                onFocus={() => setShowStudentDropdown(true)}
-                onBlur={() => setTimeout(() => setShowStudentDropdown(false), 200)}
-                style={styles.headerSearchInput}
-              />
-              {showStudentDropdown && studentSearchQuery && (
-                <div style={styles.searchDropdownMenu}>
-                  {studentsList
-                    .filter(s => 
-                      s.name.toLowerCase().includes(studentSearchQuery.toLowerCase()) || 
-                      s.studentId.toLowerCase().includes(studentSearchQuery.toLowerCase())
-                    )
-                    .slice(0, 8)
-                    .map(student => (
-                      <div
-                        key={student.id}
-                        style={{
-                          ...styles.searchDropdownItem,
-                          backgroundColor: hoveredItemId === student.id ? 'rgba(255, 255, 255, 0.05)' : 'transparent'
-                        }}
-                        onMouseEnter={() => setHoveredItemId(student.id)}
-                        onMouseLeave={() => setHoveredItemId(null)}
-                        onClick={() => {
-                          handleSelectStudent(student);
-                          setStudentSearchQuery(student.name);
-                          setShowStudentDropdown(false);
-                        }}
-                      >
-                        <div style={{ fontWeight: '600', color: 'var(--text-primary)', fontSize: '0.82rem' }}>{student.name}</div>
-                        <div style={{ fontSize: '0.72rem', color: 'var(--text-secondary)' }}>ID: {student.studentId} | Class: {student.courseName || 'N/A'}</div>
-                      </div>
-                    ))}
-                  {studentsList.filter(s => 
-                    s.name.toLowerCase().includes(studentSearchQuery.toLowerCase()) || 
-                    s.studentId.toLowerCase().includes(studentSearchQuery.toLowerCase())
-                  ).length === 0 && (
-                    <div style={{ padding: '10px', fontSize: '0.8rem', color: 'var(--text-muted)', textAlign: 'center' }}>
-                      No students found
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
-          </div>
-          <form onSubmit={handleCreateInvoice} style={styles.form}>
-            <div style={styles.formRow}>
-              <div style={styles.formGroup}>
-                <label style={styles.label}>Select Student *</label>
-                <select
-                  required
-                  style={styles.input}
-                  value={invoiceFormData.studentId}
-                  onChange={(e) => {
-                    const val = e.target.value;
-                    if (val) {
-                      const student = studentsList.find(s => s.id.toString() === val.toString());
-                      handleSelectStudent(student);
-                      if (student) setStudentSearchQuery(student.name);
-                    } else {
-                      setInvoiceFormData(prev => ({ ...prev, studentId: '' }));
-                      setStudentSearchQuery('');
-                    }
-                  }}
-                >
-                  <option value="">-- Choose Student ({filteredStudents.length} available) --</option>
-                  {filteredStudents.map(s => (
-                    <option key={s.id} value={s.id}>
-                      {s.name} ({s.rollNumber && s.rollNumber !== 'N/A' ? `Roll No: ${s.rollNumber}` : 'No Roll'}) - {s.studentId}
-                    </option>
-                  ))}
-                </select>
-                {(() => {
-                  const selStudent = studentsList.find(s => s.id.toString() === invoiceFormData.studentId.toString());
-                  if (selStudent) {
-                    const cycleLabel = (selStudent.feeCycle || 'MONTHLY').toLowerCase().replace('_', ' ');
-                    return (
-                      <div style={{
-                        marginTop: '8px',
-                        fontSize: '0.8rem',
-                        color: 'var(--primary)',
-                        background: 'rgba(139, 92, 246, 0.1)',
-                        border: '1px dashed rgba(139, 92, 246, 0.3)',
-                        borderRadius: '6px',
-                        padding: '6px 12px',
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        gap: '6px'
-                      }}>
-                        <span>ℹ️ Preferred Fee Payment Cycle:</span>
-                        <strong style={{ textTransform: 'capitalize' }}>
-                          {cycleLabel}
-                        </strong>
-                      </div>
-                    );
-                  }
-                  return null;
-                })()}
-              </div>
-
-              <div style={styles.formGroup}>
-                <label style={styles.label}>Filter by Session</label>
-                <select
-                  style={styles.input}
-                  value={selectedSessionFilter}
-                  onChange={(e) => {
-                    setSelectedSessionFilter(e.target.value);
-                    setInvoiceFormData(prev => ({ ...prev, studentId: '' }));
-                  }}
-                >
-                  <option value="">All Sessions</option>
-                  {sessionsList.map(session => (
-                    <option key={session} value={session}>
-                      {session}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div style={styles.formGroup}>
-                <label style={styles.label}>Filter by Course</label>
-                <select
-                  style={styles.input}
-                  value={selectedCourseFilter}
-                  onChange={(e) => {
-                    setSelectedCourseFilter(e.target.value);
-                    setInvoiceFormData(prev => ({ ...prev, studentId: '' }));
-                  }}
-                >
-                  <option value="">All Courses</option>
-                  {classes.map(cls => (
-                    <option key={cls.id} value={cls.id}>
-                      {cls.courseName} - {cls.section}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            </div>
-
-            <div style={styles.formRow}>
-              <div style={styles.formGroup}>
-                <label style={styles.label}>Due Date *</label>
-                <input
-                  type="date"
-                  required
-                  style={styles.input}
-                  value={invoiceFormData.dueDate}
-                  onChange={(e) => setInvoiceFormData({ ...invoiceFormData, dueDate: e.target.value })}
-                />
-              </div>
-
-              <div style={styles.formGroup}>
-                <label style={styles.label}>Amount (₹) *</label>
-                <input
-                  type="number"
-                  required
-                  min="1"
-                  style={styles.input}
-                  placeholder="e.g. 5000"
-                  value={invoiceFormData.amount}
-                  onChange={(e) => setInvoiceFormData({ ...invoiceFormData, amount: e.target.value })}
-                  onWheel={(e) => e.target.blur()}
-                />
-              </div>
-
-              <div style={styles.formGroup}>
-                <label style={styles.label}>Fee Type / Description *</label>
-                <input
-                  type="text"
-                  required
-                  style={styles.input}
-                  placeholder="e.g. Admission Fee, Tuition Fee, Course Fee"
-                  value={invoiceFormData.feeType}
-                  onChange={(e) => setInvoiceFormData({ ...invoiceFormData, feeType: e.target.value })}
-                />
-              </div>
-            </div>
-
-            <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
-              <button type="submit" style={styles.submitBtn}>
-                Generate Invoice(s)
-              </button>
-            </div>
-          </form>
-        </div>
-
         {/* Invoices Directory */}
         <div style={styles.panel}>
           <div style={styles.panelHeader}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-              <h3 style={styles.panelTitle}>🗂️ Fee Invoices Log</h3>
+              <h3 style={styles.panelTitle}>🗂️ Student Fee</h3>
               <span style={styles.recordCounter}>{filteredInvoices.length} Invoices found</span>
             </div>
             
-            {/* Search Invoices Input */}
-            <div style={{ width: '250px' }}>
-              <input
-                type="text"
-                placeholder="Search invoices..."
-                value={invoicesSearchQuery}
-                onChange={(e) => setInvoicesSearchQuery(e.target.value)}
-                style={styles.headerSearchInput}
-              />
+            {/* Search Inputs (Student & Phone) */}
+            <div style={{ display: 'flex', gap: '12px' }}>
+              <div style={{ width: '220px' }}>
+                <input
+                  type="text"
+                  placeholder="Search student..."
+                  value={invoicesSearchQuery}
+                  onChange={(e) => setInvoicesSearchQuery(e.target.value)}
+                  style={styles.headerSearchInput}
+                />
+              </div>
+              <div style={{ width: '180px' }}>
+                <input
+                  type="text"
+                  placeholder="Search phone number..."
+                  value={phoneSearchQuery}
+                  onChange={(e) => setPhoneSearchQuery(e.target.value)}
+                  style={styles.headerSearchInput}
+                />
+              </div>
             </div>
           </div>
           <div style={styles.tableContainer}>
@@ -612,7 +437,7 @@ export default function AccountantFees() {
               </p>
             ) : invoices.length === 0 ? (
               <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', fontStyle: 'italic', margin: 0, padding: '20px', textAlign: 'center' }}>
-                No invoices recorded. Generate one above.
+                No invoices recorded.
               </p>
             ) : filteredInvoices.length === 0 ? (
               <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', fontStyle: 'italic', margin: 0, padding: '20px', textAlign: 'center' }}>

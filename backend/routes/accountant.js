@@ -3,6 +3,8 @@ import prisma from '../prismaClient.js';
 import { authenticateJWT } from '../middleware/auth.js';
 import bcrypt from 'bcryptjs';
 import { getNextStudentNumber, generateStudentId } from '../utils/idGenerator.js';
+import fs from 'fs';
+import path from 'path';
 
 const router = express.Router();
 
@@ -17,10 +19,86 @@ async function getCachedPasswordHash() {
   return cachedPasswordHash;
 }
 
+async function ensureStudentInvoices(schoolId) {
+  try {
+    const studentsWithNoInvoices = await prisma.student.findMany({
+      where: {
+        schoolId,
+        courseId: { not: null },
+        feeInvoices: { none: {} }
+      },
+      include: {
+        course: {
+          include: {
+            feeStructures: true
+          }
+        }
+      }
+    });
+
+    if (studentsWithNoInvoices.length > 0) {
+      const school = await prisma.school.findUnique({
+        where: { id: schoolId },
+        select: { feeDueDay: true }
+      });
+      const feeDueDay = school?.feeDueDay || 10;
+      const today = new Date();
+      const defaultDueDate = new Date(today.getFullYear(), today.getMonth(), feeDueDay);
+
+      const invoicesToCreate = [];
+      for (const student of studentsWithNoInvoices) {
+        if (student.course && student.course.feeStructures && student.course.feeStructures.length > 0) {
+          for (const fs of student.course.feeStructures) {
+            let calculatedAmount = fs.amount;
+            if (fs.feeType === 'Tuition Fee') {
+              const baseAmount = fs.amount;
+              const baseCycle = fs.planType || 'MONTHLY';
+              if (baseAmount > 0) {
+                let yearlyAmount = 0;
+                if (baseCycle === 'MONTHLY') yearlyAmount = baseAmount * 12;
+                else if (baseCycle === 'QUARTERLY') yearlyAmount = baseAmount * 4;
+                else if (baseCycle === 'HALF_YEARLY') yearlyAmount = baseAmount * 2;
+                else if (baseCycle === 'YEARLY' || baseCycle === 'ONE_TIME') yearlyAmount = baseAmount;
+
+                const cycle = (student.feeCycle || 'MONTHLY').toUpperCase();
+                if (cycle === 'QUARTERLY') calculatedAmount = Math.round(yearlyAmount / 4);
+                else if (cycle === 'HALF_YEARLY') calculatedAmount = Math.round(yearlyAmount / 2);
+                else if (cycle === 'YEARLY') calculatedAmount = yearlyAmount;
+                else if (cycle === 'ONE_TIME') calculatedAmount = baseAmount;
+                else calculatedAmount = Math.round(yearlyAmount / 12);
+              }
+            }
+
+            invoicesToCreate.push({
+              schoolId,
+              studentId: student.id,
+              feeType: fs.feeType,
+              amount: calculatedAmount,
+              dueDate: fs.dueDate ? new Date(fs.dueDate) : defaultDueDate,
+              status: 'PENDING'
+            });
+          }
+        }
+      }
+
+      if (invoicesToCreate.length > 0) {
+        await prisma.feeInvoice.createMany({
+          data: invoicesToCreate
+        });
+      }
+    }
+  } catch (error) {
+    console.error('Error in ensureStudentInvoices self-healing check:', error);
+  }
+}
+
 // GET /api/accountant/dashboard-summary
 router.get('/dashboard-summary', async (req, res) => {
   try {
     const schoolId = req.user.schoolId;
+
+    // Self-healing: Ensure all students have their initial invoices generated
+    await ensureStudentInvoices(schoolId);
 
     // 1. Fetch all successful payments
     const payments = await prisma.feePayment.findMany({
@@ -92,6 +170,7 @@ router.get('/dashboard-summary', async (req, res) => {
         address: student.address || 'N/A',
         admissionDate: student.admissionDate || null,
         feeCycle: student.feeCycle || 'MONTHLY',
+        photo: student.photo || null,
         totalFees: studentTotalFees,
         paid: studentPaid,
         pending: studentPending
@@ -179,7 +258,7 @@ router.get('/classes', async (req, res) => {
 
 // POST /api/accountant/students - Add student from accountant workspace
 router.post('/students', async (req, res) => {
-  const { name, rollNumber, classId, fatherName, motherName, phone, address, admissionDate, feeCycle } = req.body;
+  const { name, rollNumber, classId, fatherName, motherName, phone, address, admissionDate, feeCycle, photo } = req.body;
   const schoolId = req.user.schoolId;
 
   if (!name) {
@@ -190,6 +269,26 @@ router.post('/students', async (req, res) => {
     const school = await prisma.school.findUnique({ where: { id: schoolId } });
     const maxNum = await getNextStudentNumber(schoolId);
     const studentId = generateStudentId(school.schoolCode, maxNum + 1, admissionDate);
+
+    // Save photo to disk if provided
+    let photoUrl = null;
+    if (photo) {
+      try {
+        const matches = photo.match(/^data:([A-Za-z-+\/]+);base64,(.+)$/);
+        if (matches && matches.length === 3) {
+          const buffer = Buffer.from(matches[2], 'base64');
+          const uploadDir = path.join(process.cwd(), 'uploads', 'students');
+          if (!fs.existsSync(uploadDir)) {
+            fs.mkdirSync(uploadDir, { recursive: true });
+          }
+          const filename = `${studentId}.png`;
+          fs.writeFileSync(path.join(uploadDir, filename), buffer);
+          photoUrl = `/uploads/students/${filename}`;
+        }
+      } catch (err) {
+        console.error('Failed to save student photo:', err);
+      }
+    }
 
     // Default password to generated student ID
     const passwordHash = await bcrypt.hash(studentId, 10);
@@ -207,13 +306,66 @@ router.post('/students', async (req, res) => {
         phone: phone || null,
         address: address || null,
         admissionDate: admissionDate ? new Date(admissionDate) : null,
-        feeCycle: feeCycle || 'MONTHLY'
+        feeCycle: feeCycle || 'MONTHLY',
+        photo: photoUrl
       }
     });
 
+    // Automatically generate fee invoices based on selected course's fee structures
+    if (classId) {
+      try {
+        const course = await prisma.course.findUnique({
+          where: { id: parseInt(classId) },
+          include: { feeStructures: true }
+        });
+        if (course && course.feeStructures && course.feeStructures.length > 0) {
+          const today = new Date();
+          const feeDueDay = school.feeDueDay || 10;
+          const defaultDueDate = new Date(today.getFullYear(), today.getMonth(), feeDueDay);
+
+          const invoicesToCreate = course.feeStructures.map(fs => {
+            let calculatedAmount = fs.amount;
+            if (fs.feeType === 'Tuition Fee') {
+              const baseAmount = fs.amount;
+              const baseCycle = fs.planType || 'MONTHLY';
+              if (baseAmount > 0) {
+                let yearlyAmount = 0;
+                if (baseCycle === 'MONTHLY') yearlyAmount = baseAmount * 12;
+                else if (baseCycle === 'QUARTERLY') yearlyAmount = baseAmount * 4;
+                else if (baseCycle === 'HALF_YEARLY') yearlyAmount = baseAmount * 2;
+                else if (baseCycle === 'YEARLY' || baseCycle === 'ONE_TIME') yearlyAmount = baseAmount;
+
+                const cycle = (feeCycle || 'MONTHLY').toUpperCase();
+                if (cycle === 'QUARTERLY') calculatedAmount = Math.round(yearlyAmount / 4);
+                else if (cycle === 'HALF_YEARLY') calculatedAmount = Math.round(yearlyAmount / 2);
+                else if (cycle === 'YEARLY') calculatedAmount = yearlyAmount;
+                else if (cycle === 'ONE_TIME') calculatedAmount = baseAmount;
+                else calculatedAmount = Math.round(yearlyAmount / 12);
+              }
+            }
+
+            return {
+              schoolId,
+              studentId: newStudent.id,
+              feeType: fs.feeType,
+              amount: calculatedAmount,
+              dueDate: fs.dueDate ? new Date(fs.dueDate) : defaultDueDate,
+              status: 'PENDING'
+            };
+          });
+
+          await prisma.feeInvoice.createMany({
+            data: invoicesToCreate
+          });
+        }
+      } catch (invoiceErr) {
+        console.error('Failed to automatically generate student invoices:', invoiceErr);
+      }
+    }
+
     return res.status(201).json({
       success: true,
-      message: 'Student added successfully',
+      message: 'Student added and fee invoices generated successfully',
       data: newStudent
     });
   } catch (error) {
@@ -226,7 +378,7 @@ router.post('/students', async (req, res) => {
 router.put('/students/:id', async (req, res) => {
   const studentId = parseInt(req.params.id);
   const schoolId = req.user.schoolId;
-  const { name, rollNumber, classId, fatherName, motherName, phone, address, admissionDate, feeCycle } = req.body;
+  const { name, rollNumber, classId, fatherName, motherName, phone, address, admissionDate, feeCycle, photo } = req.body;
 
   if (!name) {
     return res.status(400).json({ success: false, error: 'Name is required' });
@@ -242,6 +394,27 @@ router.put('/students/:id', async (req, res) => {
       return res.status(404).json({ success: false, error: 'Student not found' });
     }
 
+    let photoUrl = student.photo;
+    if (photo === '' || photo === null) {
+      photoUrl = null;
+    } else if (photo && photo.startsWith('data:image')) {
+      try {
+        const matches = photo.match(/^data:([A-Za-z-+\/]+);base64,(.+)$/);
+        if (matches && matches.length === 3) {
+          const buffer = Buffer.from(matches[2], 'base64');
+          const uploadDir = path.join(process.cwd(), 'uploads', 'students');
+          if (!fs.existsSync(uploadDir)) {
+            fs.mkdirSync(uploadDir, { recursive: true });
+          }
+          const filename = `${student.studentId}.png`;
+          fs.writeFileSync(path.join(uploadDir, filename), buffer);
+          photoUrl = `/uploads/students/${filename}`;
+        }
+      } catch (err) {
+        console.error('Failed to save updated student photo:', err);
+      }
+    }
+
     const updatedStudent = await prisma.student.update({
       where: { id: studentId },
       data: {
@@ -253,7 +426,8 @@ router.put('/students/:id', async (req, res) => {
         phone: phone || null,
         address: address || null,
         admissionDate: admissionDate ? new Date(admissionDate) : null,
-        feeCycle: feeCycle || 'MONTHLY'
+        feeCycle: feeCycle || 'MONTHLY',
+        photo: photoUrl
       }
     });
 
@@ -637,6 +811,9 @@ router.get('/invoices', async (req, res) => {
   const { studentId } = req.query;
 
   try {
+    // Self-healing: Ensure all students have their initial invoices generated
+    await ensureStudentInvoices(schoolId);
+
     const whereClause = { schoolId };
     if (studentId) {
       whereClause.studentId = parseInt(studentId);
