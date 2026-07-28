@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import ReactDOM from 'react-dom';
 import { getAllMyClasses, getAssignments, createAssignment, deleteAssignment } from '../../api/teacherApi';
 import Loader from '../../components/Loader';
-import { Trash2 } from 'lucide-react';
+import { Trash2, Paperclip, ExternalLink } from 'lucide-react';
 
 export default function TeacherAssignments() {
   const [classes, setClasses] = useState([]);
@@ -11,6 +11,8 @@ export default function TeacherAssignments() {
   const [error, setError] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [attachment, setAttachment] = useState(null);
+  const [uploadError, setUploadError] = useState('');
 
   const [formData, setFormData] = useState({
     title: '',
@@ -49,6 +51,23 @@ export default function TeacherAssignments() {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
+  const handleFileChange = (e) => {
+    const file = e.target.files[0];
+    setUploadError('');
+    if (file) {
+      // Validate size (5MB = 5 * 1024 * 1024 bytes)
+      if (file.size > 5 * 1024 * 1024) {
+        setUploadError('File exceeds 5MB limit.');
+        setAttachment(null);
+        e.target.value = null; // reset input
+        return;
+      }
+      setAttachment(file);
+    } else {
+      setAttachment(null);
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!formData.title || !formData.description || !formData.courseId) return;
@@ -56,9 +75,33 @@ export default function TeacherAssignments() {
     try {
       setIsSubmitting(true);
       setError('');
-      await createAssignment(formData);
+      setUploadError('');
+      
+      let finalFormData = { ...formData };
+
+      // Upload attachment to Cloudinary if selected
+      if (attachment) {
+        const uploadData = new FormData();
+        uploadData.append('file', attachment);
+        uploadData.append('upload_preset', 'eazzio_school');
+        
+        const cloudinaryRes = await fetch('https://api.cloudinary.com/v1_1/dpv9ov0ex/auto/upload', {
+          method: 'POST',
+          body: uploadData
+        });
+
+        if (!cloudinaryRes.ok) {
+          throw new Error('Failed to upload attachment to Cloudinary');
+        }
+        
+        const cloudData = await cloudinaryRes.json();
+        finalFormData.attachmentUrl = cloudData.secure_url;
+      }
+
+      await createAssignment(finalFormData);
       setIsModalOpen(false);
-      setFormData({ ...formData, title: '', description: '', dueDate: '' });
+      setFormData({ title: '', description: '', courseId: formData.courseId, dueDate: '' });
+      setAttachment(null);
       await fetchData();
     } catch (err) {
       console.error(err);
@@ -123,7 +166,14 @@ export default function TeacherAssignments() {
               <p style={styles.desc}>{assignment.description}</p>
               
               <div style={styles.footerRow}>
-                <span style={styles.date}>Posted: {new Date(assignment.createdAt).toLocaleDateString()}</span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                  <span style={styles.date}>Posted: {new Date(assignment.createdAt).toLocaleDateString()}</span>
+                  {assignment.attachmentUrl && (
+                    <a href={assignment.attachmentUrl} target="_blank" rel="noopener noreferrer" style={styles.attachmentLink}>
+                      <Paperclip size={14} /> View Attachment
+                    </a>
+                  )}
+                </div>
                 {assignment.dueDate && (
                   <span style={styles.dueDate}>
                     Due: {new Date(assignment.dueDate).toLocaleDateString()}
@@ -198,6 +248,17 @@ export default function TeacherAssignments() {
                 />
               </div>
 
+              <div style={styles.formGroup}>
+                <label style={styles.label}>Attachment (Photo/PDF up to 5MB, Optional)</label>
+                <input 
+                  type="file" 
+                  accept="image/*,.pdf"
+                  onChange={handleFileChange}
+                  style={styles.fileInput}
+                />
+                {uploadError && <span style={styles.errorText}>{uploadError}</span>}
+              </div>
+
               <div style={styles.modalActions}>
                 <button type="button" onClick={() => setIsModalOpen(false)} style={styles.cancelBtn}>
                   Cancel
@@ -231,18 +292,21 @@ const styles = {
   footerRow: { display: 'flex', justifyContent: 'space-between', borderTop: '1px solid var(--glass-border)', paddingTop: '16px', fontSize: '0.85rem', fontWeight: '500' },
   date: { color: 'var(--text-muted)' },
   dueDate: { color: 'var(--warning)', fontWeight: '700', display: 'flex', alignItems: 'center', gap: '6px' },
+  attachmentLink: { display: 'inline-flex', alignItems: 'center', gap: '4px', color: 'var(--primary)', textDecoration: 'none', background: 'var(--primary-glow)', padding: '4px 10px', borderRadius: '4px', fontWeight: '600', transition: 'all 0.2s', '&:hover': { background: 'var(--primary)', color: '#fff' } },
   
   // Modal Styles
   modalOverlay: { position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(4px)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 99999, padding: '20px' },
-  modalContent: { background: 'var(--bg-card)', width: '100%', maxWidth: '550px', borderRadius: '16px', border: '1px solid var(--glass-border)', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.25)', overflow: 'hidden' },
-  modalHeader: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '20px 28px', background: 'var(--bg-card-alt)', borderBottom: '1px solid var(--glass-border)' },
+  modalContent: { background: 'var(--bg-card)', width: '100%', maxWidth: '550px', borderRadius: '16px', border: '1px solid var(--glass-border)', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.25)', overflow: 'hidden', maxHeight: '90vh', display: 'flex', flexDirection: 'column' },
+  modalHeader: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '20px 28px', background: 'var(--bg-card-alt)', borderBottom: '1px solid var(--glass-border)', flexShrink: 0 },
   closeBtn: { background: 'rgba(0,0,0,0.05)', border: 'none', color: 'var(--text-muted)', fontSize: '1.2rem', cursor: 'pointer', width: '32px', height: '32px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'background 0.2s' },
-  form: { padding: '28px', display: 'flex', flexDirection: 'column', gap: '22px' },
+  form: { padding: '28px', display: 'flex', flexDirection: 'column', gap: '22px', overflowY: 'auto' },
   formGroup: { display: 'flex', flexDirection: 'column', gap: '8px' },
   label: { fontSize: '0.9rem', color: 'var(--text-primary)', fontWeight: '600' },
   input: { padding: '12px 16px', borderRadius: '8px', border: '1px solid var(--glass-border)', background: 'var(--input-bg)', color: 'var(--text-primary)', fontSize: '0.95rem', transition: 'border-color 0.2s, box-shadow 0.2s', outline: 'none' },
   modalActions: { display: 'flex', justifyContent: 'flex-end', gap: '12px', marginTop: '16px', paddingTop: '20px', borderTop: '1px solid var(--glass-border)' },
   cancelBtn: { padding: '10px 24px', background: 'transparent', border: '1px solid var(--glass-border)', color: 'var(--text-primary)', borderRadius: '8px', cursor: 'pointer', fontWeight: '600', transition: 'background 0.2s' },
   submitBtn: { padding: '10px 24px', background: 'var(--primary)', border: 'none', color: 'white', borderRadius: '8px', cursor: 'pointer', fontWeight: '600', boxShadow: '0 4px 12px rgba(16, 185, 129, 0.2)', transition: 'background 0.2s, transform 0.1s' },
-  deleteBtn: { background: 'var(--danger-glow)', border: '1px solid var(--danger)', color: 'var(--danger)', borderRadius: '6px', cursor: 'pointer', padding: '6px', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.2s' }
+  deleteBtn: { background: 'var(--danger-glow)', border: '1px solid var(--danger)', color: 'var(--danger)', borderRadius: '6px', cursor: 'pointer', padding: '6px', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.2s' },
+  fileInput: { padding: '8px', border: '1px dashed var(--glass-border)', borderRadius: '8px', color: 'var(--text-secondary)', background: 'var(--bg-card-alt)', width: '100%' },
+  errorText: { color: 'var(--danger)', fontSize: '0.85rem', marginTop: '4px' }
 };

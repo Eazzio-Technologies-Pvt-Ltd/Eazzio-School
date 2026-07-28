@@ -575,7 +575,7 @@ router.get('/assignments', async (req, res) => {
 router.post('/assignments', async (req, res) => {
   const schoolId = req.user.schoolId;
   const teacherId = req.user.userId;
-  const { title, description, courseId, dueDate } = req.body;
+  const { title, description, courseId, dueDate, attachmentUrl } = req.body;
 
   if (!title || !description || !courseId) {
     return res.status(400).json({ success: false, error: 'Missing required fields' });
@@ -603,6 +603,7 @@ router.post('/assignments', async (req, res) => {
         courseId: parsedCourseId,
         title,
         description,
+        attachmentUrl,
         dueDate: dueDate ? new Date(dueDate) : null
       },
       include: {

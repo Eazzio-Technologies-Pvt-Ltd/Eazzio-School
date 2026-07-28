@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { getAssignments } from '../../api/studentApi';
 import Loader from '../../components/Loader';
+import { Paperclip } from 'lucide-react';
 
 export default function StudentAssignments() {
   const [assignments, setAssignments] = useState([]);
@@ -50,7 +51,14 @@ export default function StudentAssignments() {
               <p style={styles.desc}>{assignment.description}</p>
               
               <div style={styles.footerRow}>
-                <span style={styles.date}>Assigned: {new Date(assignment.createdAt).toLocaleDateString()}</span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                  <span style={styles.date}>Assigned: {new Date(assignment.createdAt).toLocaleDateString()}</span>
+                  {assignment.attachmentUrl && (
+                    <a href={assignment.attachmentUrl} target="_blank" rel="noopener noreferrer" style={styles.attachmentLink}>
+                      <Paperclip size={14} /> View Attachment
+                    </a>
+                  )}
+                </div>
                 {assignment.dueDate && (
                   <span style={styles.dueDate}>
                     Due: {new Date(assignment.dueDate).toLocaleDateString()}
@@ -79,5 +87,6 @@ const styles = {
   desc: { color: 'var(--text-secondary)', whiteSpace: 'pre-wrap', lineHeight: '1.5', marginBottom: '20px' },
   footerRow: { display: 'flex', justifyContent: 'space-between', borderTop: '1px solid var(--glass-border)', paddingTop: '16px', fontSize: '0.85rem' },
   date: { color: 'var(--text-muted)' },
-  dueDate: { color: 'var(--warning)', fontWeight: 'bold' }
+  dueDate: { color: 'var(--warning)', fontWeight: 'bold' },
+  attachmentLink: { display: 'inline-flex', alignItems: 'center', gap: '4px', color: 'var(--primary)', textDecoration: 'none', background: 'var(--primary-glow)', padding: '4px 10px', borderRadius: '4px', fontWeight: '600', transition: 'all 0.2s', '&:hover': { background: 'var(--primary)', color: '#fff' } }
 };
