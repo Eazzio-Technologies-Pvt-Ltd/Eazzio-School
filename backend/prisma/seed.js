@@ -155,7 +155,6 @@ async function main() {
   console.log('📅 Seeding Attendance Statuses...');
   const dates = [
     new Date(Date.now() - 24 * 60 * 60 * 1000), // yesterday
-    new Date(), // today
   ];
 
   for (const date of dates) {

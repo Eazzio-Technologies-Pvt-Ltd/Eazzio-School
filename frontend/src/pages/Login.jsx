@@ -1,7 +1,7 @@
 import React, { useState, useContext, useEffect } from 'react';
 import { useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
-import { Shield, Briefcase, Calculator, BookOpen, GraduationCap, ArrowLeft } from 'lucide-react';
+import { Shield, Briefcase, Calculator, BookOpen, GraduationCap, ArrowLeft, Eye, EyeOff } from 'lucide-react';
 import logo from '../assets/full_logo_cropped.png';
 import schoolBg from '../assets/school_background.jpg';
 
@@ -15,6 +15,7 @@ export default function Login() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   
   const { login } = useContext(AuthContext);
   const navigate = useNavigate();
@@ -133,15 +134,25 @@ export default function Login() {
 
                 <div style={styles.inputGroup}>
                   <label htmlFor="login-password">Password</label>
-                  <input
-                    id="login-password"
-                    type="password"
-                    placeholder="••••••••"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    style={styles.input}
-                    required
-                  />
+                  <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+                    <input
+                      id="login-password"
+                      type={showPassword ? 'text' : 'password'}
+                      placeholder="••••••••"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      style={{ ...styles.input, width: '100%', paddingRight: '40px', boxSizing: 'border-box' }}
+                      required
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      style={styles.eyeBtn}
+                      title={showPassword ? 'Hide password' : 'Show password'}
+                    >
+                      {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                    </button>
+                  </div>
                 </div>
 
                 <button
@@ -362,4 +373,17 @@ const styles = {
     boxShadow: '0 4px 12px rgba(30, 58, 138, 0.3)',
     transition: 'opacity 0.2s',
   },
+  eyeBtn: {
+    position: 'absolute',
+    right: '10px',
+    background: 'none',
+    border: 'none',
+    color: '#64748b',
+    cursor: 'pointer',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: '4px',
+    transition: 'color 0.2s',
+  }
 };

@@ -145,14 +145,14 @@ export default function TakeAttendance() {
           <div style={styles.modal}>
             <h3>Confirm Submission</h3>
             <p style={{ margin: '14px 0', fontSize: '0.9rem', color: 'var(--text-secondary)' }}>
-              Are you sure you want to submit the roll call sheet for {assignedCourse} on {new Date(attendanceDate).toLocaleDateString()}?
+              Are you sure you want to {alreadyMarked ? 'update' : 'submit'} the roll call sheet for {assignedCourse} on {new Date(attendanceDate).toLocaleDateString()}?
             </p>
             <div style={styles.modalActions}>
               <button onClick={() => setShowConfirm(false)} className="btn-secondary" style={styles.modalBtn}>
                 Cancel
               </button>
               <button onClick={handleSave} className="btn-primary" style={styles.modalBtn}>
-                Confirm Submit
+                {alreadyMarked ? 'Confirm Update' : 'Confirm Submit'}
               </button>
             </div>
           </div>
@@ -170,8 +170,8 @@ export default function TakeAttendance() {
         )}
 
         {alreadyMarked && (
-          <div style={styles.warningAlert}>
-            <span>⚠️</span> **Notice**: Attendance has already been logged for this date. Submitting again will overwrite existing records.
+          <div style={styles.infoAlert}>
+            <span>ℹ️</span> **Notice**: Attendance for this date has already been saved. You can still make changes and update the records.
           </div>
         )}
 
@@ -204,7 +204,7 @@ export default function TakeAttendance() {
               disabled={submitting || students.length === 0}
               style={styles.saveBtn}
             >
-              {submitting ? 'Recording...' : 'Submit Attendance'}
+              {submitting ? 'Recording...' : (alreadyMarked ? 'Update Attendance' : 'Submit Attendance')}
             </button>
           </div>
         </div>
@@ -280,6 +280,7 @@ const styles = {
   header: { marginBottom: '10px' },
   sub: { color: 'var(--text-secondary)' },
   pane: { background: 'var(--bg-card)', border: '1px solid var(--glass-border)', borderRadius: 'var(--radius-md)', padding: '24px', boxShadow: '0 8px 32px rgba(0, 0, 0, 0.2)' },
+  infoAlert: { background: 'rgba(59, 130, 246, 0.1)', border: '1px solid rgba(59, 130, 246, 0.5)', color: 'var(--text-primary)', padding: '12px 16px', borderRadius: 'var(--radius-sm)', fontSize: '0.85rem', marginBottom: '20px', lineHeight: '1.4' },
   warningAlert: { background: 'var(--warning-glow)', border: '1px solid var(--warning)', color: 'var(--warning)', padding: '12px 16px', borderRadius: 'var(--radius-sm)', fontSize: '0.85rem', marginBottom: '20px', lineHeight: '1.4' },
   controlBar: { display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', flexWrap: 'wrap', gap: '20px', marginBottom: '24px', borderBottom: '1px solid var(--glass-border)', paddingBottom: '20px' },
   controlsGroup: { display: 'flex', gap: '16px', flexWrap: 'wrap', flex: 1 },
