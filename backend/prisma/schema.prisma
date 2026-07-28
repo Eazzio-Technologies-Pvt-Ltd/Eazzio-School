@@ -115,6 +115,7 @@ model Student {
   rollNumber    String?
   admissionDate DateTime?
   feeCycle      String       @default("MONTHLY")
+  photo         String?
   createdAt     DateTime     @default(now())
   courseId      Int?
   attendance    Attendance[]
