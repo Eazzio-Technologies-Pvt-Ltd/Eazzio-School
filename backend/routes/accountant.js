@@ -2,6 +2,7 @@ import express from 'express';
 import prisma from '../prismaClient.js';
 import { authenticateJWT } from '../middleware/auth.js';
 import bcrypt from 'bcryptjs';
+import { getNextStudentNumber, generateStudentId } from '../utils/idGenerator.js';
 
 const router = express.Router();
 
@@ -14,29 +15,6 @@ async function getCachedPasswordHash() {
     cachedPasswordHash = await bcrypt.hash('password', 10);
   }
   return cachedPasswordHash;
-}
-
-// Helper to get next student number securely without ID conflict
-async function getNextStudentNumber(schoolId, schoolCode) {
-  const students = await prisma.student.findMany({
-    where: { schoolId },
-    select: { studentId: true }
-  });
-  
-  let maxNum = 0;
-  const prefix = `${schoolCode}-ST`;
-  
-  students.forEach(s => {
-    if (s.studentId && s.studentId.startsWith(prefix)) {
-      const numStr = s.studentId.slice(prefix.length);
-      const num = parseInt(numStr, 10);
-      if (!isNaN(num) && num > maxNum) {
-        maxNum = num;
-      }
-    }
-  });
-  
-  return maxNum;
 }
 
 // GET /api/accountant/dashboard-summary
@@ -210,11 +188,11 @@ router.post('/students', async (req, res) => {
 
   try {
     const school = await prisma.school.findUnique({ where: { id: schoolId } });
-    const maxNum = await getNextStudentNumber(schoolId, school.schoolCode);
-    const studentId = `${school.schoolCode}-ST${(maxNum + 1).toString().padStart(4, '0')}`;
+    const maxNum = await getNextStudentNumber(schoolId);
+    const studentId = generateStudentId(school.schoolCode, maxNum + 1, admissionDate);
 
-    // Default password "password" to allow easy student login
-    const passwordHash = await getCachedPasswordHash();
+    // Default password to generated student ID
+    const passwordHash = await bcrypt.hash(studentId, 10);
 
     const newStudent = await prisma.student.create({
       data: {
@@ -307,10 +285,7 @@ router.post('/students/bulk', async (req, res) => {
 
     const courses = await prisma.course.findMany({ where: { schoolId } });
     const classes = courses.map(c => ({ ...c, className: c.courseName }));
-    let maxStudentNum = await getNextStudentNumber(schoolId, school.schoolCode);
-
-    // Hashed default password
-    const passwordHash = await getCachedPasswordHash();
+    let maxStudentNum = await getNextStudentNumber(schoolId);
 
     const createdStudents = [];
     const skippedRows = [];
@@ -405,7 +380,9 @@ router.post('/students/bulk', async (req, res) => {
 
       // Generate student ID
       maxStudentNum++;
-      const studentId = `${school.schoolCode}-ST${maxStudentNum.toString().padStart(4, '0')}`;
+      const studentId = generateStudentId(school.schoolCode, maxStudentNum, admissionDate);
+      
+      const passwordHash = await bcrypt.hash(studentId, 10);
 
       let rollNumber = normalizedRow['rollnumber'] || normalizedRow['roll'] || normalizedRow['rollno'];
       if (rollNumber) rollNumber = rollNumber.toString().trim();

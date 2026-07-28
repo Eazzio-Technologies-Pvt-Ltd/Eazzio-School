@@ -4,6 +4,7 @@ import prisma from '../prismaClient.js';
 import { authenticateJWT, requireAdmin } from '../middleware/auth.js';
 import { validate } from '../middleware/validate.js';
 import { createTeacherSchema, createClassSchema, createStudentSchema, createPrincipalSchema, createAccountantSchema } from '../validators/schemas.js';
+import { getNextStudentNumber, generateStudentId } from '../utils/idGenerator.js';
 
 const router = express.Router();
 
@@ -475,57 +476,7 @@ router.put('/courses/:id/assign-teacher', async (req, res) => {
   }
 });
 
-// 4. Add Student
-function generatePassword() {
-  return Math.random().toString(36).slice(-8); // 8 char random alphanumeric
-}
 
-router.post('/students', validate(createStudentSchema), async (req, res) => {
-  const { name, rollNumber, courseId, fatherName, motherName, phone, address, admissionDate } = req.body;
-  const schoolId = req.user.schoolId;
-
-  try {
-    // Fetch school to get schoolCode
-    const school = await prisma.school.findUnique({ where: { id: schoolId } });
-    
-    // Generate studentId: SCH001-ST0001
-    const studentCount = await prisma.student.count({ where: { schoolId } });
-    const studentId = `${school.schoolCode}-ST${(studentCount + 1).toString().padStart(4, '0')}`;
-
-    const password = studentId;
-    const passwordHash = await bcrypt.hash(password, 10);
-
-    const newStudent = await prisma.student.create({
-      data: {
-        schoolId,
-        studentId,
-        password: passwordHash,
-        name,
-        rollNumber,
-        courseId: parseInt(courseId),
-        fatherName,
-        motherName,
-        phone,
-        address,
-        admissionDate: admissionDate ? new Date(admissionDate) : null,
-      }
-    });
-
-    return res.status(201).json({
-      success: true,
-      message: 'Student added successfully',
-      data: {
-        studentId: newStudent.studentId,
-        password: password,
-        id: newStudent.id,
-        name: newStudent.name
-      }
-    });
-  } catch (err) {
-    console.error('Error adding student:', err);
-    return res.status(500).json({ success: false, error: 'Internal server error' });
-  }
-});
 
 // GET /students - Fetch all students for this school
 router.get('/students', async (req, res) => {

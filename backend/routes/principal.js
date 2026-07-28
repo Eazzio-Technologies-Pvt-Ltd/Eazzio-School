@@ -4,6 +4,7 @@ import prisma from '../prismaClient.js';
 import { authenticateJWT, requirePrincipal } from '../middleware/auth.js';
 import { validate } from '../middleware/validate.js';
 import { createTeacherSchema, createClassSchema, createStudentSchema } from '../validators/schemas.js';
+import { getNextStudentNumber, generateStudentId } from '../utils/idGenerator.js';
 
 const router = express.Router();
 
@@ -544,57 +545,7 @@ router.put('/courses/:id/assign-teacher', async (req, res) => {
   }
 });
 
-// 4. Add Student
-function generatePassword() {
-  return Math.random().toString(36).slice(-8); // 8 char random alphanumeric
-}
 
-router.post('/students', validate(createStudentSchema), async (req, res) => {
-  const { name, rollNumber, courseId, fatherName, motherName, phone, address, admissionDate } = req.body;
-  const schoolId = req.user.schoolId;
-
-  try {
-    // Fetch school to get schoolCode
-    const school = await prisma.school.findUnique({ where: { id: schoolId } });
-    
-    // Generate studentId: SCH001-ST0001
-    const studentCount = await prisma.student.count({ where: { schoolId } });
-    const studentId = `${school.schoolCode}-ST${(studentCount + 1).toString().padStart(4, '0')}`;
-
-    const password = studentId;
-    const passwordHash = await bcrypt.hash(password, 10);
-
-    const newStudent = await prisma.student.create({
-      data: {
-        schoolId,
-        studentId,
-        password: passwordHash,
-        name,
-        rollNumber,
-        courseId: parseInt(courseId),
-        fatherName,
-        motherName,
-        phone,
-        address,
-        admissionDate: admissionDate ? new Date(admissionDate) : null,
-      }
-    });
-
-    return res.status(201).json({
-      success: true,
-      message: 'Student added successfully',
-      data: {
-        studentId: newStudent.studentId,
-        password: password,
-        id: newStudent.id,
-        name: newStudent.name
-      }
-    });
-  } catch (err) {
-    console.error('Error adding student:', err);
-    return res.status(500).json({ success: false, error: 'Internal server error' });
-  }
-});
 
 // GET /students - Fetch all students for this school with calculated fields
 router.get('/students', async (req, res) => {
@@ -655,98 +606,7 @@ router.get('/students', async (req, res) => {
   }
 });
 
-// POST /students/bulk-import-update
-router.post('/students/bulk-import-update', async (req, res) => {
-  const { students } = req.body;
-  const schoolId = req.user.schoolId;
-  
-  if (!students || !Array.isArray(students) || students.length === 0) {
-    return res.status(400).json({ error: 'Valid students array is required' });
-  }
 
-  try {
-    // Fetch school to get schoolCode for new students
-    const school = await prisma.school.findUnique({ where: { id: schoolId } });
-    
-    let createdCount = 0;
-    let updatedCount = 0;
-    
-    // Process sequentially to handle dependent creations properly
-    for (const studentData of students) {
-      if (!studentData.name) continue; // Skip empty rows
-      
-      const targetRollNumber = studentData.rollNumber ? String(studentData.rollNumber) : null;
-      let existingStudent = null;
-      
-      // Try finding by studentId if provided
-      if (studentData.studentId) {
-         existingStudent = await prisma.student.findFirst({
-           where: { schoolId, studentId: studentData.studentId }
-         });
-      }
-      
-      // Try finding by rollNumber if no studentId matched
-      if (!existingStudent && targetRollNumber) {
-         existingStudent = await prisma.student.findFirst({
-           where: { schoolId, rollNumber: targetRollNumber }
-         });
-      }
-      
-      // Try matching Course
-      let courseId = null;
-      if (studentData.courseName && studentData.section && studentData.academicYear) {
-         const course = await prisma.course.findUnique({
-           where: { schoolId_courseName_section_academicYear: { schoolId, courseName: studentData.courseName, section: String(studentData.section), academicYear: String(studentData.academicYear) } }
-         });
-         if (course) courseId = course.id;
-      }
-      
-      if (existingStudent) {
-         // Update
-         await prisma.student.update({
-           where: { id: existingStudent.id },
-           data: {
-             name: studentData.name,
-             fatherName: studentData.fatherName || existingStudent.fatherName,
-             motherName: studentData.motherName || existingStudent.motherName,
-             phone: studentData.phone ? String(studentData.phone) : existingStudent.phone,
-             address: studentData.address || existingStudent.address,
-             rollNumber: targetRollNumber || existingStudent.rollNumber,
-             courseId: courseId || existingStudent.courseId
-           }
-         });
-         updatedCount++;
-      } else {
-         // Create
-         const studentCount = await prisma.student.count({ where: { schoolId } });
-         const newStudentId = `${school.schoolCode}-ST${(studentCount + 1).toString().padStart(4, '0')}`;
-         const password = newStudentId;
-         const passwordHash = await bcrypt.hash(password, 10);
-         
-         await prisma.student.create({
-           data: {
-             schoolId,
-             studentId: newStudentId,
-             password: passwordHash,
-             name: studentData.name,
-             fatherName: studentData.fatherName,
-             motherName: studentData.motherName,
-             phone: studentData.phone ? String(studentData.phone) : null,
-             address: studentData.address,
-             rollNumber: targetRollNumber,
-             courseId
-           }
-         });
-         createdCount++;
-      }
-    }
-    
-    return res.json({ success: true, message: `Bulk operation complete. Created: ${createdCount}, Updated: ${updatedCount}` });
-  } catch (err) {
-    console.error('Error in bulk import:', err);
-    return res.status(500).json({ error: 'Internal server error during bulk import' });
-  }
-});
 
 // GET /students/:id - Fetch single student details
 router.get('/students/:id', async (req, res) => {
