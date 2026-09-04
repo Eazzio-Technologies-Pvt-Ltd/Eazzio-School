@@ -577,7 +577,7 @@ router.get('/results', async (req, res) => {
       grouped[r.examId].subjects.push(r);
     });
 
-    return res.json({ success: true, data: { resultOnHold: false, exams: Object.values(grouped) } });
+    return res.json({ success: true, data: { resultOnHold: false, exams: Object.values(grouped), studentId: student.id } });
   } catch (err) {
     console.error('Error fetching results:', err);
     return res.status(500).json({ success: false, error: 'Internal server error' });

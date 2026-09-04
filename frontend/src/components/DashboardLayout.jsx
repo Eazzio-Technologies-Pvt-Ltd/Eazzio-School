@@ -7,7 +7,7 @@ import {
   LayoutDashboard, GraduationCap, Users, UsersRound, Calendar,
   CreditCard, Megaphone, Clock, FileText, Settings,
   LogOut, Menu, ChevronLeft, ChevronRight, Briefcase, MessageSquare,
-  Sun, Moon, BarChart2
+  Sun, Moon, BarChart2, Award
 } from 'lucide-react';
 
 export default function DashboardLayout() {
@@ -29,11 +29,11 @@ export default function DashboardLayout() {
   // Resize listener
   useEffect(() => {
     const handleResize = () => {
-      const mobile = window.innerWidth <= 768;
-      setIsMobile(mobile);
-      if (mobile) {
+      if (window.innerWidth < 768) {
+        setIsMobile(true);
         setSidebarOpen(false);
       } else {
+        setIsMobile(false);
         setSidebarOpen(true);
       }
     };
@@ -55,6 +55,7 @@ export default function DashboardLayout() {
       { path: '/principal/students', label: 'Students', icon: <Users size={20} /> },
       { path: '/principal/courses', label: 'Courses', icon: <GraduationCap size={20} /> },
       { path: '/principal/teachers', label: 'Teachers', icon: <UsersRound size={20} /> },
+      { path: '/principal/exams', label: 'Examinations', icon: <Award size={20} /> },
       { path: '/principal/attendance', label: 'Attendance', icon: <Calendar size={20} /> },
       { path: '/principal/fees', label: 'Fees Overview', icon: <CreditCard size={20} /> },
       { path: '/principal/notices', label: 'Notice Board', icon: <Megaphone size={20} /> },
@@ -68,6 +69,7 @@ export default function DashboardLayout() {
       { path: '/admin/courses', label: 'Courses', icon: <GraduationCap size={20} /> },
       { path: '/admin/teachers', label: 'Teachers', icon: <UsersRound size={20} /> },
       { path: '/admin/staff', label: 'Management Staff', icon: <Briefcase size={20} /> },
+      { path: '/admin/exams', label: 'Examinations', icon: <Award size={20} /> },
       { path: '/admin/attendance', label: 'Attendance', icon: <Calendar size={20} /> },
       { path: '/admin/fees', label: 'Fees Overview', icon: <CreditCard size={20} /> },
       { path: '/admin/notices', label: 'Notice Board', icon: <Megaphone size={20} /> },
@@ -78,6 +80,7 @@ export default function DashboardLayout() {
     TEACHER: [
       { path: '/teacher/dashboard', label: 'Dashboard', icon: <LayoutDashboard size={20} /> },
       { path: '/teacher/courses', label: 'My Courses', icon: <GraduationCap size={20} /> },
+      { path: '/teacher/exams', label: 'Marks & Results', icon: <Award size={20} /> },
       { path: '/teacher/assignments', label: 'Assignments', icon: <FileText size={20} /> },
       { path: '/teacher/take-attendance', label: 'Take Attendance', icon: <Calendar size={20} /> },
       { path: '/teacher/history', label: 'Attendance History', icon: <Clock size={20} /> },

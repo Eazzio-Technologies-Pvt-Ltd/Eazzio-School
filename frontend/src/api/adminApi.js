@@ -79,10 +79,12 @@ export const getStudentFullRecord = async (id) => {
 };
 
 // --- Attendance & Fees ---
-export const getAttendanceSummary = async () => {
-  const response = await api.get('/admin/attendance-summary');
+export const getAttendanceSummary = async (date) => {
+  const params = date ? { date } : {};
+  const response = await api.get('/admin/attendance-summary', { params });
   return response.data;
 };
+
 
 export const getFeeCollection = async () => {
   const response = await api.get('/admin/fee-collection');
@@ -94,6 +96,13 @@ export const getDetailedAttendance = async (courseId, date) => {
   const query = new URLSearchParams({ courseId });
   if (date) query.append('date', date);
   const response = await api.get(`/admin/attendance-detailed?${query.toString()}`);
+  return response.data;
+};
+
+export const getMonthlyAttendanceReport = async (courseId = '') => {
+  const query = new URLSearchParams();
+  if (courseId) query.append('courseId', courseId);
+  const response = await api.get(`/admin/attendance-monthly-report?${query.toString()}`);
   return response.data;
 };
 

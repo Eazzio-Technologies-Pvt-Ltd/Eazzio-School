@@ -1,13 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getResults } from '../../api/studentApi';
+import { getStudentReportCard } from '../../api/examApi';
 import Loader from '../../components/Loader';
-import { FileText, AlertTriangle, ArrowRight, Award, BookOpen } from 'lucide-react';
+import { FileText, AlertTriangle, ArrowRight, Award, BookOpen, Download } from 'lucide-react';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
 
 export default function AcademicReport() {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [downloadingPDF, setDownloadingPDF] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -26,6 +30,119 @@ export default function AcademicReport() {
     };
     loadData();
   }, []);
+
+  const handleDownloadPDF = async () => {
+    if (!data || !data.studentId) return;
+    try {
+      setDownloadingPDF(true);
+      const res = await getStudentReportCard(data.studentId);
+      if (!res.success) {
+        alert('Could not generate report card.');
+        return;
+      }
+      const { student, school, exams, subjectRows, attendance, summary } = res.data;
+
+      const doc = new jsPDF();
+      const pageW = doc.internal.pageSize.getWidth();
+      const pageH = doc.internal.pageSize.getHeight();
+
+      // Outer & Inner Borders
+      doc.setDrawColor(203, 213, 225); doc.setLineWidth(0.8);
+      doc.rect(8, 8, pageW - 16, pageH - 16);
+      doc.setDrawColor(13, 148, 136); doc.setLineWidth(0.3);
+      doc.rect(10, 10, pageW - 20, pageH - 20);
+
+      // Header Banner
+      doc.setFillColor(13, 148, 136);
+      doc.rect(10, 10, pageW - 20, 24, 'F');
+      doc.setTextColor(255, 255, 255);
+      doc.setFontSize(16); doc.setFont(undefined, 'bold');
+      doc.text(school.schoolName || 'EAZZIO PUBLIC SCHOOL', pageW / 2, 18, { align: 'center' });
+      doc.setFontSize(8.5); doc.setFont(undefined, 'normal');
+      doc.text(`${school.address || 'Senior Secondary School'} • Code: ${school.schoolCode || 'SCH'}`, pageW / 2, 24, { align: 'center' });
+      doc.text(`STUDENT ACADEMIC REPORT CARD • SESSION ${student.academicYear || '2026-2027'}`, pageW / 2, 30, { align: 'center' });
+
+      // Student Card
+      const cardY = 38; const cardH = 28;
+      doc.setFillColor(248, 250, 252); doc.setDrawColor(226, 232, 240); doc.setLineWidth(0.3);
+      doc.roundedRect(14, cardY, pageW - 28, cardH, 2, 2, 'FD');
+      doc.setFillColor(13, 148, 136);
+      doc.roundedRect(14, cardY, 3, cardH, 1, 1, 'F');
+
+      doc.setTextColor(15, 23, 42); doc.setFontSize(11); doc.setFont(undefined, 'bold');
+      doc.text(student.name, 22, cardY + 7);
+      doc.setFontSize(8.5); doc.setFont(undefined, 'normal'); doc.setTextColor(71, 85, 105);
+      doc.text(`Roll Number:  ${student.rollNumber}`, 22, cardY + 13);
+      doc.text(`Class & Section:  ${student.courseName} - ${student.section}`, 22, cardY + 19);
+      doc.text(`Student ID:  ${student.studentId}`, 22, cardY + 25);
+      doc.text(`Father's Name:  ${student.fatherName}`, pageW - 85, cardY + 13);
+      doc.text(`Attendance:  ${attendance.percentage}% (${attendance.presentDays}/${attendance.totalDays} Days)`, pageW - 85, cardY + 25);
+
+      let curY = cardY + cardH + 7;
+      doc.setFontSize(9.5); doc.setFont(undefined, 'bold'); doc.setTextColor(30, 41, 59);
+      doc.text('SCHOLASTIC PERFORMANCE MATRIX', 14, curY);
+
+      const tableHead = ['Subject', ...exams.map(e => e.examName), 'Grand Total', 'Percentage', 'Grade'];
+      const tableBody = subjectRows.map(sub => {
+        const row = [sub.subject];
+        exams.forEach(e => {
+          const mark = sub.marksByExam[e.id];
+          row.push(mark ? `${mark.marksObtained} / ${mark.maxMarks}` : '—');
+        });
+        row.push(`${sub.totalObtained} / ${sub.totalMax}`, `${sub.percentage}%`, sub.grade);
+        return row;
+      });
+
+      // Total Row
+      const totalRow = ['TOTALS'];
+      exams.forEach(e => {
+        let eObt = 0; let eMax = 0; let hasMark = false;
+        subjectRows.forEach(sub => {
+          const mark = sub.marksByExam[e.id];
+          if (mark) { eObt += mark.marksObtained; eMax += mark.maxMarks; hasMark = true; }
+        });
+        totalRow.push(hasMark ? `${eObt} / ${eMax}` : '—');
+      });
+      totalRow.push(`${summary.grandObtained} / ${summary.grandMax}`, `${summary.overallPercentage}%`, summary.overallGrade);
+      tableBody.push(totalRow);
+
+      autoTable(doc, {
+        head: [tableHead],
+        body: tableBody,
+        startY: curY + 2,
+        headStyles: { fillColor: [13, 148, 136], textColor: 255, fontStyle: 'bold', fontSize: 7.5, halign: 'center', cellPadding: 3 },
+        bodyStyles: { fontSize: 7.5, cellPadding: 2.8, textColor: [30, 41, 59], halign: 'center', valign: 'middle' },
+        columnStyles: { 0: { halign: 'left', fontStyle: 'bold', cellWidth: 38 } },
+        alternateRowStyles: { fillColor: [248, 250, 252] },
+        margin: { left: 14, right: 14 }
+      });
+
+      curY = doc.lastAutoTable.finalY + 8;
+      // Remarks
+      doc.setFillColor(254, 252, 232); doc.setDrawColor(254, 240, 138);
+      doc.roundedRect(14, curY, pageW - 28, 12, 1.5, 1.5, 'FD');
+      doc.setFontSize(7.5); doc.setFont(undefined, 'bold'); doc.setTextColor(133, 77, 14);
+      doc.text('Assessment Remarks:', 18, curY + 5);
+      doc.setFont(undefined, 'normal'); doc.setTextColor(113, 63, 18);
+      doc.text(summary.remarks || 'Good performance across all evaluations.', 18, curY + 9.5);
+
+      // Signatures
+      const sigY = pageH - 26;
+      doc.setDrawColor(203, 213, 225); doc.setLineWidth(0.3);
+      doc.line(20, sigY, 70, sigY);
+      doc.setFontSize(7.5); doc.setTextColor(100, 116, 139);
+      doc.text('Class Teacher Signature', 45, sigY + 4, { align: 'center' });
+      doc.line(pageW - 70, sigY, pageW - 20, sigY);
+      doc.text('Principal Signature & Seal', pageW - 45, sigY + 4, { align: 'center' });
+
+      doc.save(`${student.name.replace(/\s+/g, '_')}_Academic_Report_Card.pdf`);
+    } catch (err) {
+      console.error(err);
+      alert('Failed to download report card PDF');
+    } finally {
+      setDownloadingPDF(false);
+    }
+  };
 
   if (loading) return <Loader message="Loading Academic Reports..." />;
   if (error) return <div className="p-4 bg-red-50 text-red-600 border border-red-200 rounded-lg">{error}</div>;
@@ -57,9 +174,21 @@ export default function AcademicReport() {
 
   return (
     <div className="flex flex-col gap-8 animate-fade-in text-gray-800">
-      <div>
-        <h2 className="text-2xl font-bold text-gray-900 mb-2">Academic Report</h2>
-        <p className="text-gray-500">View your term-wise examination results and performance.</p>
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+          <h2 className="text-2xl font-bold text-gray-900 mb-1">Academic Report</h2>
+          <p className="text-gray-500">View your term-wise examination results and performance.</p>
+        </div>
+        {exams && exams.length > 0 && (
+          <button
+            onClick={handleDownloadPDF}
+            disabled={downloadingPDF}
+            className="flex items-center gap-2 bg-teal-600 hover:bg-teal-700 text-white px-4 py-2 rounded-lg font-semibold text-sm transition shadow-sm disabled:opacity-50"
+          >
+            <Download size={16} />
+            {downloadingPDF ? 'Generating...' : 'Download Report Card (PDF)'}
+          </button>
+        )}
       </div>
 
       <div className="flex flex-col gap-8">

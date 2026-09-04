@@ -21,6 +21,7 @@ import Courses from './pages/principal/Courses';
 import CourseDetails from './pages/principal/CourseDetails';
 import Timetable from './pages/principal/Timetable';
 import PrincipalNotices from './pages/principal/Notices';
+import ExamsAndMarks from './pages/common/ExamsAndMarks';
 // Admin Pages
 import AdminDashboard from './pages/admin/AdminDashboard';
 import AdminStudents from './pages/admin/Students';
@@ -122,6 +123,7 @@ export default function App() {
             <Route path="students/:id" element={<StudentDetails />} />
             <Route path="teachers" element={<Teachers />} />
             <Route path="teachers/:id" element={<TeacherDetails />} />
+            <Route path="exams" element={<ExamsAndMarks />} />
             <Route path="attendance" element={<AttendanceOverview />} />
             <Route path="fees" element={<FeesOverview />} />
             <Route path="settings" element={<Settings />} />
@@ -145,6 +147,7 @@ export default function App() {
             <Route path="students" element={<AdminStudents />} />
             <Route path="teachers" element={<AdminTeachers />} />
             <Route path="staff" element={<AdminStaff />} />
+            <Route path="exams" element={<ExamsAndMarks />} />
             <Route path="attendance" element={<AdminAttendanceOverview />} />
             <Route path="fees" element={<AdminFeesOverview />} />
             <Route path="settings" element={<AdminSettings />} />
@@ -165,6 +168,7 @@ export default function App() {
           >
             <Route path="dashboard" element={<TeacherDashboard />} />
             <Route path="courses" element={<MyCourses />} />
+            <Route path="exams" element={<ExamsAndMarks />} />
             <Route path="assignments" element={<TeacherAssignments />} />
             <Route path="take-attendance" element={<TakeAttendance />} />
             <Route path="history" element={<AttendanceHistory />} />
