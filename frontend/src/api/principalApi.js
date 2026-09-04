@@ -115,15 +115,24 @@ export const deleteStudent = async (id) => {
 };
 
 // --- Attendance & Fees ---
-export const getAttendanceSummary = async () => {
-  const response = await api.get('/principal/attendance-summary');
+export const getAttendanceSummary = async (date) => {
+  const params = date ? { date } : {};
+  const response = await api.get('/principal/attendance-summary', { params });
   return response.data;
 };
+
 
 export const getAttendanceDetail = async (courseId, date) => {
   const response = await api.get('/principal/attendance-detail', {
     params: { courseId, date }
   });
+  return response.data;
+};
+
+export const getMonthlyAttendanceReport = async (courseId = '') => {
+  const query = new URLSearchParams();
+  if (courseId) query.append('courseId', courseId);
+  const response = await api.get(`/principal/attendance-monthly-report?${query.toString()}`);
   return response.data;
 };
 

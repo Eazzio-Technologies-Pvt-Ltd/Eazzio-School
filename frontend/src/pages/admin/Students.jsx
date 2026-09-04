@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import ReactDOM from 'react-dom';
 import { getStudents, registerStudent, getCourses, deleteStudent, getStudentFullRecord } from '../../api/adminApi';
 import Loader from '../../components/Loader';
 import { jsPDF } from 'jspdf';
@@ -420,9 +421,9 @@ export default function Students() {
       </div>
 
       {/* Credentials Modal */}
-      {credentialsModal.visible && (
-        <div style={styles.modalOverlay}>
-          <div style={styles.modalCard}>
+      {credentialsModal.visible && ReactDOM.createPortal(
+        <div style={styles.modalOverlay} onClick={() => setCredentialsModal({visible: false, studentId: '', password: '', name: ''})}>
+          <div style={styles.modalCard} onClick={e => e.stopPropagation()}>
             <h3 style={{color: 'var(--success)', marginBottom: '10px'}}>Student Registered Successfully!</h3>
             <p>Please save these auto-generated credentials and share them with the student securely.</p>
             
@@ -436,11 +437,12 @@ export default function Students() {
               Close
             </button>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* ── DOWNLOAD MODAL ── */}
-      {downloadModal && (
+      {downloadModal && ReactDOM.createPortal(
         <div style={styles.modalOverlay} onClick={() => !dlLoading && setDownloadModal(null)}>
           <div style={dlModalStyle} onClick={e => e.stopPropagation()}>
             {/* Header */}
@@ -494,11 +496,12 @@ export default function Students() {
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* Fee History Modal */}
-      {selectedFeeStudent && (
+      {selectedFeeStudent && ReactDOM.createPortal(
         <div style={styles.modalOverlay} onClick={() => setSelectedFeeStudent(null)}>
           <div style={{ ...styles.modalCard, width: '550px', maxWidth: '95%', maxHeight: '90vh', overflowY: 'auto' }} onClick={e => e.stopPropagation()}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--glass-border)', paddingBottom: '15px', marginBottom: '15px' }}>
@@ -569,7 +572,8 @@ export default function Students() {
               </div>
             )}
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );

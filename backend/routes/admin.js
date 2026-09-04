@@ -552,8 +552,93 @@ router.get('/students/:id/full-record', async (req, res) => {
 });
 
 // 5. View Attendance
+router.get('/attendance-monthly-report', async (req, res) => {
+  const schoolId = req.user.schoolId;
+  const { courseId } = req.query;
+
+  try {
+    const whereClause = { schoolId };
+    if (courseId) {
+      whereClause.courseId = parseInt(courseId);
+    }
+
+    const students = await prisma.student.findMany({
+      where: whereClause,
+      include: {
+        attendance: true
+      },
+      orderBy: { name: 'asc' }
+    });
+
+    const report = students.map(student => {
+      const months = {};
+      
+      student.attendance.forEach(record => {
+        const d = new Date(record.date);
+        // Format: YYYY-MM
+        const monthKey = `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}`;
+        
+        if (!months[monthKey]) {
+          months[monthKey] = { present: 0, absent: 0, days: [] };
+        }
+        
+        if (record.status === 'PRESENT') {
+          months[monthKey].present += 1;
+        } else if (record.status === 'ABSENT' || record.status === 'LATE') {
+          months[monthKey].absent += 1;
+        }
+
+        // Store exact date + status for day-wise detail
+        months[monthKey].days.push({
+          date: `${d.getUTCDate().toString().padStart(2, '0')}-${String(d.getUTCMonth() + 1).padStart(2, '0')}-${d.getUTCFullYear()}`,
+          status: record.status
+        });
+      });
+
+      // Sort days within each month
+      Object.values(months).forEach(m => {
+        m.days.sort((a, b) => {
+          const [da, ma, ya] = a.date.split('-').map(Number);
+          const [db, mb, yb] = b.date.split('-').map(Number);
+          return new Date(ya, ma - 1, da) - new Date(yb, mb - 1, db);
+        });
+      });
+
+      return {
+        studentId: student.studentId,
+        name: student.name,
+        rollNumber: student.rollNumber || 'N/A',
+        months
+      };
+    });
+
+
+    return res.json(report);
+  } catch (err) {
+    console.error('Error fetching monthly attendance report:', err);
+    return res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
 router.get('/attendance-summary', async (req, res) => {
   const schoolId = req.user.schoolId;
+  const { date } = req.query;
+
+  // Use provided date or default to today
+  const targetDate = date ? new Date(date) : new Date();
+  // Use UTC getters — attendance is stored as UTC midnight (see teacher.js line 166)
+  const startOfDay = new Date(Date.UTC(
+    targetDate.getUTCFullYear(),
+    targetDate.getUTCMonth(),
+    targetDate.getUTCDate(),
+    0, 0, 0, 0
+  ));
+  const endOfDay = new Date(Date.UTC(
+    targetDate.getUTCFullYear(),
+    targetDate.getUTCMonth(),
+    targetDate.getUTCDate(),
+    23, 59, 59, 999
+  ));
 
   try {
     const classes = await prisma.course.findMany({
@@ -562,7 +647,14 @@ router.get('/attendance-summary', async (req, res) => {
         teacher: { select: { name: true } },
         students: {
           include: {
-            attendance: true
+            attendance: {
+              where: {
+                date: {
+                  gte: startOfDay,
+                  lte: endOfDay
+                }
+              }
+            }
           }
         }
       }
@@ -570,26 +662,38 @@ router.get('/attendance-summary', async (req, res) => {
 
     const summary = classes.map(cls => {
       const totalStudents = cls.students.length;
-      let totalLogs = 0;
-      let presentLogs = 0;
-      let absentLogs = 0;
+      let presentCount = 0;
+      let absentCount = 0;
+      let lateCount = 0;
+      let markedCount = 0; // students whose attendance was actually recorded
 
       cls.students.forEach(student => {
-        totalLogs += student.attendance.length;
-        presentLogs += student.attendance.filter(a => a.status === 'PRESENT').length;
-        absentLogs += student.attendance.filter(a => a.status === 'ABSENT').length;
+        if (student.attendance.length > 0) {
+          markedCount++;
+          student.attendance.forEach(a => {
+            if (a.status === 'PRESENT') presentCount++;
+            else if (a.status === 'ABSENT') absentCount++;
+            else if (a.status === 'LATE') lateCount++;
+          });
+        }
       });
 
-      const percentage = totalLogs > 0 ? Math.round((presentLogs / totalLogs) * 100) : 0;
+      const totalMarked = presentCount + absentCount + lateCount;
+      const percentage = totalMarked > 0
+        ? Math.round(((presentCount + lateCount) / totalMarked) * 100)
+        : 0;
 
       return {
         courseId: cls.id,
         courseName: `${cls.courseName}-${cls.section}`,
         teacherName: cls.teacher ? cls.teacher.name : 'Unassigned',
         totalStudents,
-        present: presentLogs,
-        absent: absentLogs,
-        percentage
+        present: presentCount,
+        absent: absentCount,
+        late: lateCount,
+        markedCount,
+        percentage,
+        attendanceTaken: markedCount > 0
       };
     });
 
@@ -599,6 +703,7 @@ router.get('/attendance-summary', async (req, res) => {
     return res.status(500).json({ error: 'Internal server error' });
   }
 });
+
 
 // 6. View Fee Collection
 router.get('/fee-collection', async (req, res) => {
