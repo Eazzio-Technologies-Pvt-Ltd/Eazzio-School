@@ -463,7 +463,10 @@ router.post('/students/bulk', async (req, res) => {
       return res.status(404).json({ success: false, error: 'School not found' });
     }
 
-    const courses = await prisma.course.findMany({ where: { schoolId } });
+    const courses = await prisma.course.findMany({ 
+      where: { schoolId },
+      include: { feeStructures: true }
+    });
     const classes = courses.map(c => ({ ...c, className: c.courseName }));
     let maxStudentNum = await getNextStudentNumber(schoolId);
 
@@ -558,6 +561,13 @@ router.post('/students/bulk', async (req, res) => {
         }
       }
 
+      // Parse admission date before generating studentId
+      let admissionDate = normalizedRow['admissiondate'] || normalizedRow['dateofadmission'] || normalizedRow['doadmission'];
+      if (admissionDate) {
+        const parsedDate = new Date(admissionDate);
+        admissionDate = isNaN(parsedDate.getTime()) ? null : parsedDate;
+      }
+
       // Generate student ID
       maxStudentNum++;
       const studentId = generateStudentId(school.schoolCode, maxStudentNum, admissionDate);
@@ -579,11 +589,7 @@ router.post('/students/bulk', async (req, res) => {
       let address = normalizedRow['address'] || normalizedRow['residentialaddress'];
       if (address) address = address.toString().trim();
 
-      let admissionDate = normalizedRow['admissiondate'] || normalizedRow['dateofadmission'] || normalizedRow['doadmission'];
-      if (admissionDate) {
-        const parsedDate = new Date(admissionDate);
-        admissionDate = isNaN(parsedDate.getTime()) ? null : parsedDate;
-      }
+      let feeCycle = (normalizedRow['feecycle'] || normalizedRow['cycle'] || 'MONTHLY').toString().trim().toUpperCase();
 
       try {
         const student = await prisma.student.create({
@@ -598,9 +604,59 @@ router.post('/students/bulk', async (req, res) => {
             motherName: motherName || null,
             phone: phone || null,
             address: address || null,
-            admissionDate
+            admissionDate,
+            feeCycle: ['MONTHLY', 'QUARTERLY', 'HALF_YEARLY', 'YEARLY', 'ONE_TIME'].includes(feeCycle) ? feeCycle : 'MONTHLY'
           }
         });
+
+        // Automatically generate fee invoices if class has feeStructures
+        if (classId) {
+          try {
+            const matchedCourse = courses.find(c => c.id === classId);
+            if (matchedCourse && matchedCourse.feeStructures && matchedCourse.feeStructures.length > 0) {
+              const today = new Date();
+              const feeDueDay = school.feeDueDay || 10;
+              const defaultDueDate = new Date(today.getFullYear(), today.getMonth(), feeDueDay);
+
+              const invoicesToCreate = matchedCourse.feeStructures.map(fs => {
+                let calculatedAmount = fs.amount;
+                if (fs.feeType === 'Tuition Fee') {
+                  const baseAmount = fs.amount;
+                  const baseCycle = fs.planType || 'MONTHLY';
+                  if (baseAmount > 0) {
+                    let yearlyAmount = 0;
+                    if (baseCycle === 'MONTHLY') yearlyAmount = baseAmount * 12;
+                    else if (baseCycle === 'QUARTERLY') yearlyAmount = baseAmount * 4;
+                    else if (baseCycle === 'HALF_YEARLY') yearlyAmount = baseAmount * 2;
+                    else if (baseCycle === 'YEARLY' || baseCycle === 'ONE_TIME') yearlyAmount = baseAmount;
+
+                    if (feeCycle === 'QUARTERLY') calculatedAmount = Math.round(yearlyAmount / 4);
+                    else if (feeCycle === 'HALF_YEARLY') calculatedAmount = Math.round(yearlyAmount / 2);
+                    else if (feeCycle === 'YEARLY') calculatedAmount = yearlyAmount;
+                    else if (feeCycle === 'ONE_TIME') calculatedAmount = baseAmount;
+                    else calculatedAmount = Math.round(yearlyAmount / 12);
+                  }
+                }
+
+                return {
+                  schoolId,
+                  studentId: student.id,
+                  feeType: fs.feeType,
+                  amount: calculatedAmount,
+                  dueDate: fs.dueDate ? new Date(fs.dueDate) : defaultDueDate,
+                  status: 'PENDING'
+                };
+              });
+
+              await prisma.feeInvoice.createMany({
+                data: invoicesToCreate
+              });
+            }
+          } catch (invErr) {
+            console.error('Warning: could not auto-generate invoices for bulk student:', invErr);
+          }
+        }
+
         createdStudents.push(student);
       } catch (err) {
         console.error('Error creating student during bulk upload:', err);
