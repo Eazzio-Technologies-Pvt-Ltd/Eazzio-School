@@ -180,6 +180,7 @@ export default function AccountantStudents() {
   // Bulk CSV Import States
   const [importing, setImporting] = useState(false);
   const [importResult, setImportResult] = useState(null);
+  const [showCsvFormatGuide, setShowCsvFormatGuide] = useState(false);
   const [lastImportedStudentIds, setLastImportedStudentIds] = useState(() => {
     try {
       return JSON.parse(localStorage.getItem('lastImportedStudentIds')) || [];
@@ -187,6 +188,23 @@ export default function AccountantStudents() {
       return [];
     }
   });
+
+  const downloadSampleCSV = () => {
+    const csvContent = 
+`name,class,section,session,rollNumber,phone,fatherName,motherName,address,admissionDate,feeCycle
+Aarav Sharma,10,A,2026-2027,101,9876543210,Ramesh Sharma,Sunita Sharma,123 Green Park New Delhi,2026-09-01,MONTHLY
+Priya Patel,9,B,2026-2027,102,9876543211,Suresh Patel,Meena Patel,45 MG Road Mumbai,2026-09-01,QUARTERLY`;
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', 'student_bulk_import_sample.csv');
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  };
 
   // Invoice & Payment details within profile
   const [studentInvoices, setStudentInvoices] = useState([]);
@@ -1007,6 +1025,135 @@ export default function AccountantStudents() {
             />
           </label>
         </div>
+      </div>
+
+      {/* CSV Format Reference & Helper Card */}
+      <div style={{
+        backgroundColor: 'var(--bg-card)',
+        border: '1px solid var(--glass-border)',
+        borderRadius: 'var(--radius-md)',
+        padding: '16px 20px',
+        boxShadow: '0 4px 18px rgba(0, 0, 0, 0.05)'
+      }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <span style={{ fontSize: '1.4rem' }}>📄</span>
+            <div>
+              <h4 style={{ margin: 0, fontSize: '0.95rem', fontWeight: 600, color: 'var(--text-primary)' }}>
+                CSV Import Format & Structure Guide
+              </h4>
+              <p style={{ margin: '2px 0 0', fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
+                Bulk me student add karne ke liye CSV file ka format neeche diya gaya hai.
+              </p>
+            </div>
+          </div>
+          <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+            <button
+              type="button"
+              onClick={downloadSampleCSV}
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '6px',
+                padding: '7px 14px',
+                borderRadius: 'var(--radius-sm, 6px)',
+                background: 'rgba(5, 150, 105, 0.12)',
+                border: '1px solid var(--success)',
+                color: 'var(--success)',
+                fontWeight: 600,
+                fontSize: '0.82rem',
+                cursor: 'pointer',
+                transition: 'all 0.2s ease'
+              }}
+            >
+              📥 Download Sample CSV
+            </button>
+            <button
+              type="button"
+              onClick={() => setShowCsvFormatGuide(prev => !prev)}
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '4px',
+                padding: '7px 12px',
+                borderRadius: 'var(--radius-sm, 6px)',
+                background: 'rgba(99, 102, 241, 0.08)',
+                border: '1px solid var(--primary)',
+                color: 'var(--primary)',
+                fontSize: '0.82rem',
+                cursor: 'pointer'
+              }}
+            >
+              {showCsvFormatGuide ? 'Hide Format 🔼' : 'View Format Guide 🔽'}
+            </button>
+          </div>
+        </div>
+
+        {showCsvFormatGuide && (
+          <div style={{ marginTop: '14px', borderTop: '1px dashed var(--glass-border)', paddingTop: '12px' }}>
+            <p style={{ margin: '0 0 8px', fontSize: '0.82rem', color: 'var(--text-secondary)' }}>
+              Aapki CSV file ki pehli row (Headers) inme se honi chahiye:
+            </p>
+            
+            {/* Scrollable Table Preview */}
+            <div style={{ overflowX: 'auto', borderRadius: '6px', border: '1px solid var(--glass-border)', marginBottom: '12px' }}>
+              <table style={{ width: '100%', fontSize: '0.78rem', borderCollapse: 'collapse', textAlign: 'left', minWidth: '780px' }}>
+                <thead>
+                  <tr style={{ background: 'rgba(99, 102, 241, 0.08)', color: 'var(--text-primary)', borderBottom: '1px solid var(--glass-border)' }}>
+                    <th style={{ padding: '8px 10px', fontWeight: 600 }}>name *</th>
+                    <th style={{ padding: '8px 10px', fontWeight: 600 }}>class</th>
+                    <th style={{ padding: '8px 10px', fontWeight: 600 }}>section</th>
+                    <th style={{ padding: '8px 10px', fontWeight: 600 }}>session</th>
+                    <th style={{ padding: '8px 10px', fontWeight: 600 }}>rollNumber</th>
+                    <th style={{ padding: '8px 10px', fontWeight: 600 }}>phone</th>
+                    <th style={{ padding: '8px 10px', fontWeight: 600 }}>fatherName</th>
+                    <th style={{ padding: '8px 10px', fontWeight: 600 }}>motherName</th>
+                    <th style={{ padding: '8px 10px', fontWeight: 600 }}>address</th>
+                    <th style={{ padding: '8px 10px', fontWeight: 600 }}>admissionDate</th>
+                    <th style={{ padding: '8px 10px', fontWeight: 600 }}>feeCycle</th>
+                  </tr>
+                </thead>
+                <tbody style={{ color: 'var(--text-secondary)' }}>
+                  <tr style={{ borderBottom: '1px solid var(--glass-border)' }}>
+                    <td style={{ padding: '8px 10px', fontWeight: 600, color: 'var(--text-primary)' }}>Aarav Sharma</td>
+                    <td style={{ padding: '8px 10px' }}>10</td>
+                    <td style={{ padding: '8px 10px' }}>A</td>
+                    <td style={{ padding: '8px 10px' }}>2026-2027</td>
+                    <td style={{ padding: '8px 10px' }}>101</td>
+                    <td style={{ padding: '8px 10px' }}>9876543210</td>
+                    <td style={{ padding: '8px 10px' }}>Ramesh Sharma</td>
+                    <td style={{ padding: '8px 10px' }}>Sunita Sharma</td>
+                    <td style={{ padding: '8px 10px' }}>123 Green Park</td>
+                    <td style={{ padding: '8px 10px' }}>2026-09-01</td>
+                    <td style={{ padding: '8px 10px' }}>MONTHLY</td>
+                  </tr>
+                  <tr>
+                    <td style={{ padding: '8px 10px', fontWeight: 600, color: 'var(--text-primary)' }}>Priya Patel</td>
+                    <td style={{ padding: '8px 10px' }}>9</td>
+                    <td style={{ padding: '8px 10px' }}>B</td>
+                    <td style={{ padding: '8px 10px' }}>2026-2027</td>
+                    <td style={{ padding: '8px 10px' }}>102</td>
+                    <td style={{ padding: '8px 10px' }}>9876543211</td>
+                    <td style={{ padding: '8px 10px' }}>Suresh Patel</td>
+                    <td style={{ padding: '8px 10px' }}>Meena Patel</td>
+                    <td style={{ padding: '8px 10px' }}>45 MG Road</td>
+                    <td style={{ padding: '8px 10px' }}>2026-09-01</td>
+                    <td style={{ padding: '8px 10px' }}>QUARTERLY</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(230px, 1fr))', gap: '8px', fontSize: '0.78rem', color: 'var(--text-secondary)' }}>
+              <div><strong style={{ color: 'var(--text-primary)' }}>• name (Mandatory):</strong> Student ka pura naam.</div>
+              <div><strong style={{ color: 'var(--text-primary)' }}>• class & section:</strong> Aapki existing class ka name (e.g. 10 ya Class 10) aur section (e.g. A).</div>
+              <div><strong style={{ color: 'var(--text-primary)' }}>• session:</strong> Academic Year (e.g. 2026-2027).</div>
+              <div><strong style={{ color: 'var(--text-primary)' }}>• admissionDate:</strong> YYYY-MM-DD (e.g. 2026-09-01).</div>
+              <div><strong style={{ color: 'var(--text-primary)' }}>• feeCycle:</strong> MONTHLY, QUARTERLY, HALF_YEARLY, YEARLY.</div>
+              <div><strong style={{ color: 'var(--text-primary)' }}>• Student ID & Password:</strong> School Code ke hisab se automatic generate hoga.</div>
+            </div>
+          </div>
+        )}
       </div>
 
       {error && (
