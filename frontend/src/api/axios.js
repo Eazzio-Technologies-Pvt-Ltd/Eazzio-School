@@ -30,8 +30,10 @@ api.interceptors.response.use(
     return response;
   },
   (error) => {
-    if (error.response && (error.response.status === 401 || error.response.status === 403)) {
-      // Clear storage and redirect on auth failures
+    // Only 401 (Unauthorized / expired token) should trigger logout.
+    // 403 (Forbidden) means the user IS authenticated but lacks permission for that
+    // specific resource — we should NOT log them out; let the component handle it.
+    if (error.response && error.response.status === 401) {
       localStorage.removeItem('token');
       localStorage.removeItem('user');
       if (window.location.pathname !== '/login') {

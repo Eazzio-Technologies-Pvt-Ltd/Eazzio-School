@@ -566,23 +566,123 @@ router.get('/results', async (req, res) => {
       ]
     });
 
-    const grouped = {};
-    results.forEach(r => {
-      if (!grouped[r.examId]) {
-        grouped[r.examId] = {
-          examDetails: r.exam,
+    // Students must only see published exams
+    const visibleResults = results.filter(
+      r => r.exam && (!('published' in r.exam) || r.exam.published !== false)
+    );
+
+    // ── Group by examType ──────────────────────────────────────────────────
+
+    const monthNames = ['January','February','March','April','May','June',
+                        'July','August','September','October','November','December'];
+
+    // 1. WEEKLY: group by month
+    const weeklyResults = visibleResults.filter(r => r.exam && r.exam.examType === 'WEEKLY');
+    const weeklyByMonth = {};
+    weeklyResults.forEach(r => {
+      const d = r.exam.examDate ? new Date(r.exam.examDate) : null;
+      const monthKey = d ? `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}` : 'unknown';
+      const monthLabel = d ? `${monthNames[d.getMonth()]} ${d.getFullYear()}` : 'Unknown';
+      if (!weeklyByMonth[monthKey]) {
+        weeklyByMonth[monthKey] = { monthKey, monthLabel, tests: {} };
+      }
+      // Group within month by examId
+      const eId = r.examId;
+      if (!weeklyByMonth[monthKey].tests[eId]) {
+        weeklyByMonth[monthKey].tests[eId] = {
+          examId: r.exam.id,
+          examName: r.exam.examName,
+          subject: r.exam.subject,
+          portion: r.exam.portion,
+          maxMarks: r.exam.maxMarks,
+          examDate: r.exam.examDate,
           subjects: []
         };
       }
-      grouped[r.examId].subjects.push(r);
+      weeklyByMonth[monthKey].tests[eId].subjects.push({
+        subject: r.subject,
+        marksObtained: r.marksObtained,
+        maxMarks: r.maxMarks,
+        grade: r.grade,
+        remarks: r.remarks
+      });
+    });
+    const weeklyMonths = Object.values(weeklyByMonth)
+      .sort((a, b) => a.monthKey.localeCompare(b.monthKey))
+      .map(m => ({ ...m, tests: Object.values(m.tests) }));
+
+    // 2. HALF_YEARLY + ANNUAL: one entry per exam, subject-wise
+    const terminalResults = visibleResults.filter(
+      r => r.exam && (r.exam.examType === 'HALF_YEARLY' || r.exam.examType === 'ANNUAL')
+    );
+    const terminalByExam = {};
+    terminalResults.forEach(r => {
+      const eId = r.examId;
+      if (!terminalByExam[eId]) {
+        terminalByExam[eId] = {
+          examId: r.exam.id,
+          examName: r.exam.examName,
+          examType: r.exam.examType,
+          term: r.exam.term,
+          academicYear: r.exam.academicYear,
+          examDate: r.exam.examDate,
+          subjects: [],
+          totalObtained: 0,
+          totalMax: 0
+        };
+      }
+      terminalByExam[eId].subjects.push({
+        subject: r.subject,
+        marksObtained: r.marksObtained,
+        maxMarks: r.maxMarks,
+        grade: r.grade,
+        remarks: r.remarks
+      });
+      terminalByExam[eId].totalObtained += r.marksObtained;
+      terminalByExam[eId].totalMax += r.maxMarks;
+    });
+    const terminalExams = Object.values(terminalByExam).map(e => ({
+      ...e,
+      percentage: e.totalMax > 0 ? Math.round((e.totalObtained / e.totalMax) * 1000) / 10 : 0
+    }));
+
+    // 3. GENERAL (legacy): keep old grouped format for backward compat
+    const generalResults = visibleResults.filter(
+      r => r.exam && (r.exam.examType === 'GENERAL' || !r.exam.examType)
+    );
+    const generalGrouped = {};
+    generalResults.forEach(r => {
+      if (!generalGrouped[r.examId]) {
+        generalGrouped[r.examId] = { examDetails: r.exam, subjects: [] };
+      }
+      generalGrouped[r.examId].subjects.push(r);
     });
 
-    return res.json({ success: true, data: { resultOnHold: false, exams: Object.values(grouped), studentId: student.id } });
+    return res.json({
+      success: true,
+      data: {
+        resultOnHold: false,
+        studentId,
+        // New grouped structure
+        weeklyTests: weeklyMonths,          // WEEKLY tests grouped by month
+        terminalExams,                       // HALF_YEARLY + ANNUAL
+        // Legacy field kept for backward compatibility — contains ALL visible results grouped by examId
+        exams: Object.values(generalGrouped),
+        // Summary counts
+        summary: {
+          totalWeeklyTests: weeklyResults.length > 0
+            ? [...new Set(weeklyResults.map(r => r.examId))].length
+            : 0,
+          totalTerminalExams: terminalExams.length
+        }
+      }
+    });
   } catch (err) {
     console.error('Error fetching results:', err);
     return res.status(500).json({ success: false, error: 'Internal server error' });
   }
 });
+
 
 // --- ASSIGNMENTS ---
 
