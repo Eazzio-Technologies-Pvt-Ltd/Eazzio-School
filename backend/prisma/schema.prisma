@@ -41,6 +41,7 @@ model School {
   results            Result[]
   feedbacks          Feedback[]
   assignments        Assignment[]
+  examTimetables     ExamTimetable[]
 }
 
 model Course {
@@ -62,6 +63,7 @@ model Course {
   results       Result[]
   courseSubjects CourseSubject[]
   assignments   Assignment[]
+  examTimetables ExamTimetable[]
 
   @@unique([schoolId, courseName, section, academicYear])
   @@index([schoolId])
@@ -298,17 +300,23 @@ enum AttendanceStatus {
 }
 
 model Exam {
-  id           Int      @id @default(autoincrement())
-  schoolId     Int
-  courseId     Int
-  examName     String
-  term         String
-  academicYear String
-  examDate     DateTime?
-  createdAt    DateTime @default(now())
-  course       Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
-  school       School   @relation(fields: [schoolId], references: [id], onDelete: Cascade)
-  results      Result[]
+  id                 Int      @id @default(autoincrement())
+  schoolId           Int
+  courseId           Int
+  examName           String
+  term               String
+  academicYear       String
+  examDate           DateTime?
+  createdAt          DateTime @default(now())
+  examType           String   @default("GENERAL")
+  subject            String?
+  portion            String?
+  maxMarks           Float?
+  createdByTeacherId Int?
+  published          Boolean  @default(true)
+  course             Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  school             School   @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  results            Result[]
 
   @@index([schoolId])
 }
@@ -387,3 +395,40 @@ model Assignment {
   @@index([courseId])
   @@index([teacherId])
 }
+
+model ExamTimetable {
+  id           Int                 @id @default(autoincrement())
+  schoolId     Int
+  courseId     Int
+  examType     String              // 'HALF_YEARLY' or 'ANNUAL'
+  title        String
+  academicYear String              @default("2026-2027")
+  published    Boolean             @default(false)
+  publishedAt  DateTime?
+  createdBy    String              @default("ADMIN")
+  createdAt    DateTime            @default(now())
+  updatedAt    DateTime            @updatedAt
+  items        ExamTimetableItem[]
+
+  course       Course              @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  school       School              @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+
+  @@index([schoolId])
+  @@index([courseId])
+}
+
+model ExamTimetableItem {
+  id              Int           @id @default(autoincrement())
+  examTimetableId Int
+  subject         String
+  examDate        DateTime
+  startTime       String        @default("09:00 AM")
+  endTime         String        @default("12:00 PM")
+  maxMarks        Float?
+  roomNo          String?
+  instructions    String?
+  examTimetable   ExamTimetable @relation(fields: [examTimetableId], references: [id], onDelete: Cascade)
+
+  @@index([examTimetableId])
+}
+

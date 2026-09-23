@@ -96,7 +96,8 @@ export default function DashboardLayout() {
       { path: '/student/fees', label: 'Fees', icon: <CreditCard size={20} /> },
       { path: '/student/attendance', label: 'Attendance', icon: <Calendar size={20} /> },
       { path: '/student/notices', label: 'Notice Board', icon: <Megaphone size={20} /> },
-      { path: '/student/academic-report', label: 'Academic Report', icon: <FileText size={20} /> },
+      { path: '/student/academic-report', label: 'Academic Report', icon: <Award size={20} /> },
+      { path: '/student/exam-schedule', label: 'Exam Schedule', icon: <Clock size={20} /> },
       { path: '/student/settings', label: 'Settings', icon: <Settings size={20} /> },
     ],
     ACCOUNTANT: [

@@ -53,6 +53,7 @@ import Notices from './pages/student/Notices';
 import AcademicReport from './pages/student/AcademicReport';
 import StudentSettings from './pages/student/StudentSettings';
 import StudentAssignments from './pages/student/Assignments';
+import ExamSchedule from './pages/student/ExamSchedule';
 
 // Accountant Pages
 import AccountantDashboard from './pages/accountant/AccountantDashboard';
@@ -194,6 +195,7 @@ export default function App() {
             <Route path="fees" element={<MyFees />} />
             <Route path="notices" element={<Notices />} />
             <Route path="academic-report" element={<AcademicReport />} />
+            <Route path="exam-schedule" element={<ExamSchedule />} />
             <Route path="settings" element={<StudentSettings />} />
           </Route>
 

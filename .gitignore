@@ -23,6 +23,8 @@ out/
 # Database / ORM
 prisma/*.db
 prisma/*.db-journal
+backend/backups/
+backups/
 
 # Logs
 npm-debug.log*
