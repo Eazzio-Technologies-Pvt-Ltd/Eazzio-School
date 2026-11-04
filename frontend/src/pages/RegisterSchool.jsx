@@ -59,7 +59,7 @@ export default function RegisterSchool() {
 
       // 2. Setup Razorpay Checkout options
       const options = {
-        key: import.meta.env.VITE_RAZORPAY_KEY_ID || order.key_id, // Read from environment or backend order payload
+        key: 'rzp_live_T30ux1vLXgkLFL', // Pass Razorpay Key directly here for frontend
         amount: order.amount,
         currency: 'INR',
         name: 'EduSphere',
