@@ -56,3 +56,19 @@ Thumbs.db
 
 # Log Files
 backend/error_log.txt
+
+backend/
+frontend/
+mobile/docs/
+
+# Sensitive data and local secrets
+*.env
+*.env.*
+!.env.example
+*.keystore
+*.jks
+*.key
+*.pem
+*.p12
+*.sql
+.playwright-mcp/

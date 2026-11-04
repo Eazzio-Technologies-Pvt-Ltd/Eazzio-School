@@ -186,7 +186,13 @@ router.post('/create-subscription-order', validate(subscriptionOrderSchema), asy
     const order = await instance.orders.create(options);
     if (!order) return res.status(500).json({ success: false, error: 'Failed to create order' });
 
-    return res.json({ success: true, data: order });
+    return res.json({ 
+      success: true, 
+      data: {
+        ...order,
+        key_id: process.env.RAZORPAY_KEY_ID
+      } 
+    });
   } catch (err) {
     console.error('Error generating Razorpay order:', err);
     return res.status(500).json({ success: false, error: 'Internal server error', details: err.message, stack: err.stack });
